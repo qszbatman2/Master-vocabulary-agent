@@ -6,6 +6,7 @@ import {
   timestamp,
   integer,
   serial,
+  boolean,
   index,
 } from "drizzle-orm/pg-core";
 import { createSchemaFactory } from "drizzle-zod";
@@ -53,6 +54,52 @@ export const words = pgTable(
   ]
 );
 
+// 用户表
+export const users = pgTable(
+  "users",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    email: varchar("email", { length: 255 }).notNull().unique(),
+    password: varchar("password", { length: 255 }).notNull(),
+    nickname: varchar("nickname", { length: 100 }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    lastLoginAt: timestamp("last_login_at", { withTimezone: true }),
+  },
+  (table) => [index("users_email_idx").on(table.email)]
+);
+
+// 用户单词学习状态表
+export const userWordStatus = pgTable(
+  "user_word_status",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id),
+    wordId: integer("word_id")
+      .notNull()
+      .references(() => words.id),
+    isMastered: boolean("is_mastered").default(false).notNull(),
+    totalPracticeCount: integer("total_practice_count").default(0).notNull(),
+    correctCount: integer("correct_count").default(0).notNull(),
+    consecutiveCorrect: integer("consecutive_correct").default(0).notNull(),
+    lastPracticedAt: timestamp("last_practiced_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }),
+  },
+  (table) => [
+    index("user_word_status_user_id_idx").on(table.userId),
+    index("user_word_status_word_id_idx").on(table.wordId),
+    index("user_word_status_mastered_idx").on(table.isMastered),
+    // 用户+单词唯一约束
+    index("user_word_status_unique_idx").on(table.userId, table.wordId),
+  ]
+);
+
 // 使用 createSchemaFactory 配置 date coercion
 const { createInsertSchema: createCoercedInsertSchema } = createSchemaFactory({
   coerce: { date: true },
@@ -74,6 +121,23 @@ export const insertWordSchema = createCoercedInsertSchema(words).pick({
   categoryId: true,
 });
 
+export const insertUserSchema = createCoercedInsertSchema(users).pick({
+  email: true,
+  password: true,
+  nickname: true,
+});
+
+export const insertUserWordStatusSchema = createCoercedInsertSchema(
+  userWordStatus
+).pick({
+  userId: true,
+  wordId: true,
+  isMastered: true,
+  totalPracticeCount: true,
+  correctCount: true,
+  consecutiveCorrect: true,
+});
+
 // TypeScript types
 export type VocabularyCategory = typeof vocabularyCategories.$inferSelect;
 export type InsertVocabularyCategory = z.infer<
@@ -81,3 +145,7 @@ export type InsertVocabularyCategory = z.infer<
 >;
 export type Word = typeof words.$inferSelect;
 export type InsertWord = z.infer<typeof insertWordSchema>;
+export type User = typeof users.$inferSelect;
+export type InsertUser = z.infer<typeof insertUserSchema>;
+export type UserWordStatus = typeof userWordStatus.$inferSelect;
+export type InsertUserWordStatus = z.infer<typeof insertUserWordStatusSchema>;

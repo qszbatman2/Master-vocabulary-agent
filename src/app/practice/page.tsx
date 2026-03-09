@@ -10,9 +10,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ArrowLeft, CheckCircle, XCircle, RotateCcw, Trophy, Volume2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle, XCircle, RotateCcw, Trophy, Volume2, BookmarkCheck, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
 
 interface Category {
   id: number;
@@ -33,9 +35,10 @@ interface Question {
 }
 
 export default function PracticePage() {
+  const { user, token } = useAuth();
+  const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedMode, setSelectedMode] = useState<'en-to-zh' | 'zh-to-en'>('en-to-zh');
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
@@ -44,10 +47,18 @@ export default function PracticePage() {
   const [wrongCount, setWrongCount] = useState(0);
   const [isStarted, setIsStarted] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
+  const [isMastered, setIsMastered] = useState(false);
+  const [autoMasteredMessage, setAutoMasteredMessage] = useState('');
+  const [remainingWords, setRemainingWords] = useState(0);
 
   useEffect(() => {
+    // 检查登录状态
+    if (!user) {
+      router.push('/login');
+      return;
+    }
     fetchCategories();
-  }, []);
+  }, [user, router]);
 
   const fetchCategories = async () => {
     try {
@@ -60,18 +71,30 @@ export default function PracticePage() {
   };
 
   const startPractice = async () => {
+    if (!token) return;
+    
     try {
       const params = new URLSearchParams();
       if (selectedCategory !== 'all') {
         params.append('categoryId', selectedCategory);
       }
-      params.append('mode', selectedMode);
       params.append('limit', '10');
 
-      const response = await fetch(`/api/practice?${params.toString()}`);
+      const response = await fetch(`/api/practice?${params.toString()}`, {
+        headers: {
+          authorization: `Bearer ${token}`,
+        },
+      });
       const data = await response.json();
       
+      if (data.message) {
+        // 所有单词都已掌握
+        alert(data.message);
+        return;
+      }
+      
       setQuestions(data.questions || []);
+      setRemainingWords(data.remainingWords || 0);
       setCurrentIndex(0);
       setSelectedAnswer(null);
       setShowResult(false);
@@ -79,23 +102,67 @@ export default function PracticePage() {
       setWrongCount(0);
       setIsStarted(true);
       setIsFinished(false);
+      setIsMastered(false);
     } catch (error) {
       console.error('Failed to start practice:', error);
     }
   };
 
-  const handleAnswer = (answer: string) => {
+  const submitResult = async (wordId: number, isCorrect: boolean, markAsMastered: boolean = false) => {
+    if (!token) return;
+    
+    try {
+      const response = await fetch('/api/practice/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          wordId,
+          isCorrect,
+          markAsMastered,
+        }),
+      });
+      
+      const data = await response.json();
+      
+      if (data.autoMastered) {
+        setAutoMasteredMessage('恭喜！连续4次正确，已自动标记为已掌握！');
+        setTimeout(() => setAutoMasteredMessage(''), 3000);
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Failed to submit result:', error);
+    }
+  };
+
+  const handleAnswer = async (answer: string) => {
     if (showResult) return;
     
     setSelectedAnswer(answer);
     setShowResult(true);
     
     const currentQuestion = questions[currentIndex];
-    if (answer === currentQuestion.correctAnswer) {
+    const isCorrect = answer === currentQuestion.correctAnswer;
+    
+    if (isCorrect) {
       setCorrectCount((prev) => prev + 1);
     } else {
       setWrongCount((prev) => prev + 1);
     }
+
+    // 提交结果
+    await submitResult(currentQuestion.id, isCorrect);
+  };
+
+  const handleMarkAsMastered = async () => {
+    if (!token || isMastered) return;
+    
+    const currentQuestion = questions[currentIndex];
+    await submitResult(currentQuestion.id, true, true);
+    setIsMastered(true);
   };
 
   const nextQuestion = () => {
@@ -103,6 +170,7 @@ export default function PracticePage() {
       setCurrentIndex((prev) => prev + 1);
       setSelectedAnswer(null);
       setShowResult(false);
+      setIsMastered(false);
     } else {
       setIsFinished(true);
     }
@@ -117,6 +185,7 @@ export default function PracticePage() {
     setShowResult(false);
     setCorrectCount(0);
     setWrongCount(0);
+    setIsMastered(false);
   };
 
   const playAudio = (word: string) => {
@@ -126,6 +195,10 @@ export default function PracticePage() {
       speechSynthesis.speak(utterance);
     }
   };
+
+  if (!user) {
+    return null;
+  }
 
   if (!isStarted) {
     return (
@@ -140,7 +213,7 @@ export default function PracticePage() {
             </Link>
             <div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white">背单词练习</h1>
-              <p className="text-gray-600 dark:text-gray-300">选择词库和模式开始练习</p>
+              <p className="text-gray-600 dark:text-gray-300">选择词库开始练习（已掌握的单词不会出现）</p>
             </div>
           </div>
 
@@ -167,17 +240,14 @@ export default function PracticePage() {
                 </Select>
               </div>
 
-              <div>
-                <label className="text-sm font-medium mb-2 block">练习模式</label>
-                <Select value={selectedMode} onValueChange={(v) => setSelectedMode(v as 'en-to-zh' | 'zh-to-en')}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="选择模式" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="en-to-zh">英译中</SelectItem>
-                    <SelectItem value="zh-to-en">中译英</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                <p className="text-sm text-blue-800 dark:text-blue-200">
+                  <strong>练习规则：</strong><br/>
+                  • 每道题随机英译中或中译英<br/>
+                  • 连续4次正确自动标记为已掌握<br/>
+                  • 已掌握的单词不会再出现<br/>
+                  • 可手动标记单词为已掌握
+                </p>
               </div>
 
               <Button onClick={startPractice} className="w-full" size="lg">
@@ -247,6 +317,14 @@ export default function PracticePage() {
                 <div className="text-sm text-gray-600 dark:text-gray-400">正确率</div>
               </div>
 
+              {remainingWords > 0 && (
+                <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <p className="text-sm text-blue-800 dark:text-blue-200">
+                    还有 <strong>{remainingWords}</strong> 个单词等待练习
+                  </p>
+                </div>
+              )}
+
               <div className="flex gap-4">
                 <Button onClick={restartPractice} variant="outline" className="flex-1">
                   <RotateCcw className="w-4 h-4 mr-2" />
@@ -267,6 +345,16 @@ export default function PracticePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-100 dark:from-gray-900 dark:to-gray-800">
+      {/* 自动掌握提示 */}
+      {autoMasteredMessage && (
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 animate-bounce">
+          <div className="bg-green-500 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-2">
+            <Sparkles className="w-5 h-5" />
+            {autoMasteredMessage}
+          </div>
+        </div>
+      )}
+      
       <div className="container mx-auto px-4 py-8">
         {/* 头部 */}
         <div className="flex items-center justify-between mb-8">
@@ -280,6 +368,9 @@ export default function PracticePage() {
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white">背单词练习</h1>
               <p className="text-gray-600 dark:text-gray-300">
                 第 {currentIndex + 1} / {questions.length} 题
+                <span className="ml-2 text-sm px-2 py-1 bg-purple-100 dark:bg-purple-900 rounded">
+                  {currentQuestion.mode === 'en-to-zh' ? '英译中' : '中译英'}
+                </span>
               </p>
             </div>
           </div>
@@ -380,6 +471,26 @@ export default function PracticePage() {
                     <p><strong>例句：</strong>{currentQuestion.example_sentence}</p>
                   )}
                 </div>
+                
+                {/* 手动标记已掌握按钮 */}
+                {!isMastered && (
+                  <Button 
+                    onClick={handleMarkAsMastered}
+                    variant="outline"
+                    className="w-full mt-4 border-green-500 text-green-600 hover:bg-green-50"
+                  >
+                    <BookmarkCheck className="w-4 h-4 mr-2" />
+                    标记为已掌握
+                  </Button>
+                )}
+                
+                {isMastered && (
+                  <div className="flex items-center justify-center gap-2 mt-4 text-green-600">
+                    <BookmarkCheck className="w-4 h-4" />
+                    已标记为掌握
+                  </div>
+                )}
+                
                 <Button onClick={nextQuestion} className="w-full mt-4">
                   {currentIndex < questions.length - 1 ? '下一题' : '查看结果'}
                 </Button>
