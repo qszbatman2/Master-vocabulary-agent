@@ -84,8 +84,10 @@ export const userWordStatus = pgTable(
     isMastered: boolean("is_mastered").default(false).notNull(),
     totalPracticeCount: integer("total_practice_count").default(0).notNull(),
     correctCount: integer("correct_count").default(0).notNull(),
+    wrongCount: integer("wrong_count").default(0).notNull(),
     consecutiveCorrect: integer("consecutive_correct").default(0).notNull(),
     lastPracticedAt: timestamp("last_practiced_at", { withTimezone: true }),
+    lastWrongAt: timestamp("last_wrong_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
@@ -95,6 +97,7 @@ export const userWordStatus = pgTable(
     index("user_word_status_user_id_idx").on(table.userId),
     index("user_word_status_word_id_idx").on(table.wordId),
     index("user_word_status_mastered_idx").on(table.isMastered),
+    index("user_word_status_last_wrong_at_idx").on(table.lastWrongAt),
     // 用户+单词唯一约束
     index("user_word_status_unique_idx").on(table.userId, table.wordId),
   ]
@@ -135,6 +138,7 @@ export const insertUserWordStatusSchema = createCoercedInsertSchema(
   isMastered: true,
   totalPracticeCount: true,
   correctCount: true,
+  wrongCount: true,
   consecutiveCorrect: true,
 });
 

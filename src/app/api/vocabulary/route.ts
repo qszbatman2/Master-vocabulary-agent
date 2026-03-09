@@ -19,6 +19,7 @@ export async function GET(request: NextRequest) {
     const categoryId = searchParams.get('categoryId');
     const search = searchParams.get('search');
     const masteredStatus = searchParams.get('mastered'); // 'all', 'mastered', 'unmastered'
+    const filter = searchParams.get('filter'); // 'wrong_words' - 错题集
     const page = parseInt(searchParams.get('page') || '1');
     const pageSize = parseInt(searchParams.get('pageSize') || '50');
 
@@ -61,12 +62,19 @@ export async function GET(request: NextRequest) {
     }
 
     // 获取用户掌握状态
-    let userStatus: Record<number, { isMastered: boolean; consecutiveCorrect: number; totalPracticeCount: number }> = {};
+    let userStatus: Record<number, { 
+      isMastered: boolean; 
+      consecutiveCorrect: number; 
+      totalPracticeCount: number;
+      correctCount: number;
+      wrongCount: number;
+      lastWrongAt: string | null;
+    }> = {};
     if (userId && words && words.length > 0) {
       const wordIds = words.map(w => w.id);
       const { data: statusData } = await client
         .from('user_word_status')
-        .select('word_id, is_mastered, consecutive_correct, total_practice_count')
+        .select('word_id, is_mastered, consecutive_correct, total_practice_count, correct_count, wrong_count, last_wrong_at')
         .eq('user_id', userId)
         .in('word_id', wordIds);
 
@@ -75,6 +83,9 @@ export async function GET(request: NextRequest) {
           isMastered: s.is_mastered,
           consecutiveCorrect: s.consecutive_correct,
           totalPracticeCount: s.total_practice_count,
+          correctCount: s.correct_count,
+          wrongCount: s.wrong_count,
+          lastWrongAt: s.last_wrong_at,
         };
       });
     }
@@ -90,6 +101,9 @@ export async function GET(request: NextRequest) {
           isMastered: status.isMastered,
           consecutiveCorrect: status.consecutiveCorrect,
           totalPracticeCount: status.totalPracticeCount,
+          correctCount: status.correctCount,
+          wrongCount: status.wrongCount,
+          lastWrongAt: status.lastWrongAt,
         } : null,
       };
     }) || [];
@@ -101,6 +115,17 @@ export async function GET(request: NextRequest) {
       } else if (masteredStatus === 'unmastered') {
         wordsWithStatus = wordsWithStatus.filter(w => !w.userStatus?.isMastered);
       }
+    }
+
+    // 错题集筛选：最近7天有错误记录的单词
+    if (userId && filter === 'wrong_words') {
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      
+      wordsWithStatus = wordsWithStatus.filter(w => {
+        if (!w.userStatus?.lastWrongAt) return false;
+        return new Date(w.userStatus.lastWrongAt) >= sevenDaysAgo;
+      });
     }
 
     // 获取统计信息

@@ -36,6 +36,9 @@ interface Word {
     isMastered: boolean;
     consecutiveCorrect: number;
     totalPracticeCount: number;
+    correctCount: number;
+    wrongCount: number;
+    lastWrongAt: string | null;
   } | null;
 }
 
@@ -62,6 +65,7 @@ export default function VocabularyPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedWord, setSelectedWord] = useState<Word | null>(null);
   const [masteredStatus, setMasteredStatus] = useState('all');
+  const [filter, setFilter] = useState('all'); // 'all', 'wrong_words'
   const [page, setPage] = useState(1);
   const pageSize = 30;
 
@@ -77,6 +81,9 @@ export default function VocabularyPage() {
       }
       if (masteredStatus !== 'all') {
         params.append('mastered', masteredStatus);
+      }
+      if (filter === 'wrong_words') {
+        params.append('filter', 'wrong_words');
       }
       params.append('page', page.toString());
       params.append('pageSize', pageSize.toString());
@@ -94,7 +101,7 @@ export default function VocabularyPage() {
     } finally {
       setLoading(false);
     }
-  }, [selectedCategory, searchQuery, masteredStatus, page, token]);
+  }, [selectedCategory, searchQuery, masteredStatus, filter, page, token]);
 
   useEffect(() => {
     fetchVocabulary();
@@ -102,7 +109,7 @@ export default function VocabularyPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [selectedCategory, searchQuery, masteredStatus]);
+  }, [selectedCategory, searchQuery, masteredStatus, filter]);
 
   const playAudio = (word: string, e?: React.MouseEvent) => {
     e?.stopPropagation();
@@ -184,16 +191,27 @@ export default function VocabularyPage() {
             </Select>
             
             {user && (
-              <Select value={masteredStatus} onValueChange={setMasteredStatus}>
-                <SelectTrigger className="w-20 h-9 text-xs">
-                  <SelectValue placeholder="状态" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">全部</SelectItem>
-                  <SelectItem value="mastered">已掌握</SelectItem>
-                  <SelectItem value="unmastered">未掌握</SelectItem>
-                </SelectContent>
-              </Select>
+              <>
+                <Select value={filter} onValueChange={setFilter}>
+                  <SelectTrigger className="w-20 h-9 text-xs">
+                    <SelectValue placeholder="类型" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">全部</SelectItem>
+                    <SelectItem value="wrong_words">错题集</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={masteredStatus} onValueChange={setMasteredStatus}>
+                  <SelectTrigger className="w-20 h-9 text-xs">
+                    <SelectValue placeholder="状态" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">全部</SelectItem>
+                    <SelectItem value="mastered">已掌握</SelectItem>
+                    <SelectItem value="unmastered">未掌握</SelectItem>
+                  </SelectContent>
+                </Select>
+              </>
             )}
           </div>
         </div>
@@ -246,9 +264,11 @@ export default function VocabularyPage() {
                       掌握
                     </Badge>
                   )}
-                  {word.userStatus && !word.userStatus.isMastered && (
+                  {word.userStatus && (
                     <Badge variant="secondary" className="text-xs px-1.5 py-0 h-5">
-                      练{word.userStatus.totalPracticeCount}
+                      <span className="text-green-600 dark:text-green-400">{word.userStatus.correctCount}</span>
+                      <span className="text-gray-400 mx-0.5">/</span>
+                      <span className="text-red-600 dark:text-red-400">{word.userStatus.wrongCount}</span>
                     </Badge>
                   )}
                 </div>
@@ -333,9 +353,14 @@ export default function VocabularyPage() {
                 <Badge className="bg-green-500">已掌握</Badge>
               )}
               {selectedWord.userStatus && (
-                <Badge variant="outline">
-                  练习{selectedWord.userStatus.totalPracticeCount}次
-                </Badge>
+                <>
+                  <Badge variant="outline" className="text-green-600 dark:text-green-400 border-green-300 dark:border-green-600">
+                    正确 {selectedWord.userStatus.correctCount}
+                  </Badge>
+                  <Badge variant="outline" className="text-red-600 dark:text-red-400 border-red-300 dark:border-red-600">
+                    错误 {selectedWord.userStatus.wrongCount}
+                  </Badge>
+                </>
               )}
             </div>
 

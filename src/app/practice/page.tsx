@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { 
   Select,
   SelectContent,
@@ -10,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ArrowLeft, CheckCircle, XCircle, RotateCcw, Trophy, Volume2, BookmarkCheck, Sparkles } from 'lucide-react';
+import { ArrowLeft, CheckCircle, XCircle, Volume2, BookmarkCheck, Sparkles, LogOut, RefreshCw, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -34,22 +35,36 @@ interface Question {
   mode: string;
 }
 
+// 本轮错误单词的连续正确计数
+interface WrongWordStatus {
+  wordId: number;
+  consecutiveCorrect: number; // 需要连续对3次才算成功
+  nextAppearAfter: number; // 下次出现在第几题之后
+}
+
 export default function PracticePage() {
   const { user, token } = useAuth();
   const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedFilter, setSelectedFilter] = useState<'all' | 'wrong_words'>('all');
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [showResult, setShowResult] = useState(false);
-  const [correctCount, setCorrectCount] = useState(0);
-  const [wrongCount, setWrongCount] = useState(0);
   const [isStarted, setIsStarted] = useState(false);
-  const [isFinished, setIsFinished] = useState(false);
-  const [isMastered, setIsMastered] = useState(false);
   const [autoMasteredMessage, setAutoMasteredMessage] = useState('');
   const [remainingWords, setRemainingWords] = useState(0);
+  
+  // 无尽模式状态
+  const [roundSuccessCount, setRoundSuccessCount] = useState(0); // 本轮成功数
+  const [roundWrongCount, setRoundWrongCount] = useState(0); // 本轮错误数（首次错误）
+  const [roundCorrectWords, setRoundCorrectWords] = useState<Set<number>>(new Set()); // 本轮已成功的词
+  const [wrongWordsMap, setWrongWordsMap] = useState<Map<number, WrongWordStatus>>(new Map()); // 本轮错题及状态
+  const [questionNumber, setQuestionNumber] = useState(0); // 当前题号（用于控制穿插间隔）
+  const [isLoading, setIsLoading] = useState(false);
+  const [isFinished, setIsFinished] = useState(false);
+  const [finishMessage, setFinishMessage] = useState('');
 
   useEffect(() => {
     if (!user) {
@@ -69,15 +84,26 @@ export default function PracticePage() {
     }
   };
 
-  const startPractice = async () => {
-    if (!token) return;
+  // 获取更多题目
+  const fetchMoreQuestions = useCallback(async (excludeIds: number[] = [], priorityIds: number[] = []) => {
+    if (!token || isLoading) return;
     
+    setIsLoading(true);
     try {
       const params = new URLSearchParams();
       if (selectedCategory !== 'all') {
         params.append('categoryId', selectedCategory);
       }
-      params.append('limit', '10');
+      if (selectedFilter === 'wrong_words') {
+        params.append('filter', 'wrong_words');
+      }
+      params.append('limit', '15');
+      if (excludeIds.length > 0) {
+        params.append('excludeWordIds', excludeIds.join(','));
+      }
+      if (priorityIds.length > 0) {
+        params.append('priorityWordIds', priorityIds.join(','));
+      }
 
       const response = await fetch(`/api/practice?${params.toString()}`, {
         headers: {
@@ -87,22 +113,71 @@ export default function PracticePage() {
       const data = await response.json();
       
       if (data.message) {
-        alert(data.message);
+        // 所有单词都掌握了或错题集清空
+        setIsFinished(true);
+        setFinishMessage(data.message);
+        return;
+      }
+      
+      if (data.questions && data.questions.length > 0) {
+        setQuestions(prev => [...prev, ...data.questions]);
+        setRemainingWords(data.remainingWords || 0);
+      }
+    } catch (error) {
+      console.error('Failed to fetch questions:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [token, selectedCategory, selectedFilter, isLoading]);
+
+  const startPractice = async () => {
+    if (!token) return;
+    
+    // 重置所有状态
+    setQuestions([]);
+    setCurrentIndex(0);
+    setSelectedAnswer(null);
+    setShowResult(false);
+    setRoundSuccessCount(0);
+    setRoundWrongCount(0);
+    setRoundCorrectWords(new Set());
+    setWrongWordsMap(new Map());
+    setQuestionNumber(0);
+    setIsFinished(false);
+    setFinishMessage('');
+    setIsStarted(true);
+    
+    // 获取第一批题目
+    setIsLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (selectedCategory !== 'all') {
+        params.append('categoryId', selectedCategory);
+      }
+      if (selectedFilter === 'wrong_words') {
+        params.append('filter', 'wrong_words');
+      }
+      params.append('limit', '15');
+
+      const response = await fetch(`/api/practice?${params.toString()}`, {
+        headers: {
+          authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await response.json();
+      
+      if (data.message) {
+        setIsFinished(true);
+        setFinishMessage(data.message);
         return;
       }
       
       setQuestions(data.questions || []);
       setRemainingWords(data.remainingWords || 0);
-      setCurrentIndex(0);
-      setSelectedAnswer(null);
-      setShowResult(false);
-      setCorrectCount(0);
-      setWrongCount(0);
-      setIsStarted(true);
-      setIsFinished(false);
-      setIsMastered(false);
     } catch (error) {
       console.error('Failed to start practice:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -144,45 +219,125 @@ export default function PracticePage() {
     
     const currentQuestion = questions[currentIndex];
     const isCorrect = answer === currentQuestion.correctAnswer;
+    const wordId = currentQuestion.id;
+
+    // 提交结果到后端
+    await submitResult(wordId, isCorrect);
+
+    // 更新本轮状态
+    const wasWrongBefore = wrongWordsMap.has(wordId);
     
     if (isCorrect) {
-      setCorrectCount((prev) => prev + 1);
+      if (wasWrongBefore) {
+        // 之前错过，现在对了
+        const status = wrongWordsMap.get(wordId)!;
+        const newConsecutive = status.consecutiveCorrect + 1;
+        
+        if (newConsecutive >= 3) {
+          // 连续对3次，本轮成功！
+          setWrongWordsMap(prev => {
+            const newMap = new Map(prev);
+            newMap.delete(wordId);
+            return newMap;
+          });
+          setRoundCorrectWords(prev => new Set(prev).add(wordId));
+          setRoundSuccessCount(prev => prev + 1);
+        } else {
+          // 更新连续正确次数
+          setWrongWordsMap(prev => {
+            const newMap = new Map(prev);
+            newMap.set(wordId, {
+              ...status,
+              consecutiveCorrect: newConsecutive,
+              nextAppearAfter: questionNumber + Math.floor(Math.random() * 5) + 3, // 3-7题后出现
+            });
+            return newMap;
+          });
+        }
+      } else {
+        // 首次就对了，本轮成功！
+        setRoundCorrectWords(prev => new Set(prev).add(wordId));
+        setRoundSuccessCount(prev => prev + 1);
+      }
     } else {
-      setWrongCount((prev) => prev + 1);
+      // 答错了
+      if (!wasWrongBefore) {
+        // 首次错误，记录本轮错误
+        setRoundWrongCount(prev => prev + 1);
+      }
+      // 加入/更新错题列表
+      setWrongWordsMap(prev => {
+        const newMap = new Map(prev);
+        newMap.set(wordId, {
+          wordId,
+          consecutiveCorrect: 0,
+          nextAppearAfter: questionNumber + Math.floor(Math.random() * 5) + 3, // 3-7题后出现
+        });
+        return newMap;
+      });
     }
-
-    await submitResult(currentQuestion.id, isCorrect);
+    
+    setQuestionNumber(prev => prev + 1);
   };
 
   const handleMarkAsMastered = async () => {
-    if (!token || isMastered) return;
-    
     const currentQuestion = questions[currentIndex];
     await submitResult(currentQuestion.id, true, true);
-    setIsMastered(true);
+    setRoundCorrectWords(prev => new Set(prev).add(currentQuestion.id));
+    setWrongWordsMap(prev => {
+      const newMap = new Map(prev);
+      newMap.delete(currentQuestion.id);
+      return newMap;
+    });
+    setRoundSuccessCount(prev => prev + 1);
   };
 
-  const nextQuestion = () => {
+  const nextQuestion = async () => {
+    // 检查是否有需要出现的错题
+    const wrongWordsToAppear = Array.from(wrongWordsMap.entries())
+      .filter(([_, status]) => status.nextAppearAfter <= questionNumber)
+      .map(([wordId]) => wordId);
+    
+    // 预加载更多题目
+    if (currentIndex >= questions.length - 5 && !isLoading) {
+      const excludeIds = Array.from(roundCorrectWords);
+      const priorityIds = wrongWordsToAppear.length > 0 ? wrongWordsToAppear : [];
+      await fetchMoreQuestions(excludeIds, priorityIds);
+    }
+    
+    // 移动到下一题
     if (currentIndex < questions.length - 1) {
       setCurrentIndex((prev) => prev + 1);
       setSelectedAnswer(null);
       setShowResult(false);
-      setIsMastered(false);
     } else {
-      setIsFinished(true);
+      // 题目用完了，等待加载
+      if (isLoading) {
+        // 等待加载完成
+        const checkInterval = setInterval(() => {
+          if (!isLoading && questions.length > currentIndex + 1) {
+            clearInterval(checkInterval);
+            setCurrentIndex((prev) => prev + 1);
+            setSelectedAnswer(null);
+            setShowResult(false);
+          }
+        }, 100);
+      }
     }
   };
 
-  const restartPractice = () => {
+  const exitPractice = () => {
     setIsStarted(false);
     setIsFinished(false);
     setQuestions([]);
     setCurrentIndex(0);
     setSelectedAnswer(null);
     setShowResult(false);
-    setCorrectCount(0);
-    setWrongCount(0);
-    setIsMastered(false);
+    setRoundSuccessCount(0);
+    setRoundWrongCount(0);
+    setRoundCorrectWords(new Set());
+    setWrongWordsMap(new Map());
+    setQuestionNumber(0);
   };
 
   const playAudio = (word: string) => {
@@ -237,11 +392,27 @@ export default function PracticePage() {
                 </Select>
               </div>
 
+              <div>
+                <label className="text-sm font-medium mb-2 block">练习模式</label>
+                <Select value={selectedFilter} onValueChange={(v) => setSelectedFilter(v as 'all' | 'wrong_words')}>
+                  <SelectTrigger className="h-10">
+                    <SelectValue placeholder="选择模式" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">普通模式</SelectItem>
+                    <SelectItem value="wrong_words">错题集（最近7天）</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                 <p className="text-xs text-blue-800 dark:text-blue-200">
-                  • 英译中/中译英随机<br/>
-                  • 连续4次正确自动掌握<br/>
-                  • 已掌握单词不重复出现
+                  <strong>无尽模式</strong><br/>
+                  • 持续练习直到主动退出<br/>
+                  • 首次正确即记为"本轮成功"<br/>
+                  • 错误的词需连续对3次才算成功<br/>
+                  • 错题会穿插出现在后续题目中<br/>
+                  • 连续4次正确自动掌握
                 </p>
               </div>
 
@@ -255,11 +426,8 @@ export default function PracticePage() {
     );
   }
 
-  // 结果页面
+  // 完成页面（所有单词都掌握或错题集清空）
   if (isFinished) {
-    const totalQuestions = questions.length;
-    const accuracy = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
-
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
         {/* 头部 */}
@@ -279,40 +447,25 @@ export default function PracticePage() {
           <Card className="max-w-md mx-auto">
             <CardHeader className="p-4 text-center">
               <div className="mx-auto w-14 h-14 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mb-3">
-                <Trophy className="w-7 h-7 text-green-600 dark:text-green-400" />
+                <Sparkles className="w-7 h-7 text-green-600 dark:text-green-400" />
               </div>
-              <CardTitle className="text-lg">练习完成！</CardTitle>
+              <CardTitle className="text-lg">{finishMessage}</CardTitle>
             </CardHeader>
             <CardContent className="p-4 pt-0 space-y-4">
-              <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="grid grid-cols-2 gap-2 text-center">
                 <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg">
-                  <div className="text-xl font-bold text-blue-600">{totalQuestions}</div>
-                  <div className="text-xs text-gray-500">总题数</div>
+                  <div className="text-xl font-bold text-green-600">{roundSuccessCount}</div>
+                  <div className="text-xs text-gray-500">本轮成功</div>
                 </div>
                 <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg">
-                  <div className="text-xl font-bold text-green-600">{correctCount}</div>
-                  <div className="text-xs text-gray-500">正确</div>
-                </div>
-                <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg">
-                  <div className="text-xl font-bold text-red-600">{wrongCount}</div>
-                  <div className="text-xs text-gray-500">错误</div>
+                  <div className="text-xl font-bold text-red-600">{roundWrongCount}</div>
+                  <div className="text-xs text-gray-500">首次错误</div>
                 </div>
               </div>
 
-              <div className="text-center p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                <div className="text-3xl font-bold text-purple-600">{accuracy}%</div>
-                <div className="text-xs text-gray-500">正确率</div>
-              </div>
-
-              <div className="flex gap-2">
-                <Button onClick={restartPractice} variant="outline" className="flex-1 h-10">
-                  <RotateCcw className="w-4 h-4 mr-1" />
-                  返回
-                </Button>
-                <Button onClick={startPractice} className="flex-1 h-10">
-                  再练一次
-                </Button>
-              </div>
+              <Button onClick={exitPractice} className="w-full h-10">
+                返回
+              </Button>
             </CardContent>
           </Card>
         </div>
@@ -320,7 +473,21 @@ export default function PracticePage() {
     );
   }
 
+  // 加载中
+  if (questions.length === 0 || currentIndex >= questions.length) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <RefreshCw className="w-8 h-8 animate-spin mx-auto text-blue-600" />
+          <p className="mt-2 text-gray-500">加载中...</p>
+        </div>
+      </div>
+    );
+  }
+
   const currentQuestion = questions[currentIndex];
+  const isWrongWord = wrongWordsMap.has(currentQuestion.id);
+  const wrongStatus = wrongWordsMap.get(currentQuestion.id);
 
   // 练习页面
   return (
@@ -340,32 +507,41 @@ export default function PracticePage() {
         <div className="container mx-auto px-3 py-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Link href="/">
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <ArrowLeft className="w-4 h-4" />
-                </Button>
-              </Link>
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={exitPractice}>
+                <LogOut className="w-4 h-4 text-red-500" />
+              </Button>
               <div>
                 <div className="text-sm font-bold text-gray-900 dark:text-white">
-                  第 {currentIndex + 1}/{questions.length} 题
+                  第 {questionNumber + 1} 题
                 </div>
                 <div className="text-xs text-gray-500">
                   {currentQuestion.mode === 'en-to-zh' ? '英译中' : '中译英'}
                 </div>
               </div>
             </div>
-            <div className="text-sm">
-              <span className="text-green-600 font-semibold">{correctCount}</span>
-              <span className="text-gray-400 mx-1">/</span>
-              <span className="text-red-600 font-semibold">{wrongCount}</span>
+            <div className="text-sm flex items-center gap-2">
+              <span className="text-green-600 font-semibold">成功 {roundSuccessCount}</span>
+              <span className="text-gray-300">|</span>
+              <span className="text-red-600 font-semibold">错误 {roundWrongCount}</span>
             </div>
           </div>
-          {/* 进度条 */}
-          <div className="mt-2 w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
-            <div 
-              className="bg-purple-600 h-1.5 rounded-full transition-all duration-300"
-              style={{ width: `${((currentIndex + 1) / questions.length) * 100}%` }}
-            ></div>
+          {/* 本轮状态栏 */}
+          <div className="mt-2 flex items-center justify-between text-xs text-gray-500">
+            <div className="flex items-center gap-2">
+              {wrongWordsMap.size > 0 && (
+                <Badge variant="outline" className="text-xs border-orange-300 text-orange-600">
+                  <AlertCircle className="w-3 h-3 mr-1" />
+                  待复习 {wrongWordsMap.size}
+                </Badge>
+              )}
+              {roundCorrectWords.size > 0 && (
+                <Badge variant="outline" className="text-xs border-green-300 text-green-600">
+                  <CheckCircle className="w-3 h-3 mr-1" />
+                  已成功 {roundCorrectWords.size}
+                </Badge>
+              )}
+            </div>
+            <span>剩余 {remainingWords} 词</span>
           </div>
         </div>
       </div>
@@ -397,6 +573,15 @@ export default function PracticePage() {
               <p className="text-xs text-gray-500 mt-1">
                 {currentQuestion.phonetic}
               </p>
+            )}
+            {/* 错题标记 */}
+            {isWrongWord && (
+              <div className="mt-2">
+                <Badge variant="outline" className="text-xs border-orange-300 text-orange-600">
+                  <AlertCircle className="w-3 h-3 mr-1" />
+                  本轮错题 · 需连续对 {3 - (wrongStatus?.consecutiveCorrect || 0)} 次
+                </Badge>
+              </div>
             )}
           </CardHeader>
           <CardContent className="p-4 pt-2">
@@ -449,7 +634,7 @@ export default function PracticePage() {
                 </div>
                 
                 <div className="flex gap-2 mt-3">
-                  {!isMastered && (
+                  {!roundCorrectWords.has(currentQuestion.id) && (
                     <Button 
                       onClick={handleMarkAsMastered}
                       variant="outline"
@@ -461,7 +646,7 @@ export default function PracticePage() {
                     </Button>
                   )}
                   <Button onClick={nextQuestion} size="sm" className="flex-1 h-8 text-xs">
-                    {currentIndex < questions.length - 1 ? '下一题' : '查看结果'}
+                    下一题
                   </Button>
                 </div>
               </div>

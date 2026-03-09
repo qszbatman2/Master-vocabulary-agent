@@ -18,9 +18,17 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const categoryId = searchParams.get('categoryId');
     const limit = parseInt(searchParams.get('limit') || '10');
+    const filter = searchParams.get('filter'); // 'wrong_words' - 错题集
+    const excludeWordIds = searchParams.get('excludeWordIds')?.split(',').map(Number).filter(Boolean) || [];
+    const priorityWordIds = searchParams.get('priorityWordIds')?.split(',').map(Number).filter(Boolean) || [];
+    
     const authHeader = request.headers.get('authorization');
     const token = authHeader?.replace('Bearer ', '');
     const userId = token ? getUserIdFromToken(token) : null;
+
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
     // 获取指定词库的所有单词
     let query = client
@@ -41,35 +49,75 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'No words found' }, { status: 404 });
     }
 
-    // 如果用户已登录，排除已掌握的单词
-    let availableWords = allWords;
-    if (userId) {
-      const { data: masteredStatus } = await client
-        .from('user_word_status')
-        .select('word_id')
-        .eq('user_id', userId)
-        .eq('is_mastered', true);
+    // 获取用户掌握状态
+    const { data: userStatusData } = await client
+      .from('user_word_status')
+      .select('word_id, is_mastered, last_wrong_at')
+      .eq('user_id', userId);
 
-      const masteredWordIds = new Set(masteredStatus?.map(s => s.word_id) || []);
-      availableWords = allWords.filter(w => !masteredWordIds.has(w.id));
+    const statusMap = new Map(userStatusData?.map(s => [s.word_id, s]) || []);
+
+    // 根据筛选条件过滤
+    let availableWords = allWords;
+
+    // 错题集：最近7天有错误记录的单词
+    if (filter === 'wrong_words') {
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      
+      availableWords = allWords.filter(w => {
+        const status = statusMap.get(w.id);
+        if (!status?.last_wrong_at) return false;
+        return new Date(status.last_wrong_at) >= sevenDaysAgo;
+      });
+    } else {
+      // 普通模式：排除已掌握的单词
+      availableWords = allWords.filter(w => {
+        const status = statusMap.get(w.id);
+        return !status?.is_mastered;
+      });
+    }
+
+    // 排除本轮已成功的单词
+    if (excludeWordIds.length > 0) {
+      const excludeSet = new Set(excludeWordIds);
+      availableWords = availableWords.filter(w => !excludeSet.has(w.id));
     }
 
     if (availableWords.length === 0) {
       return NextResponse.json({ 
         questions: [], 
         total: 0,
-        message: '恭喜！你已经掌握了所有单词！' 
+        remainingWords: 0,
+        message: filter === 'wrong_words' 
+          ? '恭喜！错题集已清空！' 
+          : '恭喜！你已经掌握了所有单词！' 
       });
     }
 
-    // 随机选择指定数量的单词
-    const shuffled = availableWords.sort(() => Math.random() - 0.5);
-    const selectedWords = shuffled.slice(0, Math.min(limit, shuffled.length));
+    // 优先选择需要复习的错题（优先词列表）
+    let selectedWords;
+    if (priorityWordIds.length > 0) {
+      const prioritySet = new Set(priorityWordIds);
+      const priorityWords = availableWords.filter(w => prioritySet.has(w.id));
+      const otherWords = availableWords.filter(w => !prioritySet.has(w.id));
+      
+      // 随机打乱两组
+      const shuffledPriority = priorityWords.sort(() => Math.random() - 0.5);
+      const shuffledOther = otherWords.sort(() => Math.random() - 0.5);
+      
+      // 合并，优先词在前
+      selectedWords = [...shuffledPriority, ...shuffledOther].slice(0, limit);
+    } else {
+      // 随机选择指定数量的单词
+      const shuffled = availableWords.sort(() => Math.random() - 0.5);
+      selectedWords = shuffled.slice(0, Math.min(limit, shuffled.length));
+    }
 
     // 为每个单词生成选项，并随机选择模式
     const questions = selectedWords.map((word) => {
-      // 获取其他单词作为干扰项
-      const otherWords = availableWords.filter((w) => w.id !== word.id);
+      // 获取其他单词作为干扰项（从所有单词中选，不只是未掌握的）
+      const otherWords = allWords.filter((w) => w.id !== word.id);
       const shuffledOptions = otherWords.sort(() => Math.random() - 0.5).slice(0, 3);
       
       // 随机选择模式：en-to-zh 或 zh-to-en

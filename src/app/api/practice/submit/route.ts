@@ -50,6 +50,9 @@ export async function POST(request: NextRequest) {
       const newCorrectCount = isCorrect 
         ? existingStatus.correct_count + 1 
         : existingStatus.correct_count;
+      const newWrongCount = !isCorrect 
+        ? (existingStatus.wrong_count || 0) + 1 
+        : existingStatus.wrong_count || 0;
       const newConsecutiveCorrect = isCorrect 
         ? existingStatus.consecutive_correct + 1 
         : 0;
@@ -68,8 +71,10 @@ export async function POST(request: NextRequest) {
           is_mastered: isMastered,
           total_practice_count: newTotalCount,
           correct_count: newCorrectCount,
+          wrong_count: newWrongCount,
           consecutive_correct: newConsecutiveCorrect,
           last_practiced_at: now,
+          last_wrong_at: !isCorrect ? now : existingStatus.last_wrong_at,
           updated_at: now,
         })
         .eq('id', existingStatus.id);
@@ -84,6 +89,8 @@ export async function POST(request: NextRequest) {
         autoMastered: shouldAutoMaster,
         consecutiveCorrect: newConsecutiveCorrect,
         totalPracticeCount: newTotalCount,
+        correctCount: newCorrectCount,
+        wrongCount: newWrongCount,
       });
     } else {
       // 创建新状态
@@ -97,8 +104,10 @@ export async function POST(request: NextRequest) {
           is_mastered: isMastered,
           total_practice_count: 1,
           correct_count: isCorrect ? 1 : 0,
+          wrong_count: isCorrect ? 0 : 1,
           consecutive_correct: isCorrect ? 1 : 0,
           last_practiced_at: now,
+          last_wrong_at: !isCorrect ? now : null,
         });
 
       if (error) {
@@ -110,6 +119,8 @@ export async function POST(request: NextRequest) {
         isMastered,
         consecutiveCorrect: isCorrect ? 1 : 0,
         totalPracticeCount: 1,
+        correctCount: isCorrect ? 1 : 0,
+        wrongCount: isCorrect ? 0 : 1,
       });
     }
   } catch (error) {
