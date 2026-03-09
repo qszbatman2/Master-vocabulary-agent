@@ -581,8 +581,11 @@ export default function PracticePage() {
           </Card>
         </div>
 
-        {/* 中间区域 - 答题前显示选项，答题后显示答案解析 */}
-        <div className="flex-1 px-3 py-2">
+        {/* 中间空白区域 */}
+        <div className="flex-1"></div>
+
+        {/* 底部吸附区域 - 答题前显示选项，答题后显示答案解析 */}
+        <div className="sticky bottom-0 z-20 px-3 py-2 pb-4 bg-gray-50 dark:bg-gray-900">
           <div className="max-w-md mx-auto space-y-2">
             {!showResult ? (
               /* 答题前：显示四个选项 */
@@ -604,7 +607,7 @@ export default function PracticePage() {
                 );
               })
             ) : (
-              /* 答题后：显示答案解析 */
+              /* 答题后：显示答案解析 + 标记掌握 + 下一题 */
               <>
                 {/* 答案结果 */}
                 <div className={cn(
@@ -656,21 +659,15 @@ export default function PracticePage() {
                     </span>
                   </div>
                 </Button>
+
+                {/* 下一题按钮 */}
+                <Button onClick={nextQuestion} className="w-full h-12 text-base">
+                  下一题
+                </Button>
               </>
             )}
           </div>
         </div>
-
-        {/* 底部固定：下一题按钮 */}
-        {showResult && (
-          <div className="sticky bottom-0 z-30 px-3 py-3 bg-gray-50 dark:bg-gray-900">
-            <div className="max-w-md mx-auto">
-              <Button onClick={nextQuestion} className="w-full h-12 text-base">
-                下一题
-              </Button>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
