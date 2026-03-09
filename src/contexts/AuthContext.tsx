@@ -20,6 +20,34 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// 安全访问 localStorage
+const getLocalStorage = (key: string): string | null => {
+  if (typeof window === 'undefined') return null;
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+};
+
+const setLocalStorage = (key: string, value: string): void => {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    // ignore
+  }
+};
+
+const removeLocalStorage = (key: string): void => {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.removeItem(key);
+  } catch {
+    // ignore
+  }
+};
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
@@ -27,7 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // 从 localStorage 恢复登录状态
-    const savedToken = localStorage.getItem('auth_token');
+    const savedToken = getLocalStorage('auth_token');
     if (savedToken) {
       setToken(savedToken);
       fetchUser(savedToken);
@@ -48,12 +76,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const data = await response.json();
         setUser(data.user);
       } else {
-        localStorage.removeItem('auth_token');
+        removeLocalStorage('auth_token');
         setToken(null);
       }
     } catch (error) {
       console.error('获取用户信息失败:', error);
-      localStorage.removeItem('auth_token');
+      removeLocalStorage('auth_token');
       setToken(null);
     } finally {
       setLoading(false);
@@ -73,7 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (response.ok) {
         setUser(data.user);
         setToken(data.token);
-        localStorage.setItem('auth_token', data.token);
+        setLocalStorage('auth_token', data.token);
         return { success: true };
       } else {
         return { success: false, error: data.error };
@@ -96,7 +124,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (response.ok) {
         setUser(data.user);
         setToken(data.token);
-        localStorage.setItem('auth_token', data.token);
+        setLocalStorage('auth_token', data.token);
         return { success: true };
       } else {
         return { success: false, error: data.error };
@@ -109,7 +137,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     setUser(null);
     setToken(null);
-    localStorage.removeItem('auth_token');
+    removeLocalStorage('auth_token');
   };
 
   return (

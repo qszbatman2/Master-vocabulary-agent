@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
+import { initializeDatabase } from '@/lib/db-init';
 
 export async function GET() {
   try {
+    // 自动初始化数据库
+    await initializeDatabase();
+    
     const client = getSupabaseClient();
     const { data: categories, error } = await client
       .from('vocabulary_categories')
