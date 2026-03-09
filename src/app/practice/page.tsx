@@ -29,6 +29,7 @@ interface Question {
   phonetic: string;
   meaning: string;
   example_sentence: string;
+  example_sentence_cn?: string;
   question: string;
   options: string[];
   correctAnswer: string;
@@ -664,7 +665,12 @@ export default function PracticePage() {
                       <p><span className="text-gray-500">音标：</span>{currentQuestion.phonetic}</p>
                     )}
                     {currentQuestion.example_sentence && (
-                      <p><span className="text-gray-500">例句：</span>{currentQuestion.example_sentence}</p>
+                      <div className="mt-2 p-2 bg-white/50 dark:bg-gray-900/50 rounded">
+                        <p className="text-gray-700 dark:text-gray-300">{currentQuestion.example_sentence}</p>
+                        {currentQuestion.example_sentence_cn && (
+                          <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">{currentQuestion.example_sentence_cn}</p>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>

@@ -28,6 +28,7 @@ interface Word {
   phonetic: string;
   meaning: string;
   example_sentence: string;
+  example_sentence_cn?: string;
   category_id: number;
   vocabulary_categories: {
     name: string;
@@ -374,7 +375,12 @@ export default function VocabularyPage() {
             {selectedWord.example_sentence && (
               <div className="mb-4">
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">例句</p>
-                <p className="text-gray-700 dark:text-gray-300 italic">{selectedWord.example_sentence}</p>
+                <div className="p-2 bg-gray-50 dark:bg-gray-900 rounded">
+                  <p className="text-gray-700 dark:text-gray-300">{selectedWord.example_sentence}</p>
+                  {selectedWord.example_sentence_cn && (
+                    <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">{selectedWord.example_sentence_cn}</p>
+                  )}
+                </div>
               </div>
             )}
 

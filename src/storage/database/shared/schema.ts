@@ -41,6 +41,7 @@ export const words = pgTable(
     phonetic: varchar("phonetic", { length: 100 }),
     meaning: text("meaning").notNull(),
     exampleSentence: text("example_sentence"),
+    exampleSentenceCn: text("example_sentence_cn"),
     categoryId: integer("category_id")
       .notNull()
       .references(() => vocabularyCategories.id),

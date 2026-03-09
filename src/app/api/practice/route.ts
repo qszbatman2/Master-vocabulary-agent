@@ -152,6 +152,7 @@ export async function GET(request: NextRequest) {
         phonetic: word.phonetic,
         meaning: word.meaning,
         example_sentence: word.example_sentence,
+        example_sentence_cn: word.example_sentence_cn,
         question,
         options: shuffledFinal,
         correctAnswer,
