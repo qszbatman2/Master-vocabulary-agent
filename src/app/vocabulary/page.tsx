@@ -182,7 +182,7 @@ export default function VocabularyPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">全部</SelectItem>
-                {data?.categories.map((category) => (
+                {(data?.categories || []).map((category) => (
                   <SelectItem key={category.id} value={category.id.toString()}>
                     {category.name}
                   </SelectItem>

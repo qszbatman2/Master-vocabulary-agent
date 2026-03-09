@@ -45,13 +45,8 @@ export async function GET(request: NextRequest) {
       // 错题集或掌握状态筛选 - 先获取符合条件的单词ID
       let statusQuery = client
         .from('user_word_status')
-        .select('word_id, is_mastered, consecutive_correct, total_practice_count, correct_count, wrong_count, last_wrong_at, words!inner(id, category_id)')
+        .select('word_id, is_mastered, consecutive_correct, total_practice_count, correct_count, wrong_count, last_wrong_at')
         .eq('user_id', userId);
-
-      // 先按词库分类筛选
-      if (categoryId && categoryId !== 'all') {
-        statusQuery = statusQuery.eq('words.category_id', parseInt(categoryId));
-      }
 
       if (filter === 'wrong_words') {
         // 错题集：最近7天有错误记录
@@ -86,12 +81,41 @@ export async function GET(request: NextRequest) {
         });
       }
 
+      // 获取单词信息并按分类筛选
+      const wordIds = statusData.map(s => s.word_id);
+      let wordsQuery = client
+        .from('words')
+        .select('id, category_id')
+        .in('id', wordIds);
+
+      if (categoryId && categoryId !== 'all') {
+        wordsQuery = wordsQuery.eq('category_id', parseInt(categoryId));
+      }
+
+      const { data: wordsCategoryData } = await wordsQuery;
+
+      if (!wordsCategoryData || wordsCategoryData.length === 0) {
+        return NextResponse.json({
+          categories,
+          words: [],
+          total: 0,
+          page,
+          pageSize,
+          stats: null,
+        });
+      }
+
+      // 创建状态映射
+      const statusMap = new Map(statusData.map(s => [s.word_id, s]));
+      const filteredWordIds = new Set(wordsCategoryData.map(w => w.id));
+
       // 提取单词信息
-      const wordDataList = statusData.map(s => ({
-        wordId: s.word_id,
-        categoryId: (s.words as any)?.category_id,
-        status: s
-      }));
+      const wordDataList = statusData
+        .filter(s => filteredWordIds.has(s.word_id))
+        .map(s => ({
+          wordId: s.word_id,
+          status: s
+        }));
 
       // 搜索过滤
       let filteredWordData = wordDataList;
@@ -134,9 +158,6 @@ export async function GET(request: NextRequest) {
       if (wordsError) {
         return NextResponse.json({ error: wordsError.message }, { status: 500 });
       }
-
-      // 创建状态映射
-      const statusMap = new Map(statusData.map(s => [s.word_id, s]));
 
       words = (wordsData || []).map((word) => {
         const category = categories?.find((c) => c.id === word.category_id);
