@@ -538,81 +538,55 @@ export default function PracticePage() {
         </div>
       </div>
 
-      {/* 内容 */}
-      <div className="flex-1 container mx-auto px-3 py-3">
-        <Card className="max-w-md mx-auto">
-          <CardHeader className="p-4 pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-xl">
-                {currentQuestion.mode === 'en-to-zh' ? (
-                  <div className="flex items-center gap-2">
-                    {currentQuestion.question}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => playAudio(currentQuestion.question)}
-                    >
-                      <Volume2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                ) : (
-                  currentQuestion.question
-                )}
-              </CardTitle>
-            </div>
-            {currentQuestion.mode === 'en-to-zh' && (
-              <p className="text-xs text-gray-500 mt-1">
-                {currentQuestion.phonetic}
-              </p>
-            )}
-            {/* 错题标记 */}
-            {isWrongWord && (
-              <div className="mt-2">
-                <Badge variant="outline" className="text-xs border-orange-300 text-orange-600">
-                  <AlertCircle className="w-3 h-3 mr-1" />
-                  本轮错题 · 需连续对 {3 - (wrongStatus?.consecutiveCorrect || 0)} 次
-                </Badge>
-              </div>
-            )}
-          </CardHeader>
-          <CardContent className="p-4 pt-2">
-            <div className="grid grid-cols-2 gap-2">
-              {currentQuestion.options.map((option, index) => {
-                const isCorrect = option === currentQuestion.correctAnswer;
-                const isSelected = option === selectedAnswer;
-                const showCorrect = showResult && isCorrect;
-                const showWrong = showResult && isSelected && !isCorrect;
-
-                return (
-                  <Button
-                    key={index}
-                    variant="outline"
-                    className={cn(
-                      'h-auto py-3 px-3 text-sm justify-start',
-                      showCorrect && 'bg-green-100 dark:bg-green-900 border-green-500 text-green-900 dark:text-green-100',
-                      showWrong && 'bg-red-100 dark:bg-red-900 border-red-500 text-red-900 dark:text-red-100'
-                    )}
-                    onClick={() => handleAnswer(option)}
-                    disabled={showResult}
-                  >
-                    <div className="flex items-center gap-2 w-full">
-                      <div className="w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-xs font-semibold flex-shrink-0">
-                        {String.fromCharCode(65 + index)}
-                      </div>
-                      <span className="flex-1 text-left truncate">{option}</span>
-                      {showCorrect && <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />}
-                      {showWrong && <XCircle className="w-4 h-4 text-red-600 flex-shrink-0" />}
+      {/* 内容 - 底部固定操作区 */}
+      <div className="flex-1 flex flex-col justify-end">
+        {/* 题目卡片 */}
+        <div className="px-3 py-2">
+          <Card className="max-w-md mx-auto border-0 shadow-lg">
+            <CardHeader className="p-3 pb-1">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xl">
+                  {currentQuestion.mode === 'en-to-zh' ? (
+                    <div className="flex items-center gap-2">
+                      {currentQuestion.question}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => playAudio(currentQuestion.question)}
+                      >
+                        <Volume2 className="w-4 h-4" />
+                      </Button>
                     </div>
-                  </Button>
-                );
-              })}
-            </div>
+                  ) : (
+                    currentQuestion.question
+                  )}
+                </CardTitle>
+              </div>
+              {currentQuestion.mode === 'en-to-zh' && (
+                <p className="text-xs text-gray-500 mt-1">
+                  {currentQuestion.phonetic}
+                </p>
+              )}
+              {/* 错题标记 */}
+              {isWrongWord && (
+                <div className="mt-2">
+                  <Badge variant="outline" className="text-xs border-orange-300 text-orange-600">
+                    <AlertCircle className="w-3 h-3 mr-1" />
+                    本轮错题 · 需连续对 {3 - (wrongStatus?.consecutiveCorrect || 0)} 次
+                  </Badge>
+                </div>
+              )}
+            </CardHeader>
+          </Card>
+        </div>
 
-            {/* 答案解析 */}
-            {showResult && (
-              <div className="mt-3 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg text-sm">
-                <div className="mb-1 font-semibold">
+        {/* 答案解析（答对/答错后显示） */}
+        {showResult && (
+          <div className="px-3 py-1">
+            <Card className="max-w-md mx-auto border-0 shadow-lg bg-gray-100 dark:bg-gray-800">
+              <CardContent className="p-3">
+                <div className="mb-1 font-semibold text-sm">
                   {selectedAnswer === currentQuestion.correctAnswer ? '✓ 正确' : '✗ 错误'}
                 </div>
                 <div className="text-xs text-gray-600 dark:text-gray-400 space-y-0.5">
@@ -624,26 +598,73 @@ export default function PracticePage() {
                     <p>例句：{currentQuestion.example_sentence}</p>
                   )}
                 </div>
-                
-                <div className="flex gap-2 mt-3">
-                  <Button 
-                    onClick={handleMarkAsMastered}
-                    variant="outline"
-                    size="sm"
-                    className="flex-1 border-green-500 text-green-600 h-8 text-xs"
-                    disabled={masteredThisRound.has(currentQuestion.id)}
-                  >
-                    <BookmarkCheck className="w-3 h-3 mr-1" />
-                    {masteredThisRound.has(currentQuestion.id) ? '已标记' : '标记掌握'}
-                  </Button>
-                  <Button onClick={nextQuestion} size="sm" className="flex-1 h-8 text-xs">
-                    下一题
-                  </Button>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* 选项按钮区 */}
+        <div className="px-3 py-2 pb-4">
+          <div className="max-w-md mx-auto space-y-2">
+            {/* 标记掌握按钮（第一个选项） */}
+            <Button
+              variant="outline"
+              className={cn(
+                'w-full h-auto py-3 px-4 justify-start border-green-300 dark:border-green-700',
+                masteredThisRound.has(currentQuestion.id) && 'bg-green-50 dark:bg-green-900/30 border-green-500'
+              )}
+              onClick={handleMarkAsMastered}
+              disabled={masteredThisRound.has(currentQuestion.id)}
+            >
+              <div className="flex items-center gap-3 w-full">
+                <div className="w-7 h-7 rounded-full bg-green-100 dark:bg-green-800 flex items-center justify-center text-xs font-semibold flex-shrink-0 text-green-600">
+                  <BookmarkCheck className="w-4 h-4" />
                 </div>
+                <span className="flex-1 text-left text-green-600 dark:text-green-400">
+                  {masteredThisRound.has(currentQuestion.id) ? '已标记掌握' : '标记掌握（跳过此词）'}
+                </span>
               </div>
+            </Button>
+
+            {/* 四个选项 */}
+            {currentQuestion.options.map((option, index) => {
+              const isCorrect = option === currentQuestion.correctAnswer;
+              const isSelected = option === selectedAnswer;
+              const showCorrect = showResult && isCorrect;
+              const showWrong = showResult && isSelected && !isCorrect;
+
+              return (
+                <Button
+                  key={index}
+                  variant="outline"
+                  className={cn(
+                    'w-full h-auto py-3 px-4 justify-start',
+                    showCorrect && 'bg-green-100 dark:bg-green-900 border-green-500 text-green-900 dark:text-green-100',
+                    showWrong && 'bg-red-100 dark:bg-red-900 border-red-500 text-red-900 dark:text-red-100'
+                  )}
+                  onClick={() => handleAnswer(option)}
+                  disabled={showResult}
+                >
+                  <div className="flex items-center gap-3 w-full">
+                    <div className="w-7 h-7 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-sm font-semibold flex-shrink-0">
+                      {String.fromCharCode(65 + index)}
+                    </div>
+                    <span className="flex-1 text-left line-clamp-2">{option}</span>
+                    {showCorrect && <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />}
+                    {showWrong && <XCircle className="w-5 h-5 text-red-600 flex-shrink-0" />}
+                  </div>
+                </Button>
+              );
+            })}
+
+            {/* 下一题按钮（答题后显示） */}
+            {showResult && (
+              <Button onClick={nextQuestion} className="w-full h-12 text-base">
+                下一题
+              </Button>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   );
