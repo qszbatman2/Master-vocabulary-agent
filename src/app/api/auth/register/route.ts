@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
 
-const client = getSupabaseClient();
-
 // 简单的密码哈希函数（生产环境应使用 bcrypt）
 function hashPassword(password: string): string {
   // 简单哈希 - 实际应用请使用 bcrypt
@@ -11,6 +9,7 @@ function hashPassword(password: string): string {
 
 export async function POST(request: NextRequest) {
   try {
+    const client = getSupabaseClient();
     const body = await request.json();
     const { email, password, nickname } = body;
 

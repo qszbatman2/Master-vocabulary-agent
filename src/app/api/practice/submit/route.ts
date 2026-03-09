@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
 
-const client = getSupabaseClient();
-
 // 解析 token 获取用户 ID
 function getUserIdFromToken(token: string): number | null {
   try {
@@ -16,6 +14,7 @@ function getUserIdFromToken(token: string): number | null {
 
 export async function POST(request: NextRequest) {
   try {
+    const client = getSupabaseClient();
     const authHeader = request.headers.get('authorization');
     const token = authHeader?.replace('Bearer ', '');
     

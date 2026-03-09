@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
 
-const client = getSupabaseClient();
-
 function hashPassword(password: string): string {
   return Buffer.from(password).toString('base64');
 }
 
 export async function POST(request: NextRequest) {
   try {
+    const client = getSupabaseClient();
     const body = await request.json();
     const { email, password } = body;
 

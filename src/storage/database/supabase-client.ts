@@ -2,10 +2,16 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { execSync } from 'child_process';
 
 let envLoaded = false;
+let cachedClient: SupabaseClient | null = null;
 
 interface SupabaseCredentials {
   url: string;
   anonKey: string;
+}
+
+// Check if we're in build time
+function isBuildTime(): boolean {
+  return process.env.NODE_ENV === 'production' && typeof window === 'undefined' && !process.env.COZE_SUPABASE_URL;
 }
 
 function loadEnv(): void {
@@ -73,17 +79,28 @@ function getSupabaseCredentials(): SupabaseCredentials {
   const url = process.env.COZE_SUPABASE_URL;
   const anonKey = process.env.COZE_SUPABASE_ANON_KEY;
 
-  if (!url) {
-    throw new Error('COZE_SUPABASE_URL is not set');
-  }
-  if (!anonKey) {
-    throw new Error('COZE_SUPABASE_ANON_KEY is not set');
+  if (!url || !anonKey) {
+    // During build time, return dummy credentials to prevent build failure
+    if (isBuildTime()) {
+      return { url: 'https://dummy.supabase.co', anonKey: 'dummy-key' };
+    }
+    throw new Error('COZE_SUPABASE_URL or COZE_SUPABASE_ANON_KEY is not set');
   }
 
   return { url, anonKey };
 }
 
 function getSupabaseClient(token?: string): SupabaseClient {
+  // During build time, return a dummy client to prevent build failure
+  if (isBuildTime()) {
+    return createClient('https://dummy.supabase.co', 'dummy-key');
+  }
+
+  // Return cached client if available and no token is provided
+  if (!token && cachedClient) {
+    return cachedClient;
+  }
+
   const { url, anonKey } = getSupabaseCredentials();
 
   if (token) {
@@ -101,7 +118,7 @@ function getSupabaseClient(token?: string): SupabaseClient {
     });
   }
 
-  return createClient(url, anonKey, {
+  cachedClient = createClient(url, anonKey, {
     db: {
       timeout: 60000,
     },
@@ -110,6 +127,8 @@ function getSupabaseClient(token?: string): SupabaseClient {
       persistSession: false,
     },
   });
+
+  return cachedClient;
 }
 
 export { loadEnv, getSupabaseCredentials, getSupabaseClient };

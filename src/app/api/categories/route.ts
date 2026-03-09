@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
 
-const client = getSupabaseClient();
-
 export async function GET() {
   try {
+    const client = getSupabaseClient();
     const { data: categories, error } = await client
       .from('vocabulary_categories')
       .select('*')

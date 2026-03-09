@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
 
-const client = getSupabaseClient();
-
 export async function GET(request: NextRequest) {
   try {
+    const client = getSupabaseClient();
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
 
     if (!token) {
