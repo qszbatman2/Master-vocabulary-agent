@@ -65,6 +65,7 @@ export default function PracticePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
   const [finishMessage, setFinishMessage] = useState('');
+  const [masteredThisRound, setMasteredThisRound] = useState<Set<number>>(new Set()); // 本轮标记掌握的词
 
   useEffect(() => {
     if (!user) {
@@ -145,6 +146,7 @@ export default function PracticePage() {
     setQuestionNumber(0);
     setIsFinished(false);
     setFinishMessage('');
+    setMasteredThisRound(new Set());
     setIsStarted(true);
     
     // 获取第一批题目
@@ -283,6 +285,7 @@ export default function PracticePage() {
   const handleMarkAsMastered = async () => {
     const currentQuestion = questions[currentIndex];
     await submitResult(currentQuestion.id, true, true);
+    setMasteredThisRound(prev => new Set(prev).add(currentQuestion.id));
     setRoundCorrectWords(prev => new Set(prev).add(currentQuestion.id));
     setWrongWordsMap(prev => {
       const newMap = new Map(prev);
@@ -338,6 +341,7 @@ export default function PracticePage() {
     setRoundCorrectWords(new Set());
     setWrongWordsMap(new Map());
     setQuestionNumber(0);
+    setMasteredThisRound(new Set());
   };
 
   const playAudio = (word: string) => {
@@ -523,25 +527,13 @@ export default function PracticePage() {
               <span className="text-green-600 font-semibold">成功 {roundSuccessCount}</span>
               <span className="text-gray-300">|</span>
               <span className="text-red-600 font-semibold">错误 {roundWrongCount}</span>
-            </div>
-          </div>
-          {/* 本轮状态栏 */}
-          <div className="mt-2 flex items-center justify-between text-xs text-gray-500">
-            <div className="flex items-center gap-2">
               {wrongWordsMap.size > 0 && (
-                <Badge variant="outline" className="text-xs border-orange-300 text-orange-600">
-                  <AlertCircle className="w-3 h-3 mr-1" />
-                  待复习 {wrongWordsMap.size}
-                </Badge>
-              )}
-              {roundCorrectWords.size > 0 && (
-                <Badge variant="outline" className="text-xs border-green-300 text-green-600">
-                  <CheckCircle className="w-3 h-3 mr-1" />
-                  已成功 {roundCorrectWords.size}
-                </Badge>
+                <>
+                  <span className="text-gray-300">|</span>
+                  <span className="text-orange-600">待复习 {wrongWordsMap.size}</span>
+                </>
               )}
             </div>
-            <span>剩余 {remainingWords} 词</span>
           </div>
         </div>
       </div>
@@ -634,17 +626,16 @@ export default function PracticePage() {
                 </div>
                 
                 <div className="flex gap-2 mt-3">
-                  {!roundCorrectWords.has(currentQuestion.id) && (
-                    <Button 
-                      onClick={handleMarkAsMastered}
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 border-green-500 text-green-600 h-8 text-xs"
-                    >
-                      <BookmarkCheck className="w-3 h-3 mr-1" />
-                      标记掌握
-                    </Button>
-                  )}
+                  <Button 
+                    onClick={handleMarkAsMastered}
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 border-green-500 text-green-600 h-8 text-xs"
+                    disabled={masteredThisRound.has(currentQuestion.id)}
+                  >
+                    <BookmarkCheck className="w-3 h-3 mr-1" />
+                    {masteredThisRound.has(currentQuestion.id) ? '已标记' : '标记掌握'}
+                  </Button>
                   <Button onClick={nextQuestion} size="sm" className="flex-1 h-8 text-xs">
                     下一题
                   </Button>

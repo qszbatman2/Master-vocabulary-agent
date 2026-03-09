@@ -37,95 +37,187 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: categoriesError.message }, { status: 500 });
     }
 
-    // 构建单词查询
-    let query = client
-      .from('words')
-      .select('*', { count: 'exact' });
+    // 如果是错题集或掌握状态筛选，需要特殊处理
+    let words: any[] = [];
+    let totalCount = 0;
 
-    if (categoryId && categoryId !== 'all') {
-      query = query.eq('category_id', parseInt(categoryId));
-    }
-
-    if (search) {
-      query = query.or(`word.ilike.%${search}%,meaning.ilike.%${search}%`);
-    }
-
-    // 分页
-    const from = (page - 1) * pageSize;
-    const to = from + pageSize - 1;
-    query = query.range(from, to).order('created_at', { ascending: true });
-
-    const { data: words, error: wordsError, count } = await query;
-
-    if (wordsError) {
-      return NextResponse.json({ error: wordsError.message }, { status: 500 });
-    }
-
-    // 获取用户掌握状态
-    let userStatus: Record<number, { 
-      isMastered: boolean; 
-      consecutiveCorrect: number; 
-      totalPracticeCount: number;
-      correctCount: number;
-      wrongCount: number;
-      lastWrongAt: string | null;
-    }> = {};
-    if (userId && words && words.length > 0) {
-      const wordIds = words.map(w => w.id);
-      const { data: statusData } = await client
+    if (userId && (filter === 'wrong_words' || (masteredStatus && masteredStatus !== 'all'))) {
+      // 错题集或掌握状态筛选 - 先获取符合条件的单词ID
+      let statusQuery = client
         .from('user_word_status')
-        .select('word_id, is_mastered, consecutive_correct, total_practice_count, correct_count, wrong_count, last_wrong_at')
-        .eq('user_id', userId)
-        .in('word_id', wordIds);
+        .select('word_id, is_mastered, consecutive_correct, total_practice_count, correct_count, wrong_count, last_wrong_at, words!inner(id, category_id)')
+        .eq('user_id', userId);
 
-      statusData?.forEach(s => {
-        userStatus[s.word_id] = {
-          isMastered: s.is_mastered,
-          consecutiveCorrect: s.consecutive_correct,
-          totalPracticeCount: s.total_practice_count,
-          correctCount: s.correct_count,
-          wrongCount: s.wrong_count,
-          lastWrongAt: s.last_wrong_at,
+      // 先按词库分类筛选
+      if (categoryId && categoryId !== 'all') {
+        statusQuery = statusQuery.eq('words.category_id', parseInt(categoryId));
+      }
+
+      if (filter === 'wrong_words') {
+        // 错题集：最近7天有错误记录
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        statusQuery = statusQuery.not('last_wrong_at', 'is', null).gte('last_wrong_at', sevenDaysAgo.toISOString());
+      }
+      
+      // 掌握状态筛选（可与错题集组合）
+      if (masteredStatus === 'mastered') {
+        statusQuery = statusQuery.eq('is_mastered', true);
+      } else if (masteredStatus === 'unmastered') {
+        statusQuery = statusQuery.eq('is_mastered', false);
+      }
+
+      const { data: statusData, error: statusError } = await statusQuery;
+      
+      if (statusError) {
+        console.error('Status query error:', statusError);
+        return NextResponse.json({ error: statusError.message }, { status: 500 });
+      }
+
+      if (!statusData || statusData.length === 0) {
+        // 没有符合条件的单词
+        return NextResponse.json({
+          categories,
+          words: [],
+          total: 0,
+          page,
+          pageSize,
+          stats: null,
+        });
+      }
+
+      // 提取单词信息
+      const wordDataList = statusData.map(s => ({
+        wordId: s.word_id,
+        categoryId: (s.words as any)?.category_id,
+        status: s
+      }));
+
+      // 搜索过滤
+      let filteredWordData = wordDataList;
+      if (search) {
+        const wordIds = wordDataList.map(w => w.wordId);
+        const { data: searchWords } = await client
+          .from('words')
+          .select('id')
+          .in('id', wordIds)
+          .or(`word.ilike.%${search}%,meaning.ilike.%${search}%`);
+        
+        const searchWordIds = new Set(searchWords?.map(w => w.id) || []);
+        filteredWordData = wordDataList.filter(w => searchWordIds.has(w.wordId));
+      }
+
+      if (filteredWordData.length === 0) {
+        return NextResponse.json({
+          categories,
+          words: [],
+          total: 0,
+          page,
+          pageSize,
+          stats: null,
+        });
+      }
+
+      // 分页
+      totalCount = filteredWordData.length;
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize;
+      const paginatedWordData = filteredWordData.slice(from, to);
+      const paginatedWordIds = paginatedWordData.map(w => w.wordId);
+
+      // 获取单词详情
+      const { data: wordsData, error: wordsError } = await client
+        .from('words')
+        .select('*')
+        .in('id', paginatedWordIds);
+
+      if (wordsError) {
+        return NextResponse.json({ error: wordsError.message }, { status: 500 });
+      }
+
+      // 创建状态映射
+      const statusMap = new Map(statusData.map(s => [s.word_id, s]));
+
+      words = (wordsData || []).map((word) => {
+        const category = categories?.find((c) => c.id === word.category_id);
+        const status = statusMap.get(word.id);
+        return {
+          ...word,
+          vocabulary_categories: { name: category?.name || '' },
+          userStatus: status ? {
+            isMastered: status.is_mastered,
+            consecutiveCorrect: status.consecutive_correct,
+            totalPracticeCount: status.total_practice_count,
+            correctCount: status.correct_count,
+            wrongCount: status.wrong_count,
+            lastWrongAt: status.last_wrong_at,
+          } : null,
         };
       });
-    }
+    } else {
+      // 普通查询
+      let query = client
+        .from('words')
+        .select('*', { count: 'exact' });
 
-    // 关联分类名称和用户状态
-    let wordsWithStatus = words?.map((word) => {
-      const category = categories?.find((c) => c.id === word.category_id);
-      const status = userStatus[word.id];
-      return {
-        ...word,
-        vocabulary_categories: { name: category?.name || '' },
-        userStatus: status ? {
-          isMastered: status.isMastered,
-          consecutiveCorrect: status.consecutiveCorrect,
-          totalPracticeCount: status.totalPracticeCount,
-          correctCount: status.correctCount,
-          wrongCount: status.wrongCount,
-          lastWrongAt: status.lastWrongAt,
-        } : null,
-      };
-    }) || [];
-
-    // 按掌握状态筛选
-    if (userId && masteredStatus && masteredStatus !== 'all') {
-      if (masteredStatus === 'mastered') {
-        wordsWithStatus = wordsWithStatus.filter(w => w.userStatus?.isMastered);
-      } else if (masteredStatus === 'unmastered') {
-        wordsWithStatus = wordsWithStatus.filter(w => !w.userStatus?.isMastered);
+      if (categoryId && categoryId !== 'all') {
+        query = query.eq('category_id', parseInt(categoryId));
       }
-    }
 
-    // 错题集筛选：最近7天有错误记录的单词
-    if (userId && filter === 'wrong_words') {
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-      
-      wordsWithStatus = wordsWithStatus.filter(w => {
-        if (!w.userStatus?.lastWrongAt) return false;
-        return new Date(w.userStatus.lastWrongAt) >= sevenDaysAgo;
-      });
+      if (search) {
+        query = query.or(`word.ilike.%${search}%,meaning.ilike.%${search}%`);
+      }
+
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
+      const { data: wordsData, error: wordsError, count } = await query
+        .range(from, to)
+        .order('created_at', { ascending: true });
+
+      if (wordsError) {
+        return NextResponse.json({ error: wordsError.message }, { status: 500 });
+      }
+
+      words = wordsData || [];
+      totalCount = count || 0;
+
+      // 获取用户掌握状态
+      if (userId && words.length > 0) {
+        const wordIds = words.map(w => w.id);
+        const { data: statusData } = await client
+          .from('user_word_status')
+          .select('word_id, is_mastered, consecutive_correct, total_practice_count, correct_count, wrong_count, last_wrong_at')
+          .eq('user_id', userId)
+          .in('word_id', wordIds);
+
+        const statusMap = new Map(statusData?.map(s => [s.word_id, s]) || []);
+
+        words = words.map((word) => {
+          const category = categories?.find((c) => c.id === word.category_id);
+          const status = statusMap.get(word.id);
+          return {
+            ...word,
+            vocabulary_categories: { name: category?.name || '' },
+            userStatus: status ? {
+              isMastered: status.is_mastered,
+              consecutiveCorrect: status.consecutive_correct,
+              totalPracticeCount: status.total_practice_count,
+              correctCount: status.correct_count,
+              wrongCount: status.wrong_count,
+              lastWrongAt: status.last_wrong_at,
+            } : null,
+          };
+        });
+      } else {
+        words = words.map((word) => {
+          const category = categories?.find((c) => c.id === word.category_id);
+          return {
+            ...word,
+            vocabulary_categories: { name: category?.name || '' },
+            userStatus: null,
+          };
+        });
+      }
     }
 
     // 获取统计信息
@@ -150,8 +242,8 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       categories,
-      words: wordsWithStatus,
-      total: count || 0,
+      words,
+      total: totalCount,
       page,
       pageSize,
       stats,
