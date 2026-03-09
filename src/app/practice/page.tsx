@@ -282,7 +282,7 @@ export default function PracticePage() {
     setQuestionNumber(prev => prev + 1);
   };
 
-  const handleMarkAsMastered = async () => {
+  const handleMarkAsMastered = async (autoNext: boolean = false) => {
     const currentQuestion = questions[currentIndex];
     await submitResult(currentQuestion.id, true, true);
     setMasteredThisRound(prev => new Set(prev).add(currentQuestion.id));
@@ -293,6 +293,12 @@ export default function PracticePage() {
       return newMap;
     });
     setRoundSuccessCount(prev => prev + 1);
+    // 答题前标记掌握，自动跳到下一题
+    if (autoNext) {
+      setTimeout(() => {
+        nextQuestion();
+      }, 300);
+    }
   };
 
   const nextQuestion = async () => {
@@ -588,24 +594,47 @@ export default function PracticePage() {
         <div className="sticky bottom-0 z-20 px-3 py-2 pb-4 bg-gray-50 dark:bg-gray-900">
           <div className="max-w-md mx-auto space-y-2">
             {!showResult ? (
-              /* 答题前：显示四个选项 */
-              currentQuestion.options.map((option, index) => {
-                return (
-                  <Button
-                    key={index}
-                    variant="outline"
-                    className="w-full h-auto py-3 px-4 justify-start"
-                    onClick={() => handleAnswer(option)}
-                  >
-                    <div className="flex items-center gap-3 w-full">
-                      <div className="w-7 h-7 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-sm font-semibold flex-shrink-0">
-                        {String.fromCharCode(65 + index)}
-                      </div>
-                      <span className="flex-1 text-left line-clamp-2">{option}</span>
+              /* 答题前：显示标记掌握 + 四个选项 */
+              <>
+                {/* 标记掌握按钮 */}
+                <Button
+                  variant="outline"
+                  className={cn(
+                    'w-full h-auto py-3 px-4 justify-start border-green-300 dark:border-green-700',
+                    masteredThisRound.has(currentQuestion.id) && 'bg-green-50 dark:bg-green-900/30 border-green-500'
+                  )}
+                  onClick={() => handleMarkAsMastered(true)}
+                  disabled={masteredThisRound.has(currentQuestion.id)}
+                >
+                  <div className="flex items-center gap-3 w-full">
+                    <div className="w-7 h-7 rounded-full bg-green-100 dark:bg-green-800 flex items-center justify-center flex-shrink-0 text-green-600">
+                      <BookmarkCheck className="w-4 h-4" />
                     </div>
-                  </Button>
-                );
-              })
+                    <span className="flex-1 text-left text-green-600 dark:text-green-400">
+                      {masteredThisRound.has(currentQuestion.id) ? '已标记掌握' : '标记掌握'}
+                    </span>
+                  </div>
+                </Button>
+
+                {/* 四个选项 */}
+                {currentQuestion.options.map((option, index) => {
+                  return (
+                    <Button
+                      key={index}
+                      variant="outline"
+                      className="w-full h-auto py-3 px-4 justify-start"
+                      onClick={() => handleAnswer(option)}
+                    >
+                      <div className="flex items-center gap-3 w-full">
+                        <div className="w-7 h-7 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-sm font-semibold flex-shrink-0">
+                          {String.fromCharCode(65 + index)}
+                        </div>
+                        <span className="flex-1 text-left line-clamp-2">{option}</span>
+                      </div>
+                    </Button>
+                  );
+                })}
+              </>
             ) : (
               /* 答题后：显示答案解析 + 标记掌握 + 下一题 */
               <>
@@ -640,14 +669,14 @@ export default function PracticePage() {
                   </div>
                 </div>
 
-                {/* 标记掌握按钮 */}
+                {/* 标记掌握按钮（答题后 - 不自动跳） */}
                 <Button
                   variant="outline"
                   className={cn(
                     'w-full h-auto py-3 px-4 justify-start border-green-300 dark:border-green-700',
                     masteredThisRound.has(currentQuestion.id) && 'bg-green-50 dark:bg-green-900/30 border-green-500'
                   )}
-                  onClick={handleMarkAsMastered}
+                  onClick={() => handleMarkAsMastered(false)}
                   disabled={masteredThisRound.has(currentQuestion.id)}
                 >
                   <div className="flex items-center gap-3 w-full">
