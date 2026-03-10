@@ -75,6 +75,65 @@ export async function POST(request: NextRequest) {
   
   try {
     const body = await request.json().catch(() => ({}));
+    
+    // 支持直接传入单词数组
+    if (body.words && Array.isArray(body.words)) {
+      console.log(`收到 ${body.words.length} 个单词待导入`);
+      
+      // 获取分类 ID 映射
+      const { data: categories } = await client
+        .from('vocabulary_categories')
+        .select('id, name');
+      
+      const categoryMap: Record<string, number> = {};
+      categories?.forEach(c => {
+        categoryMap[c.name] = c.id;
+      });
+      
+      // 准备插入数据
+      const records = body.words.map((w: {
+        word: string;
+        phonetic?: string;
+        meaning: string;
+        example_sentence?: string;
+        example_sentence_cn?: string;
+        category_id?: number;
+      }) => ({
+        word: w.word.toLowerCase(),
+        phonetic: w.phonetic || '',
+        meaning: w.meaning,
+        example_sentence: w.example_sentence || `This is an example using the word "${w.word}".`,
+        example_sentence_cn: w.example_sentence_cn || '',
+        category_id: w.category_id || categoryMap['托福词汇'] || 1,
+      }));
+      
+      // 批量插入
+      const { error, count } = await client
+        .from('words')
+        .upsert(records, { 
+          onConflict: 'word',
+          ignoreDuplicates: true 
+        });
+      
+      if (error) {
+        console.error('插入失败:', error);
+        return NextResponse.json({
+          success: false,
+          error: error.message,
+        }, { status: 500 });
+      }
+      
+      const { count: newTotal } = await client
+        .from('words')
+        .select('*', { count: 'exact', head: true });
+      
+      return NextResponse.json({
+        success: true,
+        message: `成功处理 ${records.length} 个单词`,
+        total: newTotal,
+      });
+    }
+    
     const action = body.action || 'status';
     
     if (action === 'import') {
