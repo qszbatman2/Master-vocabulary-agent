@@ -1,6 +1,45 @@
-# projects
+# 英语单词学习平台
 
 这是一个基于 [Next.js 16](https://nextjs.org) + [shadcn/ui](https://ui.shadcn.com) 的全栈应用项目，由扣子编程 CLI 创建。
+
+## 功能特性
+
+- 📚 **词库管理**: 支持雅思、托福、GRE、日常、商务、科技、医学、法律等多个词库分类
+- 🎯 **背单词练习**: 英译中/中译英双模式，支持答题反馈和进度追踪
+- 🔄 **无尽模式**: 随机抽取单词进行无限练习
+- 📊 **错题集**: 智能记录错题，支持筛选和重点复习
+- 📈 **学习统计**: 记录正确/错误次数，追踪学习进度
+
+## 生产环境部署注意事项
+
+### ⚠️ 数据同步问题
+
+**问题**: 开发环境和生产环境使用不同的 Supabase 数据库实例，部署后生产环境数据库为空。
+
+**解决方案**:
+1. 部署后，调用 `/api/admin/init` 初始化基础数据
+2. 调用 `/api/admin/batch-import` 批量导入更多词汇（需部署最新代码）
+
+**当前状态**:
+- 开发环境: 8,500 个单词（完整）
+- 生产环境: 516 个单词（基础数据）
+
+**同步步骤**:
+```bash
+# 1. 初始化基础数据
+curl -X GET https://your-domain.coze.site/api/admin/init
+
+# 2. 批量导入更多词汇（部署后）
+curl -X POST -H "Authorization: Bearer vocabulary-admin-2024" \
+  https://your-domain.coze.site/api/admin/batch-import
+```
+
+### 数据库去重
+
+如果发现重复数据，可执行清理脚本：
+```bash
+npx ts-node scripts/clean-duplicates.ts
+```
 
 ## 快速开始
 
