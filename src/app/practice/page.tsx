@@ -268,6 +268,7 @@ export default function PracticePage() {
 
     // 更新本轮状态
     const wasWrongBefore = wrongWordsMap.has(wordId);
+    const alreadyCounted = roundCorrectWordsRef.current.has(wordId);
     
     if (isCorrect) {
       if (wasWrongBefore) {
@@ -283,7 +284,10 @@ export default function PracticePage() {
             return newMap;
           });
           setRoundCorrectWords(prev => new Set(prev).add(wordId));
-          setRoundSuccessCount(prev => prev + 1);
+          // 只有未被计数时才增加（避免重复计数）
+          if (!alreadyCounted) {
+            setRoundSuccessCount(prev => prev + 1);
+          }
         } else {
           // 更新连续正确次数
           setWrongWordsMap(prev => {
@@ -299,7 +303,10 @@ export default function PracticePage() {
       } else {
         // 首次就对了，本轮成功！
         setRoundCorrectWords(prev => new Set(prev).add(wordId));
-        setRoundSuccessCount(prev => prev + 1);
+        // 只有未被计数时才增加（避免重复计数）
+        if (!alreadyCounted) {
+          setRoundSuccessCount(prev => prev + 1);
+        }
       }
     } else {
       // 答错了
@@ -325,6 +332,10 @@ export default function PracticePage() {
   const handleMarkAsMastered = async (autoNext: boolean = false) => {
     const currentQuestion = questions[currentIndex];
     await submitResult(currentQuestion.id, true, true);
+    
+    // 检查是否已经被计入成功数（避免重复计数）
+    const alreadyCounted = roundCorrectWordsRef.current.has(currentQuestion.id);
+    
     setMasteredThisRound(prev => new Set(prev).add(currentQuestion.id));
     setRoundCorrectWords(prev => new Set(prev).add(currentQuestion.id));
     setWrongWordsMap(prev => {
@@ -332,7 +343,12 @@ export default function PracticePage() {
       newMap.delete(currentQuestion.id);
       return newMap;
     });
-    setRoundSuccessCount(prev => prev + 1);
+    
+    // 只有未被计数时才增加
+    if (!alreadyCounted) {
+      setRoundSuccessCount(prev => prev + 1);
+    }
+    
     // 答题前标记掌握，自动跳到下一题
     if (autoNext) {
       setTimeout(() => {
