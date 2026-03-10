@@ -165,7 +165,14 @@ export async function GET(request: NextRequest) {
     // 为每个单词生成选项，并随机选择模式
     const questions = selectedWords.map((word) => {
       // 获取其他单词作为干扰项（从所有单词中选，不只是未掌握的）
-      const otherWords = allWords.filter((w) => w.id !== word.id);
+      // 按单词文本去重，避免同一单词的多个记录导致选项重复
+      const otherWordsMap = new Map<string, typeof allWords[0]>();
+      allWords.forEach((w) => {
+        if (w.word !== word.word && !otherWordsMap.has(w.word)) {
+          otherWordsMap.set(w.word, w);
+        }
+      });
+      const otherWords = Array.from(otherWordsMap.values());
       const shuffledOptions = otherWords.sort(() => Math.random() - 0.5).slice(0, 3);
       
       // 随机选择模式：en-to-zh 或 zh-to-en
@@ -191,8 +198,24 @@ export async function GET(request: NextRequest) {
         ];
       }
 
+      // 最终去重确保选项唯一
+      const uniqueOptions = [...new Set(options)];
+      
+      // 如果去重后选项不足4个，从 otherWords 中补充
+      if (uniqueOptions.length < 4) {
+        const usedValues = new Set(uniqueOptions);
+        for (const w of otherWords) {
+          if (uniqueOptions.length >= 4) break;
+          const value = mode === 'en-to-zh' ? w.meaning : w.word;
+          if (!usedValues.has(value)) {
+            uniqueOptions.push(value);
+            usedValues.add(value);
+          }
+        }
+      }
+
       // 打乱选项顺序
-      const shuffledFinal = options.sort(() => Math.random() - 0.5);
+      const shuffledFinal = uniqueOptions.sort(() => Math.random() - 0.5);
 
       return {
         id: word.id,
