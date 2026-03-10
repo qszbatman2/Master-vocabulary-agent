@@ -427,6 +427,71 @@ interface WordData {
 3. **批量插入**：建议每批 100 条，避免单次插入过多数据
 4. **错误处理**：批量失败时降级为逐条插入
 
+#### 部署后数据初始化
+
+**问题**：部署完成后数据库数据未自动更新，词库只有少量初始数据。
+
+**原因**：数据导入脚本需要手动执行，不会在部署时自动运行。
+
+**解决方案**：创建批量导入脚本 `scripts/import-all-words.ts`：
+
+```typescript
+// 批量执行所有数据导入脚本
+const SCRIPTS = [
+  'seed-data.ts',
+  'words-data-part1.ts',
+  'words-data-part2.ts',
+  // ... 其他脚本
+];
+
+for (const script of SCRIPTS) {
+  await execAsync(`npx tsx scripts/${script}`);
+}
+```
+
+**执行命令**：
+```bash
+npx tsx scripts/import-all-words.ts
+```
+
+#### 重复分类数据处理
+
+**问题**：多次执行导入脚本后，出现重复的分类记录（如两个"托福词汇"）。
+
+**原因**：每次运行 `seed-data.ts` 都会插入新分类，不会检查是否已存在。
+
+**解决方案**：创建修复脚本 `scripts/fix-duplicate-categories-v2.ts`：
+
+```typescript
+// 1. 找出重复分类（同名但不同ID）
+// 2. 将单词迁移到保留的分类ID
+// 3. 删除重复分类
+for (const [name, ids] of Object.entries(nameToIds)) {
+  if (ids.length > 1) {
+    const keepId = ids[0];  // 保留最小ID
+    // 迁移单词
+    await supabase.from('words').update({ category_id: keepId }).eq('category_id', removeId);
+    // 删除重复分类
+    await supabase.from('vocabulary_categories').delete().eq('id', removeId);
+  }
+}
+```
+
+**预防措施**：在 `seed-data.ts` 中添加分类存在性检查：
+```typescript
+// 先检查分类是否已存在
+const { data: existing } = await supabase
+  .from('vocabulary_categories')
+  .select('id')
+  .eq('name', categoryName)
+  .single();
+
+if (!existing) {
+  // 不存在才插入
+  await supabase.from('vocabulary_categories').insert({ name, description });
+}
+```
+
 ### 部署常见错误排查
 
 | 错误信息 | 原因 | 解决方案 |
@@ -434,6 +499,8 @@ interface WordData {
 | `Property 'xxx' does not exist on type` | 访问未定义的属性 | 检查类型定义，添加字段或移除访问 |
 | `Could not find table 'public.xxx'` | 表名错误 | 确认数据库实际表名 |
 | `Transform failed with error` | 语法错误 | 检查文件末尾是否有残留数据 |
+| 部署后数据库数据缺失 | 脚本未执行 | 运行 `npx tsx scripts/import-all-words.ts` |
+| 分类重复/单词分散 | 多次执行种子脚本 | 运行 `npx tsx scripts/fix-duplicate-categories-v2.ts` |
 
 ### 代码提交前检查清单
 
@@ -441,3 +508,5 @@ interface WordData {
 - [ ] 检查新增脚本的数据类型定义完整性
 - [ ] 确认数据库表名和字段名正确
 - [ ] 验证服务运行正常 `curl -I http://localhost:5000`
+- [ ] 部署后执行数据导入脚本（如有新数据）
+- [ ] 检查数据库数据是否完整更新
