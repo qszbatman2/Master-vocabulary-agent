@@ -14,26 +14,47 @@ async function exportAndImport() {
   
   console.log('正在从开发环境获取所有单词...');
   
-  // 获取所有单词（不使用 join）
-  const { data: allWords, error } = await client
-    .from('words')
-    .select(`
-      word,
-      phonetic,
-      meaning,
-      example_sentence,
-      example_sentence_cn,
-      category_id
-    `)
-    .order('id');
+  // 分批获取所有单词
+  const allWords: Array<{
+    word: string;
+    phonetic: string;
+    meaning: string;
+    example_sentence: string | null;
+    example_sentence_cn: string | null;
+    category_id: number;
+  }> = [];
   
-  if (error) {
-    console.error('获取数据失败:', error);
-    return;
+  let page = 0;
+  const pageSize = 1000;
+  
+  while (true) {
+    const { data, error } = await client
+      .from('words')
+      .select(`
+        word,
+        phonetic,
+        meaning,
+        example_sentence,
+        example_sentence_cn,
+        category_id
+      `)
+      .range(page * pageSize, (page + 1) * pageSize - 1);
+    
+    if (error) {
+      console.error('获取数据失败:', error);
+      return;
+    }
+    
+    if (!data || data.length === 0) break;
+    
+    allWords.push(...data);
+    console.log(`已获取 ${allWords.length} 个单词...`);
+    
+    if (data.length < pageSize) break;
+    page++;
   }
   
-  const totalCount = allWords?.length || 0;
-  console.log(`开发环境共有 ${totalCount} 个单词`);
+  console.log(`开发环境共有 ${allWords.length} 个单词`);
   
   // 获取分类列表用于反向映射
   const { data: categories } = await client
@@ -50,22 +71,22 @@ async function exportAndImport() {
   const prodData = await prodResponse.json();
   console.log(`生产环境当前有 ${prodData.total} 个单词`);
   
-  // 获取生产环境已有单词列表
+  // 获取生产环境已有单词列表（分页获取全部）
   const existingSet = new Set<string>();
-  let page = 1;
-  const pageSize = 500;
+  let prodPage = 1;
+  const prodPageSize = 500;
   
   console.log('正在获取生产环境已有单词列表...');
   while (true) {
-    const response = await fetch(`${PRODUCTION_API}/api/vocabulary?limit=${pageSize}&page=${page}`);
+    const response = await fetch(`${PRODUCTION_API}/api/vocabulary?limit=${prodPageSize}&page=${prodPage}`);
     const data = await response.json();
     
     if (data.words && data.words.length > 0) {
       data.words.forEach((w: { word: string }) => existingSet.add(w.word.toLowerCase()));
     }
     
-    if (!data.words || data.words.length < pageSize) break;
-    page++;
+    if (!data.words || data.words.length < prodPageSize) break;
+    prodPage++;
   }
   
   console.log(`生产环境已有 ${existingSet.size} 个唯一单词`);
@@ -112,7 +133,7 @@ async function exportAndImport() {
     const batchNum = Math.floor(i / BATCH_SIZE) + 1;
     
     try {
-      const response = await fetch(`${PRODUCTION_API}/api/admin/import`, {
+      const response = await fetch(`${PRODUCTION_API}/api/admin/batch-import`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
