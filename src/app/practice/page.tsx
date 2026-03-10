@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -67,6 +67,26 @@ export default function PracticePage() {
   const [isFinished, setIsFinished] = useState(false);
   const [finishMessage, setFinishMessage] = useState('');
   const [masteredThisRound, setMasteredThisRound] = useState<Set<number>>(new Set()); // 本轮标记掌握的词
+
+  // 使用 ref 确保在 nextQuestion 中访问最新状态
+  const roundCorrectWordsRef = useRef(roundCorrectWords);
+  const questionsRef = useRef(questions);
+  const currentIndexRef = useRef(currentIndex);
+  const isLoadingRef = useRef(isLoading);
+
+  // 更新 ref
+  useEffect(() => {
+    roundCorrectWordsRef.current = roundCorrectWords;
+  }, [roundCorrectWords]);
+  useEffect(() => {
+    questionsRef.current = questions;
+  }, [questions]);
+  useEffect(() => {
+    currentIndexRef.current = currentIndex;
+  }, [currentIndex]);
+  useEffect(() => {
+    isLoadingRef.current = isLoading;
+  }, [isLoading]);
 
   useEffect(() => {
     if (!user) {
@@ -309,29 +329,53 @@ export default function PracticePage() {
       .map(([wordId]) => wordId);
     
     // 预加载更多题目
-    if (currentIndex >= questions.length - 5 && !isLoading) {
-      const excludeIds = Array.from(roundCorrectWords);
+    if (currentIndexRef.current >= questionsRef.current.length - 5 && !isLoadingRef.current) {
+      const excludeIds = Array.from(roundCorrectWordsRef.current);
       const priorityIds = wrongWordsToAppear.length > 0 ? wrongWordsToAppear : [];
       await fetchMoreQuestions(excludeIds, priorityIds);
     }
     
-    // 移动到下一题
-    if (currentIndex < questions.length - 1) {
-      setCurrentIndex((prev) => prev + 1);
+    // 找到下一个未被答对的题目（使用 ref 确保访问最新状态）
+    const findNextValidIndex = (startIndex: number): number => {
+      const currentQuestions = questionsRef.current;
+      const currentCorrectWords = roundCorrectWordsRef.current;
+      
+      for (let i = startIndex + 1; i < currentQuestions.length; i++) {
+        const wordId = currentQuestions[i].id;
+        // 跳过本轮已成功的单词
+        if (!currentCorrectWords.has(wordId)) {
+          return i;
+        }
+      }
+      return -1; // 没有找到有效的下一题
+    };
+    
+    const nextIndex = findNextValidIndex(currentIndexRef.current);
+    
+    if (nextIndex !== -1) {
+      setCurrentIndex(nextIndex);
       setSelectedAnswer(null);
       setShowResult(false);
     } else {
-      // 题目用完了，等待加载
-      if (isLoading) {
-        // 等待加载完成
+      // 当前队列中没有有效题目了，需要加载更多
+      if (isLoadingRef.current) {
+        // 等待加载完成后再找
         const checkInterval = setInterval(() => {
-          if (!isLoading && questions.length > currentIndex + 1) {
+          if (!isLoadingRef.current) {
             clearInterval(checkInterval);
-            setCurrentIndex((prev) => prev + 1);
-            setSelectedAnswer(null);
-            setShowResult(false);
+            const newIndex = findNextValidIndex(currentIndexRef.current);
+            if (newIndex !== -1) {
+              setCurrentIndex(newIndex);
+              setSelectedAnswer(null);
+              setShowResult(false);
+            }
           }
         }, 100);
+      } else {
+        // 主动触发加载
+        const excludeIds = Array.from(roundCorrectWordsRef.current);
+        const priorityIds = wrongWordsToAppear.length > 0 ? wrongWordsToAppear : [];
+        await fetchMoreQuestions(excludeIds, priorityIds);
       }
     }
   };
