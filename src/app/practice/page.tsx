@@ -67,6 +67,7 @@ export default function PracticePage() {
   const [isFinished, setIsFinished] = useState(false);
   const [finishMessage, setFinishMessage] = useState('');
   const [masteredThisRound, setMasteredThisRound] = useState<Set<number>>(new Set()); // 本轮标记掌握的词
+  const [startTime, setStartTime] = useState<number>(0); // 开始时间
 
   // 使用 ref 确保在 nextQuestion 中访问最新状态
   const roundCorrectWordsRef = useRef(roundCorrectWords);
@@ -169,6 +170,7 @@ export default function PracticePage() {
     setFinishMessage('');
     setMasteredThisRound(new Set());
     setIsStarted(true);
+    setStartTime(Date.now()); // 记录开始时间
     
     // 获取第一批题目
     setIsLoading(true);
@@ -381,18 +383,23 @@ export default function PracticePage() {
   };
 
   const exitPractice = () => {
-    setIsStarted(false);
-    setIsFinished(false);
-    setQuestions([]);
-    setCurrentIndex(0);
-    setSelectedAnswer(null);
-    setShowResult(false);
-    setRoundSuccessCount(0);
-    setRoundWrongCount(0);
-    setRoundCorrectWords(new Set());
-    setWrongWordsMap(new Map());
-    setQuestionNumber(0);
-    setMasteredThisRound(new Set());
+    // 计算学习时长
+    const duration = startTime > 0 ? Math.floor((Date.now() - startTime) / 1000) : 0;
+    
+    // 构建结算数据
+    const summary = {
+      totalPracticed: questionNumber,
+      masteredCount: roundSuccessCount,
+      wrongCount: roundWrongCount,
+      correctCount: questionNumber - roundWrongCount, // 首次正确数 = 总题数 - 首次错误数
+      duration,
+    };
+    
+    // 保存到 sessionStorage（防止 URL 过长）
+    sessionStorage.setItem('practice_summary', JSON.stringify(summary));
+    
+    // 跳转到结算页面
+    router.push('/practice/summary');
   };
 
   const playAudio = (word: string) => {
@@ -519,7 +526,7 @@ export default function PracticePage() {
               </div>
 
               <Button onClick={exitPractice} className="w-full h-10">
-                返回
+                查看结算
               </Button>
             </CardContent>
           </Card>

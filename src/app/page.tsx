@@ -1,15 +1,52 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { BookOpen, GraduationCap, LogIn, LogOut, User } from 'lucide-react';
+import { BookOpen, GraduationCap, LogIn, LogOut, User, TrendingUp, CheckCircle, RotateCcw, BookMarked } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 
+interface Stats {
+  today: {
+    practicedCount: number;
+    masteredCount: number;
+  };
+  total: {
+    masteredCount: number;
+    reviewingCount: number;
+    newWordsCount: number;
+    totalWords: number;
+  };
+}
+
 export default function Home() {
-  const { user, logout } = useAuth();
+  const { user, logout, token } = useAuth();
   const router = useRouter();
+  const [stats, setStats] = useState<Stats | null>(null);
+
+  useEffect(() => {
+    if (user && token) {
+      fetchStats();
+    }
+  }, [user, token]);
+
+  const fetchStats = async () => {
+    try {
+      const response = await fetch('/api/stats', {
+        headers: {
+          authorization: `Bearer ${token}`,
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setStats(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch stats:', error);
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -103,23 +140,97 @@ export default function Home() {
         </div>
 
         {/* 统计信息 */}
-        <div className="text-center mb-4">
-          <div className="inline-flex items-center gap-4 md:gap-8 px-4 py-2 md:px-8 md:py-4 bg-white dark:bg-gray-800 rounded-full shadow-md text-xs md:text-sm">
-            <div className="text-center">
-              <div className="text-lg md:text-2xl font-bold text-blue-600 dark:text-blue-400">4</div>
-              <div className="text-gray-600 dark:text-gray-400">词库</div>
+        <div className="mb-4">
+          {user && stats ? (
+            <div className="max-w-2xl mx-auto">
+              {/* 今日统计 */}
+              <Card className="mb-3">
+                <CardHeader className="p-3 pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4 text-blue-500" />
+                    今日学习
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-3 pt-0">
+                  <div className="flex justify-around">
+                    <div className="text-center">
+                      <div className="text-xl md:text-2xl font-bold text-blue-600">{stats.today.practicedCount}</div>
+                      <div className="text-xs text-gray-500">已背单词</div>
+                    </div>
+                    <div className="w-px h-10 bg-gray-200 dark:bg-gray-700"></div>
+                    <div className="text-center">
+                      <div className="text-xl md:text-2xl font-bold text-green-600">{stats.today.masteredCount}</div>
+                      <div className="text-xs text-gray-500">今日掌握</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* 累计统计 */}
+              <Card>
+                <CardHeader className="p-3 pb-2">
+                  <CardTitle className="text-sm">累计进度</CardTitle>
+                </CardHeader>
+                <CardContent className="p-3 pt-0">
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="text-center p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                      <div className="flex items-center justify-center gap-1 mb-1">
+                        <CheckCircle className="w-3 h-3 text-green-500" />
+                        <span className="text-lg md:text-xl font-bold text-green-600">{stats.total.masteredCount}</span>
+                      </div>
+                      <div className="text-xs text-gray-500">已掌握</div>
+                    </div>
+                    <div className="text-center p-2 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+                      <div className="flex items-center justify-center gap-1 mb-1">
+                        <RotateCcw className="w-3 h-3 text-orange-500" />
+                        <span className="text-lg md:text-xl font-bold text-orange-600">{stats.total.reviewingCount}</span>
+                      </div>
+                      <div className="text-xs text-gray-500">复习中</div>
+                    </div>
+                    <div className="text-center p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                      <div className="flex items-center justify-center gap-1 mb-1">
+                        <BookMarked className="w-3 h-3 text-blue-500" />
+                        <span className="text-lg md:text-xl font-bold text-blue-600">{stats.total.newWordsCount}</span>
+                      </div>
+                      <div className="text-xs text-gray-500">剩余新词</div>
+                    </div>
+                  </div>
+                  {/* 进度条 */}
+                  <div className="mt-3">
+                    <div className="flex justify-between text-xs text-gray-500 mb-1">
+                      <span>总进度</span>
+                      <span>{stats.total.totalWords > 0 ? Math.round(stats.total.masteredCount / stats.total.totalWords * 100) : 0}%</span>
+                    </div>
+                    <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-gradient-to-r from-green-400 to-green-600 rounded-full transition-all duration-300"
+                        style={{ width: `${stats.total.totalWords > 0 ? Math.min(100, stats.total.masteredCount / stats.total.totalWords * 100) : 0}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-            <div className="w-px h-8 bg-gray-300 dark:bg-gray-600"></div>
+          ) : (
             <div className="text-center">
-              <div className="text-lg md:text-2xl font-bold text-purple-600 dark:text-purple-400">100+</div>
-              <div className="text-gray-600 dark:text-gray-400">单词</div>
+              <div className="inline-flex items-center gap-4 md:gap-8 px-4 py-2 md:px-8 md:py-4 bg-white dark:bg-gray-800 rounded-full shadow-md text-xs md:text-sm">
+                <div className="text-center">
+                  <div className="text-lg md:text-2xl font-bold text-blue-600 dark:text-blue-400">8</div>
+                  <div className="text-gray-600 dark:text-gray-400">词库</div>
+                </div>
+                <div className="w-px h-8 bg-gray-300 dark:bg-gray-600"></div>
+                <div className="text-center">
+                  <div className="text-lg md:text-2xl font-bold text-purple-600 dark:text-purple-400">8500+</div>
+                  <div className="text-gray-600 dark:text-gray-400">单词</div>
+                </div>
+                <div className="w-px h-8 bg-gray-300 dark:bg-gray-600"></div>
+                <div className="text-center">
+                  <div className="text-lg md:text-2xl font-bold text-green-600 dark:text-green-400">2</div>
+                  <div className="text-gray-600 dark:text-gray-400">模式</div>
+                </div>
+              </div>
             </div>
-            <div className="w-px h-8 bg-gray-300 dark:bg-gray-600"></div>
-            <div className="text-center">
-              <div className="text-lg md:text-2xl font-bold text-green-600 dark:text-green-400">2</div>
-              <div className="text-gray-600 dark:text-gray-400">模式</div>
-            </div>
-          </div>
+          )}
         </div>
 
         {/* 功能说明 */}
