@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Trophy, Target, CheckCircle, XCircle, RotateCcw, Home } from 'lucide-react';
+import { ArrowLeft, Trophy, Target, CheckCircle, RotateCcw, Home } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -16,19 +16,16 @@ interface RoundSummary {
   duration: number;            // 学习时长（秒）
 }
 
-export default function SummaryPage() {
+function SummaryContent() {
   const { user } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [summary, setSummary] = useState<RoundSummary | null>(null);
-  const initializedRef = useRef(false); // 防止重复执行
-  const dataLoadedRef = useRef(false); // 数据是否已加载
+  const initializedRef = useRef(false);
+  const dataLoadedRef = useRef(false);
 
   useEffect(() => {
-    // 数据已加载，不再重复处理
     if (dataLoadedRef.current) return;
-    
-    // 等待 user 状态确定
     if (user === undefined) return;
     
     if (!user) {
@@ -36,19 +33,15 @@ export default function SummaryPage() {
       return;
     }
 
-    // 标记已初始化
     if (initializedRef.current) return;
     initializedRef.current = true;
 
-    // 优先从 sessionStorage 获取结算数据
     const saved = sessionStorage.getItem('practice_summary');
     if (saved) {
       try {
         const data = JSON.parse(saved);
-        console.log('从 sessionStorage 读取结算数据:', data);
         setSummary(data);
         dataLoadedRef.current = true;
-        // 数据已读取，延迟清理（确保页面已渲染）
         setTimeout(() => {
           sessionStorage.removeItem('practice_summary');
         }, 100);
@@ -58,7 +51,6 @@ export default function SummaryPage() {
       }
     }
 
-    // 如果 sessionStorage 没有数据，尝试从 URL 参数获取
     const totalPracticed = parseInt(searchParams.get('total') || '0');
     const masteredCount = parseInt(searchParams.get('mastered') || '0');
     const wrongCount = parseInt(searchParams.get('wrong') || '0');
@@ -66,19 +58,12 @@ export default function SummaryPage() {
     const duration = parseInt(searchParams.get('duration') || '0');
 
     if (totalPracticed > 0 || masteredCount > 0 || wrongCount > 0) {
-      setSummary({
-        totalPracticed,
-        masteredCount,
-        wrongCount,
-        correctCount,
-        duration,
-      });
+      setSummary({ totalPracticed, masteredCount, wrongCount, correctCount, duration });
       dataLoadedRef.current = true;
     } else {
-      // 没有任何数据，返回首页
       router.push('/');
     }
-  }, [user, router]); // 依赖 user 和 router
+  }, [user, router]);
 
   if (!user || !summary) {
     return (
@@ -103,8 +88,99 @@ export default function SummaryPage() {
     : 0;
 
   return (
+    <div className="flex-1 container mx-auto px-3 py-4 flex flex-col items-center justify-center">
+      <Card className="w-full max-w-sm mb-4 overflow-hidden">
+        <div className="h-24 bg-gradient-to-r from-purple-500 to-blue-500 flex items-center justify-center">
+          <div className="text-center text-white">
+            <Trophy className="w-10 h-10 mx-auto mb-1" />
+            <p className="text-sm opacity-90">学习完成</p>
+          </div>
+        </div>
+
+        <CardHeader className="p-4 pb-2">
+          <CardTitle className="text-center text-lg">本轮成绩</CardTitle>
+        </CardHeader>
+        
+        <CardContent className="p-4 pt-0 space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+              <Target className="w-5 h-5 text-blue-500 mx-auto mb-1" />
+              <div className="text-2xl font-bold text-blue-600">{summary.totalPracticed}</div>
+              <div className="text-xs text-gray-500">已背单词</div>
+            </div>
+            <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+              <CheckCircle className="w-5 h-5 text-green-500 mx-auto mb-1" />
+              <div className="text-2xl font-bold text-green-600">{summary.masteredCount}</div>
+              <div className="text-xs text-gray-500">本轮掌握</div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 text-center">
+            <div className="p-2 bg-gray-50 dark:bg-gray-800 rounded">
+              <div className="text-lg font-semibold text-gray-700 dark:text-gray-300">{summary.correctCount}</div>
+              <div className="text-xs text-gray-500">首次正确</div>
+            </div>
+            <div className="p-2 bg-gray-50 dark:bg-gray-800 rounded">
+              <div className="text-lg font-semibold text-red-600">{summary.wrongCount}</div>
+              <div className="text-xs text-gray-500">首次错误</div>
+            </div>
+            <div className="p-2 bg-gray-50 dark:bg-gray-800 rounded">
+              <div className="text-lg font-semibold text-purple-600">{accuracy}%</div>
+              <div className="text-xs text-gray-500">正确率</div>
+            </div>
+          </div>
+
+          <div className="text-center p-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+            <div className="text-sm text-gray-600 dark:text-gray-400">学习时长</div>
+            <div className="text-xl font-bold text-purple-600">{formatDuration(summary.duration)}</div>
+          </div>
+
+          <div className="text-center py-2">
+            {summary.masteredCount >= 10 ? (
+              <p className="text-green-600 font-medium">太棒了！继续保持！</p>
+            ) : summary.masteredCount >= 5 ? (
+              <p className="text-blue-600 font-medium">进步很大，加油！</p>
+            ) : summary.totalPracticed > 0 ? (
+              <p className="text-purple-600 font-medium">每一次练习都是进步！</p>
+            ) : (
+              <p className="text-gray-500">开始你的学习之旅吧！</p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="w-full max-w-sm space-y-2">
+        <Link href="/practice" className="block">
+          <Button className="w-full h-11" size="lg">
+            <RotateCcw className="w-4 h-4 mr-2" />
+            继续练习
+          </Button>
+        </Link>
+        <Link href="/" className="block">
+          <Button variant="outline" className="w-full h-11" size="lg">
+            <Home className="w-4 h-4 mr-2" />
+            返回首页
+          </Button>
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function LoadingFallback() {
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+        <p className="mt-2 text-gray-500">加载中...</p>
+      </div>
+    </div>
+  );
+}
+
+export default function SummaryPage() {
+  return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 flex flex-col">
-      {/* 头部 */}
       <div className="sticky top-0 z-20 bg-white/80 dark:bg-gray-800/80 backdrop-blur border-b">
         <div className="container mx-auto px-3 py-3 flex items-center gap-2">
           <Link href="/">
@@ -116,90 +192,9 @@ export default function SummaryPage() {
         </div>
       </div>
 
-      {/* 内容 */}
-      <div className="flex-1 container mx-auto px-3 py-4 flex flex-col items-center justify-center">
-        {/* 主卡片 */}
-        <Card className="w-full max-w-sm mb-4 overflow-hidden">
-          {/* 顶部装饰 */}
-          <div className="h-24 bg-gradient-to-r from-purple-500 to-blue-500 flex items-center justify-center">
-            <div className="text-center text-white">
-              <Trophy className="w-10 h-10 mx-auto mb-1" />
-              <p className="text-sm opacity-90">学习完成</p>
-            </div>
-          </div>
-
-          <CardHeader className="p-4 pb-2">
-            <CardTitle className="text-center text-lg">本轮成绩</CardTitle>
-          </CardHeader>
-          
-          <CardContent className="p-4 pt-0 space-y-4">
-            {/* 主要数据 */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                <Target className="w-5 h-5 text-blue-500 mx-auto mb-1" />
-                <div className="text-2xl font-bold text-blue-600">{summary.totalPracticed}</div>
-                <div className="text-xs text-gray-500">已背单词</div>
-              </div>
-              <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                <CheckCircle className="w-5 h-5 text-green-500 mx-auto mb-1" />
-                <div className="text-2xl font-bold text-green-600">{summary.masteredCount}</div>
-                <div className="text-xs text-gray-500">本轮掌握</div>
-              </div>
-            </div>
-
-            {/* 详细数据 */}
-            <div className="grid grid-cols-3 gap-2 text-center">
-              <div className="p-2 bg-gray-50 dark:bg-gray-800 rounded">
-                <div className="text-lg font-semibold text-gray-700 dark:text-gray-300">{summary.correctCount}</div>
-                <div className="text-xs text-gray-500">首次正确</div>
-              </div>
-              <div className="p-2 bg-gray-50 dark:bg-gray-800 rounded">
-                <div className="text-lg font-semibold text-red-600">{summary.wrongCount}</div>
-                <div className="text-xs text-gray-500">首次错误</div>
-              </div>
-              <div className="p-2 bg-gray-50 dark:bg-gray-800 rounded">
-                <div className="text-lg font-semibold text-purple-600">{accuracy}%</div>
-                <div className="text-xs text-gray-500">正确率</div>
-              </div>
-            </div>
-
-            {/* 学习时长 */}
-            <div className="text-center p-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-              <div className="text-sm text-gray-600 dark:text-gray-400">学习时长</div>
-              <div className="text-xl font-bold text-purple-600">{formatDuration(summary.duration)}</div>
-            </div>
-
-            {/* 鼓励语 */}
-            <div className="text-center py-2">
-              {summary.masteredCount >= 10 ? (
-                <p className="text-green-600 font-medium">太棒了！继续保持！</p>
-              ) : summary.masteredCount >= 5 ? (
-                <p className="text-blue-600 font-medium">进步很大，加油！</p>
-              ) : summary.totalPracticed > 0 ? (
-                <p className="text-purple-600 font-medium">每一次练习都是进步！</p>
-              ) : (
-                <p className="text-gray-500">开始你的学习之旅吧！</p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* 操作按钮 */}
-        <div className="w-full max-w-sm space-y-2">
-          <Link href="/practice" className="block">
-            <Button className="w-full h-11" size="lg">
-              <RotateCcw className="w-4 h-4 mr-2" />
-              继续练习
-            </Button>
-          </Link>
-          <Link href="/" className="block">
-            <Button variant="outline" className="w-full h-11" size="lg">
-              <Home className="w-4 h-4 mr-2" />
-              返回首页
-            </Button>
-          </Link>
-        </div>
-      </div>
+      <Suspense fallback={<LoadingFallback />}>
+        <SummaryContent />
+      </Suspense>
     </div>
   );
 }
