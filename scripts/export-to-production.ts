@@ -14,8 +14,8 @@ async function exportAndImport() {
   
   console.log('正在从开发环境获取所有单词...');
   
-  // 获取所有单词
-  const { data: allWords, error, count } = await client
+  // 获取所有单词（不使用 join）
+  const { data: allWords, error } = await client
     .from('words')
     .select(`
       word,
@@ -23,8 +23,7 @@ async function exportAndImport() {
       meaning,
       example_sentence,
       example_sentence_cn,
-      category_id,
-      vocabulary_categories(name)
+      category_id
     `)
     .order('id');
   
@@ -33,7 +32,18 @@ async function exportAndImport() {
     return;
   }
   
-  console.log(`开发环境共有 ${count} 个单词`);
+  const totalCount = allWords?.length || 0;
+  console.log(`开发环境共有 ${totalCount} 个单词`);
+  
+  // 获取分类列表用于反向映射
+  const { data: categories } = await client
+    .from('vocabulary_categories')
+    .select('id, name');
+  
+  const categoryIdToName: Record<number, string> = {};
+  categories?.forEach(c => {
+    categoryIdToName[c.id] = c.name;
+  });
   
   // 获取生产环境已有单词
   const prodResponse = await fetch(`${PRODUCTION_API}/api/vocabulary?limit=1`);
@@ -82,15 +92,14 @@ async function exportAndImport() {
   
   // 准备导入数据
   const records = newWords.map(w => {
-    const catData = w.vocabulary_categories as { name: string } | { name: string }[] | null;
-    const catName = Array.isArray(catData) ? catData[0]?.name : catData?.name;
+    const catName = categoryIdToName[w.category_id] || '托福词汇';
     return {
       word: w.word.toLowerCase(),
       phonetic: w.phonetic || '',
       meaning: w.meaning,
       example_sentence: w.example_sentence || `This is an example using the word "${w.word}".`,
       example_sentence_cn: w.example_sentence_cn || '',
-      category_id: categoryMap[catName || '托福词汇'] || 1,
+      category_id: categoryMap[catName] || 1,
     };
   });
   

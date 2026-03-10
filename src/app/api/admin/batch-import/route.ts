@@ -520,6 +520,10 @@ export async function POST(request: NextRequest) {
   }
   
   try {
+    // 解析请求体，检查是否有外部数据
+    const body = await request.json().catch(() => ({}));
+    const externalWords = body.words;
+    
     const { count: currentCount } = await client
       .from('words')
       .select('*', { count: 'exact', head: true });
@@ -538,6 +542,10 @@ export async function POST(request: NextRequest) {
     const existingSet = new Set(existingWords?.map(w => w.word.toLowerCase()) || []);
     console.log(`已存在 ${existingSet.size} 个单词`);
     
+    // 使用外部数据或内置数据
+    const wordsToImport = externalWords || ALL_WORDS;
+    console.log(`准备导入 ${wordsToImport.length} 个单词`);
+    
     // 准备插入数据
     const defaultCategoryId = categoryIds['托福词汇'] || 1;
     const records: Array<{
@@ -548,17 +556,17 @@ export async function POST(request: NextRequest) {
       category_id: number;
     }> = [];
     
-    for (const w of ALL_WORDS) {
+    for (const w of wordsToImport) {
       const word = w.word.toLowerCase().trim();
       if (!word || existingSet.has(word)) continue;
       
-      const categoryId = categoryIds[w.category] || defaultCategoryId;
+      const categoryId = w.category_id || categoryIds[w.category] || defaultCategoryId;
       
       records.push({
         word,
         phonetic: w.phonetic || '',
         meaning: w.meaning.trim(),
-        example_sentence: `This is an example using the word "${w.word}".`,
+        example_sentence: w.example_sentence || `This is an example using the word "${w.word}".`,
         category_id: categoryId,
       });
       existingSet.add(word);
