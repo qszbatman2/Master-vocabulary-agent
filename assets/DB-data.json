@@ -1,0 +1,906 @@
+{
+  "exportTime": "2026-03-10T04:03:33.110Z",
+  "total": 13220,
+  "categories": [
+    {
+      "id": 1,
+      "name": "雅思词汇",
+      "description": "IELTS雅思考试常用词汇",
+      "created_at": "2026-03-09T12:40:49.023143+08:00"
+    },
+    {
+      "id": 2,
+      "name": "托福词汇",
+      "description": "TOEFL托福考试常用词汇",
+      "created_at": "2026-03-09T12:40:49.023143+08:00"
+    },
+    {
+      "id": 3,
+      "name": "GRE词汇",
+      "description": "GRE研究生入学考试词汇",
+      "created_at": "2026-03-09T12:40:49.023143+08:00"
+    },
+    {
+      "id": 4,
+      "name": "日常词汇",
+      "description": "日常生活常用词汇",
+      "created_at": "2026-03-09T12:40:49.023143+08:00"
+    },
+    {
+      "id": 9,
+      "name": "商务词汇",
+      "description": "商务英语常用词汇",
+      "created_at": "2026-03-09T16:48:55.883117+08:00"
+    },
+    {
+      "id": 10,
+      "name": "科技词汇",
+      "description": "科技领域常用词汇",
+      "created_at": "2026-03-09T16:48:55.908364+08:00"
+    },
+    {
+      "id": 11,
+      "name": "医学词汇",
+      "description": "医学领域常用词汇",
+      "created_at": "2026-03-09T16:48:55.937591+08:00"
+    },
+    {
+      "id": 12,
+      "name": "法律词汇",
+      "description": "法律领域常用词汇",
+      "created_at": "2026-03-09T16:48:55.959083+08:00"
+    },
+    {
+      "id": 13,
+      "name": "互联网",
+      "description": "自动合并新增分类",
+      "created_at": "2026-03-10T12:03:33.105531+08:00"
+    },
+    {
+      "id": 14,
+      "name": "六级词汇",
+      "description": "自动合并新增分类",
+      "created_at": "2026-03-10T12:03:33.105531+08:00"
+    },
+    {
+      "id": 15,
+      "name": "四级词汇",
+      "description": "自动合并新增分类",
+      "created_at": "2026-03-10T12:03:33.105531+08:00"
+    },
+    {
+      "id": 16,
+      "name": "游戏",
+      "description": "自动合并新增分类",
+      "created_at": "2026-03-10T12:03:33.105531+08:00"
+    },
+    {
+      "id": 17,
+      "name": "通用词汇",
+      "description": "自动合并新增分类",
+      "created_at": "2026-03-10T12:03:33.105531+08:00"
+    },
+    {
+      "id": 18,
+      "name": "金融",
+      "description": "自动合并新增分类",
+      "created_at": "2026-03-10T12:03:33.105531+08:00"
+    },
+    {
+      "id": 19,
+      "name": "项目管理",
+      "description": "自动合并新增分类",
+      "created_at": "2026-03-10T12:03:33.105531+08:00"
+    },
+    {
+      "id": 20,
+      "name": "高考词汇",
+      "description": "自动合并新增分类",
+      "created_at": "2026-03-10T12:03:33.105531+08:00"
+    }
+  ],
+  "stats": {
+    "高考词汇": 552,
+    "项目管理": 75,
+    "互联网": 164,
+    "雅思词汇": 1641,
+    "托福词汇": 4361,
+    "通用词汇": 2511,
+    "GRE词汇": 3070,
+    "六级词汇": 812,
+    "商务词汇": 72,
+    "游戏": 54,
+    "四级词汇": 117,
+    "金融": 64,
+    "法律词汇": 64,
+    "科技词汇": 127,
+    "医学词汇": 140,
+    "日常词汇": 46
+  },
+  "words": [
+    {
+      "word": "a",
+      "phonetic": "/ei/",
+      "meaning": "第一个字母 A; 一个; 第一的；art. [计] 累加器, 加法器, 地址, 振幅, 模拟, 区域, 面积, 汇编, 组件, 异步",
+      "example_sentence": "There's a problem there that you don't see.",
+      "example_sentence_cn": "有个问题你没有想到。",
+      "category": "高考词汇"
+    },
+    {
+      "word": "a-r",
+      "phonetic": "/a:/",
+      "meaning": "abbr. 应收款（Account Receivable）；验收条件（Acceptance Requirement）；陆军条例（Army Regulation）；n. (Ar)人名；(土)阿尔",
+      "example_sentence": "",
+      "example_sentence_cn": null,
+      "category": "项目管理"
+    },
+    {
+      "word": "aa",
+      "phonetic": "/ɔ:/",
+      "meaning": "[计] 绝对地址, 农业自动化, 自动应答；[医] 各, 各个",
+      "example_sentence": "Do we have any AA batteries? My mouse died.",
+      "example_sentence_cn": "我们有AA电池吗？我的鼠标没电了。",
+      "category": "互联网"
+    },
+    {
+      "word": "abandon",
+      "phonetic": "/əˈbændən/",
+      "meaning": "vt. 放弃, 抛弃, 遗弃, 使屈从, 沉溺, 放纵；n. 放任, 无拘束, 狂热",
+      "example_sentence": "We have to abandon the plan.",
+      "example_sentence_cn": "我们必须放棄这個计划。",
+      "category": "雅思词汇"
+    },
+    {
+      "word": "abandoned",
+      "phonetic": "/ә'bændәnd/",
+      "meaning": "a. 被抛弃的, 无约束的, 恣意放荡的",
+      "example_sentence": "Kenji abandoned his hope of becoming a doctor.",
+      "example_sentence_cn": "健二放弃了成为医生的希望。",
+      "category": "托福词汇"
+    },
+    {
+      "word": "abandonment",
+      "phonetic": "/ә'bændәmәnt/",
+      "meaning": "n. 放弃, 抛弃, 放纵；[经] 委付, 废弃, 放弃(采矿权)",
+      "example_sentence": "With North Korea's announcement on the 26th of its nuclear development plan based upon the agreement stemming from the Six Party Talks, and the United States' commencement of procedures to remove North Korea from its designation on the list of State Sponsors of Terrorism, the families of abductees have expressed growing unease that it may constitute an abandonment of the abductee issue.",
+      "example_sentence_cn": "随着北朝鲜在26号宣布了按照六方谈话上达成的共识所制定的核计划发展，美国将其从美国的恐怖主义捐助国的名单上去除。被绑架者的家属表达了不安，因为这有可能造成对绑架问题的放弃。",
+      "category": "托福词汇"
+    },
+    {
+      "word": "abbey",
+      "phonetic": "/'æbi/",
+      "meaning": "n. 大修道院",
+      "example_sentence": "We walked through the ruins of the abbey.",
+      "example_sentence_cn": "我们穿过了修道院的废墟。",
+      "category": "通用词汇"
+    },
+    {
+      "word": "abbot",
+      "phonetic": "/'æbәt/",
+      "meaning": "n. 男修道院院长, 大寺院男住持",
+      "example_sentence": "The abbot gave rice to the vixen.",
+      "example_sentence_cn": "修道院院长给了狐狸一些米。",
+      "category": "通用词汇"
+    },
+    {
+      "word": "abdominal",
+      "phonetic": "/æb'dɒminәl/",
+      "meaning": "a. 腹部的, 有腹鳍的；[医] 腹[部]的",
+      "example_sentence": "That exercise is good for the abdominal muscles.",
+      "example_sentence_cn": "那个运动对腹部肌肉有好处。",
+      "category": "通用词汇"
+    },
+    {
+      "word": "aberdeen",
+      "phonetic": "/,æbә'di:n/",
+      "meaning": "n. 亚伯丁（英国苏格兰一郡 ）；苏格兰粗毛猎狐狗（等于Aberdeenterrier）",
+      "example_sentence": "On the 9th of April of 2023, my family went out for dim sum lunch in the elegant Fisherman's Terrace Seafood Restaurant in the very fancy Aberdeen Centre, here on Lulu Island. I do not often have dim sum, and this time, I really had a nice time. My family knew that I have been dreaming of a spacious atrium-like venue, and this time, there it was. After the beautiful meal, we headed to the Japanese-lifestyle boutique called Oomomo. I wanted to get a bottle of authentic Japanese \"mugicha,\" or barley tea, but I could not think too much of more food, just then.",
+      "example_sentence_cn": "喺2023年4月9號，我屋企人出去食咗個位於露露島非常花式嘅阿伯丁中心嘅優雅漁人露台海鮮餐廳食點心午餐。我唔係成日食點心，而今次，我真係過得好开心。我屋企人都知道我一直都梦想有個好似中庭噉嘅宽敞場地，而今次，就係嗰度。食完靚餐之后，我哋就去咗一间叫做 Oomomo 嘅日式生活精品店。我想攞樽正宗嘅日本「 mugicha 」，或者大麥茶，但係我諗唔到太多嘢食，就喺嗰時。",
+      "category": "通用词汇"
+    },
+    {
+      "word": "aberration",
+      "phonetic": "/ˌæbəˈreɪʃn/",
+      "meaning": "n. 偏差；反常",
+      "example_sentence": "Owing to a strange mental aberration, Tom forgot his own name.",
+      "example_sentence_cn": "由于一种奇怪的精神异常，汤姆忘记了自己的名字。",
+      "category": "GRE词汇"
+    },
+    {
+      "word": "abhor",
+      "phonetic": "/əbˈhɔːr/",
+      "meaning": "v. 憎恶；痛恨",
+      "example_sentence": "I abhor politics.",
+      "example_sentence_cn": "我厌恶政治。",
+      "category": "GRE词汇"
+    },
+    {
+      "word": "abide",
+      "phonetic": "/ә'baid/",
+      "meaning": "vi. 停留, 遵守, 居留, 继续下去；vt. 忍受, 经受, 屈从于",
+      "example_sentence": "You have to abide by the laws.",
+      "example_sentence_cn": "你必须遵守法律。",
+      "category": "托福词汇"
+    },
+    {
+      "word": "ability",
+      "phonetic": "/ә'biliti/",
+      "meaning": "n. 能力, 才干；[经] 能力, 才能",
+      "example_sentence": "He made no progress in his speaking ability.",
+      "example_sentence_cn": "他说話的能力沒有任何的进步。",
+      "category": "托福词汇"
+    },
+    {
+      "word": "able",
+      "phonetic": "/'eibl/",
+      "meaning": "a. 能干的, 能够的",
+      "example_sentence": "Enjoy your life while you are able to.",
+      "example_sentence_cn": "能够的时候就好好享受人生吧。",
+      "category": "高考词汇"
+    },
+    {
+      "word": "abnormal",
+      "phonetic": "/æb'nɒ:mәl/",
+      "meaning": "a. 反常的, 不规则的, 变态的, 畸形的；n. 畸形的人",
+      "example_sentence": "Environmental pollution is causing abnormal weather conditions.",
+      "example_sentence_cn": "環境污染正造成異常的天氣情況。",
+      "category": "雅思词汇"
+    },
+    {
+      "word": "abnormality",
+      "phonetic": "/.æbnɒ:'mæliti/",
+      "meaning": "n. 反常, 畸形, 变态；[化] 反常; 非正态性",
+      "example_sentence": "We have detected an abnormality on your x-ray.",
+      "example_sentence_cn": "我们在你的X光片上发现了异常。",
+      "category": "通用词汇"
+    },
+    {
+      "word": "aboard",
+      "phonetic": "/əˈbɔːd/",
+      "meaning": "adv. 在船上, 在火车上, 在飞机上；prep. 在...之上",
+      "example_sentence": "The passengers all went aboard the ship.",
+      "example_sentence_cn": "乘客全都登上了船。",
+      "category": "雅思词汇"
+    },
+    {
+      "word": "abolish",
+      "phonetic": "/əˈbɒlɪʃ/",
+      "meaning": "vt. 废止, 革除, 消灭；[经] 废除, 取消, 裁撤",
+      "example_sentence": "We should abolish the death penalty.",
+      "example_sentence_cn": "我们应该废除死刑。",
+      "category": "雅思词汇"
+    },
+    {
+      "word": "abolition",
+      "phonetic": "/.æbәu'liʃәn/",
+      "meaning": "n. 废除, 废奴运动；[医] 禁止, 消失",
+      "example_sentence": "The abolition of slavery in Europe eventually reached America.",
+      "example_sentence_cn": "欧洲废除奴隶制的运动最终影响到了美洲。",
+      "category": "托福词汇"
+    },
+    {
+      "word": "abortion",
+      "phonetic": "/ә'bɒ:ʃәn/",
+      "meaning": "n. 流产, 堕胎, 失败, 夭折, 中止；[医] 流产, 小产; 顿挫",
+      "example_sentence": "Are you for or against abortion?",
+      "example_sentence_cn": "你支持还是反对堕胎？",
+      "category": "雅思词汇"
+    },
+    {
+      "word": "abound",
+      "phonetic": "/əˈbaʊnd/",
+      "meaning": "vi. 大量存在, 富于, 充满",
+      "example_sentence": "Fish abound in this lake.",
+      "example_sentence_cn": "这個湖里有很多鱼。",
+      "category": "托福词汇"
+    },
+    {
+      "word": "about",
+      "phonetic": "/ә'baut/",
+      "meaning": "prep. 在...周围, 大约, 有关, 关于；adv. 大约, 四处, 在附近, 周围",
+      "example_sentence": "This is the town I told you about.",
+      "example_sentence_cn": "这就是我跟你说的那个镇。",
+      "category": "高考词汇"
+    },
+    {
+      "word": "above",
+      "phonetic": "/ә'bʌv/",
+      "meaning": "prep. 在上方, 超出；adv. 在上面；a. 上述的, 上面的",
+      "example_sentence": "Children of six and above should attend school.",
+      "example_sentence_cn": "六岁及以上的小孩应该上学。",
+      "category": "高考词汇"
+    },
+    {
+      "word": "above-the-line",
+      "phonetic": "/ə'bʌvðə,lain/",
+      "meaning": "n. 经常项目；线上项目，线上预算",
+      "example_sentence": "",
+      "example_sentence_cn": null,
+      "category": "项目管理"
+    },
+    {
+      "word": "abrasive",
+      "phonetic": "/əˈbreɪsɪv/",
+      "meaning": "adj. 粗糙的；有研磨作用的",
+      "example_sentence": "This is an example using the word \"abrasive\".",
+      "example_sentence_cn": "这是一个使用“abrasive”一词的示例。",
+      "category": "GRE词汇"
+    },
+    {
+      "word": "abreast",
+      "phonetic": "/əˈbrest/",
+      "meaning": "adv. 并肩；并排",
+      "example_sentence": "These two are standing abreast.",
+      "example_sentence_cn": "两人并肩站在一起。",
+      "category": "托福词汇"
+    },
+    {
+      "word": "abridge",
+      "phonetic": "/əˈbrɪdʒ/",
+      "meaning": "v. 缩短；删节",
+      "example_sentence": "They decided to abridge after thinking it over.",
+      "example_sentence_cn": "想清楚之后，他们决定去做这件事。（缩短/abridge）",
+      "category": "GRE词汇"
+    },
+    {
+      "word": "abroad",
+      "phonetic": "/əˈbrɔːd/",
+      "meaning": "adv. 往国外, 到室外, 到处；a. 往国外的, 在室外的, 广泛四散的",
+      "example_sentence": "There are lots of benefits from travelling abroad.",
+      "example_sentence_cn": "去国外旅行有很多好处。",
+      "category": "雅思词汇"
+    },
+    {
+      "word": "abrupt",
+      "phonetic": "/əˈbrʌpt/",
+      "meaning": "a. 突然的, 唐突的, 陡峭的, 不连贯的",
+      "example_sentence": "Bill's abrupt manner causes him to be misunderstood.",
+      "example_sentence_cn": "Bill's abrupt manner causes him to be misunderstood.",
+      "category": "雅思词汇"
+    },
+    {
+      "word": "abruptly",
+      "phonetic": "/ә'brʌptli/",
+      "meaning": "adv. 突然地, 唐突地",
+      "example_sentence": "His untidy room announced that he had abruptly departed.",
+      "example_sentence_cn": "从他凌乱的房间可以看出他离开的时候很着急。",
+      "category": "通用词汇"
+    },
+    {
+      "word": "absence",
+      "phonetic": "/'æbsәns/",
+      "meaning": "n. 缺席, 缺乏, 没有；[医] 失神",
+      "example_sentence": "Everything chose to go wrong during his absence.",
+      "example_sentence_cn": "他不在的时候每一件事都出错了。",
+      "category": "托福词汇"
+    },
+    {
+      "word": "absent",
+      "phonetic": "/ˈæbsənt/",
+      "meaning": "a. 缺席的, 不在的, 缺乏的, 漫不经心的；vt. 使缺席",
+      "example_sentence": "Why did you absent yourself from class yesterday?",
+      "example_sentence_cn": "侬昨日为啥离开教室？",
+      "category": "雅思词汇"
+    },
+    {
+      "word": "absolute",
+      "phonetic": "/'æbsәlu:t/",
+      "meaning": "a. 绝对的, 专制的, 完全的, 独立的；n. 绝对事物",
+      "example_sentence": "The lord held absolute power over his subjects.",
+      "example_sentence_cn": "领主对他的臣民有绝对权力。",
+      "category": "托福词汇"
+    },
+    {
+      "word": "absolutely",
+      "phonetic": "/'æbsәlu:tli/",
+      "meaning": "adv. 完全地, 绝对地, 确确实实地",
+      "example_sentence": "I don't use taxis unless it's absolutely necessary.",
+      "example_sentence_cn": "如非必要我都唔會搭的士。",
+      "category": "托福词汇"
+    },
+    {
+      "word": "absorb",
+      "phonetic": "/әb'sɒ:b/",
+      "meaning": "vt. 吸收, 使全神贯注, 同化, 买进, 理解, 承受, 忍受, 承担；[医] 吸收",
+      "example_sentence": "Trees give off oxygen and absorb carbon dioxide.",
+      "example_sentence_cn": "树木排出氧气，吸收二氧化碳。",
+      "category": "托福词汇"
+    },
+    {
+      "word": "absorption",
+      "phonetic": "/әb'sɒ:pʃәn/",
+      "meaning": "n. 吸收, 专心, 全神贯注；[化] 吸收; 吸收作用",
+      "example_sentence": "Let's explain the difference between absorption and adsorption.",
+      "example_sentence_cn": "Let's explain the difference between absorption and adsorption.",
+      "category": "托福词汇"
+    },
+    {
+      "word": "abstain",
+      "phonetic": "/əbˈsteɪn/",
+      "meaning": "v. 戒除；弃权",
+      "example_sentence": "My father tries to abstain from drinking.",
+      "example_sentence_cn": "我父親正在嘗試戒酒。",
+      "category": "GRE词汇"
+    },
+    {
+      "word": "abstract",
+      "phonetic": "/ˈæbstrækt/",
+      "meaning": "a. 抽象的, 深奥的；n. 摘要, 抽象概念；vt. 摘要, 提炼, 使抽象化；[计] 摘录; 摘要; 抽象",
+      "example_sentence": "Some abstract art is difficult to understand.",
+      "example_sentence_cn": "一些抽象藝術是很難理解的。",
+      "category": "雅思词汇"
+    },
+    {
+      "word": "abstraction",
+      "phonetic": "/æb'strækʃәn/",
+      "meaning": "n. 抽象化, 心不在焉, 空想, 提炼, 抽象派作品；[化] 提取; 抽取; 夺取; 夺取反应; 除去",
+      "example_sentence": "This whole matter is a mere abstraction for you.",
+      "example_sentence_cn": "This whole matter is a mere abstraction for you.",
+      "category": "托福词汇"
+    },
+    {
+      "word": "absurd",
+      "phonetic": "/əbˈsɜːd/",
+      "meaning": "a. 荒谬的, 不合理的, 可笑的；n. 荒诞",
+      "example_sentence": "It is absurd of you to do that.",
+      "example_sentence_cn": "你那么做真是太过荒谬了.",
+      "category": "托福词汇"
+    },
+    {
+      "word": "abu",
+      "phonetic": "",
+      "meaning": "abbr. 亚洲广播联盟（Asian Broadcast Union）",
+      "example_sentence": "There were clashes at Shireen Abu Akleh's funeral.",
+      "example_sentence_cn": "There were clashes at Shireen Abu Akleh's funeral.",
+      "category": "通用词汇"
+    },
+    {
+      "word": "abundance",
+      "phonetic": "/əˈbʌndəns/",
+      "meaning": "n. 丰富, 充足, 大量；[经] 丰富, 充裕",
+      "example_sentence": "She lives in abundance.",
+      "example_sentence_cn": "她过着富足的日子。",
+      "category": "托福词汇"
+    },
+    {
+      "word": "abundant",
+      "phonetic": "/əˈbʌndənt/",
+      "meaning": "a. 丰富的, 充分的, 大量的",
+      "example_sentence": "The United States is abundant in natural resources.",
+      "example_sentence_cn": "美国的自然资源很丰富。",
+      "category": "雅思词汇"
+    },
+    {
+      "word": "abuse",
+      "phonetic": "/ә'bju:s.ә'bju:z/",
+      "meaning": "n. 滥用, 虐待, 恶习, 辱骂；vt. 滥用, 辱骂, 虐待",
+      "example_sentence": "We can only abuse of things that are good.",
+      "example_sentence_cn": "我们只能滥用善良的。",
+      "category": "托福词汇"
+    },
+    {
+      "word": "ac",
+      "phonetic": "",
+      "meaning": "公元前；[计] 存取周期, 累加器, 声耦合器, 交流, 应用控制, 自动检查, 自动计算机",
+      "example_sentence": "Please turn up the AC a little bit.",
+      "example_sentence_cn": "请你把冷气调高点。",
+      "category": "互联网"
+    },
+    {
+      "word": "academic",
+      "phonetic": "/ˌækəˈdemɪk/",
+      "meaning": "a. 学院的, 学术的, 不切实际的；n. 大学生, 大学教师, 学者, 学会会员",
+      "example_sentence": "Academic fraud is more common than you might think.",
+      "example_sentence_cn": "学术造假比你想象的普遍。",
+      "category": "雅思词汇"
+    },
+    {
+      "word": "academy",
+      "phonetic": "/ә'kædәmi/",
+      "meaning": "n. 学院, 院校, 学会",
+      "example_sentence": "The results of the Chinese Academy of Sciences' survey are like this.",
+      "example_sentence_cn": "中国科学院的调查结果是这样的。",
+      "category": "托福词汇"
+    },
+    {
+      "word": "accelerate",
+      "phonetic": "/әk'selәreit/",
+      "meaning": "v. 加速, 促进",
+      "example_sentence": "The car continued to accelerate.",
+      "example_sentence_cn": "车子继续加速。",
+      "category": "托福词汇"
+    },
+    {
+      "word": "acceleration",
+      "phonetic": "/әk.selә'reiʃәn/",
+      "meaning": "n. 加速, 促进, 加速度；[化] 加速度",
+      "example_sentence": "If not, how do you explain the acceleration?",
+      "example_sentence_cn": "If not, how do you explain the acceleration?",
+      "category": "托福词汇"
+    },
+    {
+      "word": "accelerator",
+      "phonetic": "/әk'selәreitә/",
+      "meaning": "n. 加速剂, 加速器, 油门；[化] 加速器; 早强剂; 促进剂; 硫化促进剂",
+      "example_sentence": "The Large Hadron Collider is a particle accelerator.",
+      "example_sentence_cn": "The Large Hadron Collider is a particle accelerator.",
+      "category": "通用词汇"
+    },
+    {
+      "word": "accent",
+      "phonetic": "/ˈæksent/",
+      "meaning": "n. 重音, 口音, 特点, 注重点；vt. 重读, 加重音号于, 强调",
+      "example_sentence": "In the discussion the accent was on unemployment.",
+      "example_sentence_cn": "討論的重點是失業问題。",
+      "category": "雅思词汇"
+    },
+    {
+      "word": "accentuate",
+      "phonetic": "/æk'sentjueit/",
+      "meaning": "vt. 以重音念, 强调, 重读",
+      "example_sentence": "A light touch of makeup can accentuate beauty.",
+      "example_sentence_cn": "A light touch of makeup can accentuate beauty.",
+      "category": "托福词汇"
+    },
+    {
+      "word": "accept",
+      "phonetic": "/əkˈsept/",
+      "meaning": "vt. 接受, 承认, 同意, 相信, 赞成, 承担, 承兑, 采纳, 接纳, 容忍；vi. 同意",
+      "example_sentence": "I don't know whether to accept or refuse.",
+      "example_sentence_cn": "我不知道应该接受還是拒絕。",
+      "category": "雅思词汇"
+    },
+    {
+      "word": "acceptable",
+      "phonetic": "/əkˈseptəbl/",
+      "meaning": "a. 可接受的, 合意的, 可忍受的",
+      "example_sentence": "Acceptable and unacceptable are clearly in opposition to each other.",
+      "example_sentence_cn": "可與不可，其相非明。",
+      "category": "托福词汇"
+    },
+    {
+      "word": "acceptance",
+      "phonetic": "/әk'septәns/",
+      "meaning": "n. 接受, 接纳, 承认, 同意, 赞同, 容忍, 相信；[经] 承兑, 认付, (工程)验收",
+      "example_sentence": "The Lockheed scandal is a worldwide corruption scandal involving the major American plane manufacturer Lockheed. It came to light in February 1976 and revolved mainly around the acceptance of passenger plane contracts.",
+      "example_sentence_cn": "洛克希德丑闻是席卷美国主要飞机制造行业的世界性贪污丑闻。1976年2月被公布于众的洛克希德丑闻主要涉及到客机交易中的贪污受贿行为。",
+      "category": "六级词汇"
+    },
+    {
+      "word": "accepted",
+      "phonetic": "/әk'septid/",
+      "meaning": "a. 公认的, 一般承认的；[经] 已承兑, 已认付",
+      "example_sentence": "Of course I accepted his offer of support.",
+      "example_sentence_cn": "当然我接受了他的支援请求。",
+      "category": "通用词汇"
+    },
+    {
+      "word": "accepter",
+      "phonetic": "/әk'septә(r)/",
+      "meaning": "n. 领受人, 承兑人, 受体, 受主；[经] 承兑人, 验收人",
+      "example_sentence": "",
+      "example_sentence_cn": null,
+      "category": "项目管理"
+    },
+    {
+      "word": "access",
+      "phonetic": "/'ækses/",
+      "meaning": "n. 通路, 入口, 接近, 进入, 使用权, 发作；vt. 访问, 存取, 接近, 使用；[计] 访问, 存取",
+      "example_sentence": "He has access to the American Embassy.",
+      "example_sentence_cn": "他有权出入美国大使馆。",
+      "category": "托福词汇"
+    },
+    {
+      "word": "accessible",
+      "phonetic": "/əkˈsesəbl/",
+      "meaning": "a. 易接近的, 可进入的, 可使用的, 易受影响的, 可理解的",
+      "example_sentence": "New York is accessible by train from Washington.",
+      "example_sentence_cn": "从华盛顿乘火车可以到纽约。",
+      "category": "托福词汇"
+    },
+    {
+      "word": "accession",
+      "phonetic": "/æk'seʃәn/",
+      "meaning": "n. 到达, 即位, 增加, 同意, 发作, 正式接受；vt. 登记入册",
+      "example_sentence": "Tuesday marked the final day of the Diamond Jubilee celebrations, marking the 60th anniversary of Queen Elizabeth II's accession to the throne.",
+      "example_sentence_cn": "星期二是女王登基鑽石慶典的最后一天，標志著伊莉莎白二世女王登基 60 週年。",
+      "category": "通用词汇"
+    },
+    {
+      "word": "accessory",
+      "phonetic": "/əkˈsesəri/",
+      "meaning": "n. 附件, 零件, 附加物, 从犯, 同谋；a. 附属的, 补充的, 同谋的, 帮凶的, 非主要的, 副的；[计] 附件",
+      "example_sentence": "Sami was charged as an accessory to murder.",
+      "example_sentence_cn": "Sami was charged as an accessory to murder.",
+      "category": "托福词汇"
+    },
+    {
+      "word": "accident",
+      "phonetic": "/ˈæksɪdənt/",
+      "meaning": "n. 意外事件, 机遇, 事故, 次要方面；[化] 意外事故; 事故",
+      "example_sentence": "Tom was badly injured in a traffic accident.",
+      "example_sentence_cn": "湯姆在交通意外中受了重傷。",
+      "category": "雅思词汇"
+    },
+    {
+      "word": "accidental",
+      "phonetic": "/.æksi'dentl/",
+      "meaning": "a. 意外的, 偶然的, 非主要的, 附属的；n. 临时记号, 次要方面",
+      "example_sentence": "That discovery was quite accidental.",
+      "example_sentence_cn": "那个发现纯属偶然。",
+      "category": "托福词汇"
+    },
+    {
+      "word": "accidentally",
+      "phonetic": "/.æksi'dentli/",
+      "meaning": "adv. 偶然地, 意外地",
+      "example_sentence": "Tom accidentally ate some rat poison.",
+      "example_sentence_cn": "湯姆无意吃了老鼠藥。",
+      "category": "托福词汇"
+    },
+    {
+      "word": "acclaim",
+      "phonetic": "/əˈkleɪm/",
+      "meaning": "v. 称赞 n. 赞誉",
+      "example_sentence": "We often acclaim when time is limited.",
+      "example_sentence_cn": "时间紧的时候，我们经常需要快速行动。（称赞 n. 赞誉/acclaim）",
+      "category": "GRE词汇"
+    },
+    {
+      "word": "accommodate",
+      "phonetic": "/əˈkɒmədeɪt/",
+      "meaning": "vt. 使适应, 调和, 通融, 容纳, 向...提供；vi. 适应",
+      "example_sentence": "This classroom can accommodate only thirty students.",
+      "example_sentence_cn": "这间班房只能容納三十個學生。",
+      "category": "雅思词汇"
+    },
+    {
+      "word": "accommodation",
+      "phonetic": "/ә.kɒmә'deiʃәn/",
+      "meaning": "n. 膳宿, 预订铺位, 适应性调节, 调和, 贷款；[医] 调节(眼); 适应",
+      "example_sentence": "Do you offer accommodation?",
+      "example_sentence_cn": "您提供住宿吗？",
+      "category": "雅思词汇"
+    },
+    {
+      "word": "accompaniment",
+      "phonetic": "/ә'kʌmpәnimәnt/",
+      "meaning": "n. 伴随物, 附加物, 伴奏",
+      "example_sentence": "Incidentally, the kind of accompaniment pictured below is the so-called boom cha cha accompaniment. Waltz music is very popular with this kind of accompaniment.",
+      "example_sentence_cn": "順带一提，下图嗰種伴奏就係所謂嘅 boom cha cha 伴奏。華爾茲乐曲好興用呢種伴奏。",
+      "category": "托福词汇"
+    },
+    {
+      "word": "accompany",
+      "phonetic": "/ә'kʌmpәni/",
+      "meaning": "vt. 陪伴, 伴随, 补充, 为...伴奏；vi. 伴奏, 伴唱",
+      "example_sentence": "The girl begged her mother to accompany her.",
+      "example_sentence_cn": "個細路女囈佢阿媽陪佢。",
+      "category": "托福词汇"
+    },
+    {
+      "word": "accompanying",
+      "phonetic": "",
+      "meaning": "a. 随同的, 附见的",
+      "example_sentence": "After 10 o'clock in the morning, I headed walking to Starbucks café, after I discovered that Tim Hortons café was jam-packed. It's Saturday today, so it's unusual. At Starbucks, I enjoyed a Grande Summer-Berry Lemonade Refresher. It was festively blue and red in colour with raspberry, blueberry, and blackberry flavours embedded with raspberry-flavoured pearls. There were this morning 5 baristas active: 3 Filipinos, 1 Vietnamese, and 1 Mandarin Chinese. I like it at Starbucks, too, due to the dimmer cavern-like ambiance. At the Clam Temple, I like the wide, vast emptiness in the worship salon. At Tim Hortons, I like the sun rays beaming from the bay windows. After Starbucks, I walked to the nearby Kin's Farm Market to buy a bag of 10 Mexican guavas, which were already yellow. I want to take pictures of them sliced and accompanying my tofu fish cuttlefish corn potato tangerine pork rolls from 852 Kitchen food boutique. I might wait until it's sunny on the verandah to photograph there. It's a cloudy day, this 14th of June of 2025.",
+      "example_sentence_cn": "朝早十點幾之后，我就行去星巴克咖啡館，因为我发现 Tim Hortons 咖啡館好擠滿人。 今日係星期六，好唔尋常。 係星巴克，我享用咗一杯 Grande 夏日浆果檸檬水茶點。 佢嘅颜色係節日嘅藍色同紅色，有覆盆子、藍莓同黑莓嘅味道，入面仲有覆盆子味嘅珍珠。今朝有5個咖啡師活躍：3個菲律賓人、1個越南人同1個中國人。我都鍾意喺星巴克，因为個氣氛好暗，好似洞穴噉，喺蛤蜊廟，我�鍾意喺 Tim Hortons 嘅崇拜沙龍入面嘅闊闊空曠，喺星巴克之后，我行去附近嘅 Kin's Farm Market 買咗一袋我想影嘅墨西哥番石榴粟米薯仔橘子豬肉卷嚟自852廚房食品精品店。 我可能會等到露台上晒太陽先喺嗰度影相。 2025 年 6 月 14 號，今日係多雲嘅日子。",
+      "category": "托福词汇"
+    },
+    {
+      "word": "accomplice",
+      "phonetic": "/əˈkʌmplɪs/",
+      "meaning": "n. 同谋",
+      "example_sentence": "He was an accomplice.",
+      "example_sentence_cn": "他是共犯。",
+      "category": "托福词汇"
+    },
+    {
+      "word": "accomplish",
+      "phonetic": "/əˈkʌmplɪʃ/",
+      "meaning": "vt. 完成, 达到, 实现, 使完美",
+      "example_sentence": "He is sure to accomplish his purpose.",
+      "example_sentence_cn": "他很肯定可以达到目标。",
+      "category": "雅思词汇"
+    },
+    {
+      "word": "accord",
+      "phonetic": "/əˈkɔːd/",
+      "meaning": "n. 一致, 调和, 协定；vt. 给与, 使一致；vi. 相符合",
+      "example_sentence": "This measure is in accord with our policy.",
+      "example_sentence_cn": "这個議案合符我们的政策内容。",
+      "category": "雅思词汇"
+    },
+    {
+      "word": "accordance",
+      "phonetic": "/əˈkɔːdns/",
+      "meaning": "n. 一致；依照",
+      "example_sentence": "You must act in accordance with the rules.",
+      "example_sentence_cn": "You must act in accordance with the rules.",
+      "category": "托福词汇"
+    },
+    {
+      "word": "accordingly",
+      "phonetic": "/ә'kɒ:diŋli/",
+      "meaning": "adv. 相应地, 因此, 于是",
+      "example_sentence": "Accordingly, besides noun declension patterns, there also existed a greater variety of verb conjugation patterns than in Modern English.",
+      "example_sentence_cn": "因此，除了名词的變格之外，也存在比現代英語多的動词的各種變型。",
+      "category": "六级词汇"
+    },
+    {
+      "word": "account",
+      "phonetic": "/ә'kaunt/",
+      "meaning": "n. 报告, 解释, 估价, 理由, 利润, 算账, 帐目；vi. 报帐, 解释, 导致, 报偿, 占, 杀死；vt. 认为；[计] 帐户, 帐号",
+      "example_sentence": "How do you account for your being late?",
+      "example_sentence_cn": "你怎么解释你的迟到？",
+      "category": "托福词汇"
+    },
+    {
+      "word": "accountability",
+      "phonetic": "/ә.kauntә'biliti/",
+      "meaning": "n. 负有责任, 可说明性；[化] 衡算计量",
+      "example_sentence": "I take accountability for my mistake.",
+      "example_sentence_cn": "我来承担失败的责任。",
+      "category": "GRE词汇"
+    },
+    {
+      "word": "accountable",
+      "phonetic": "/əˈkaʊntəbl/",
+      "meaning": "a. 负有责任的, 可说明的, 可解释的；[经] 负有责任的",
+      "example_sentence": "Legal frameworks exist to hold war criminals accountable.",
+      "example_sentence_cn": "法律架構的存在，使戰爭罪犯的責任可以追究。",
+      "category": "商务词汇"
+    },
+    {
+      "word": "accountancy",
+      "phonetic": "/ә'kauntәnsi/",
+      "meaning": "n. 会计工作, 会计学；[经] 会计工作, 会计学术, 会计职业",
+      "example_sentence": "It's possible to branch out from computing to jobs in banking, accountancy and so on.",
+      "example_sentence_cn": "有可能將电脑工作擴展到银行業務, 會計業務等等。",
+      "category": "通用词汇"
+    },
+    {
+      "word": "accountant",
+      "phonetic": "/ә'kauntәnt/",
+      "meaning": "n. 会计人员, 会计师；[经] 会计师, 会计人员",
+      "example_sentence": "Allan was lucky and passed the tax accountant examination.",
+      "example_sentence_cn": "艾伦很幸运地考过了税务师考试。",
+      "category": "托福词汇"
+    },
+    {
+      "word": "accounting",
+      "phonetic": "/ә'kauntiŋ/",
+      "meaning": "n. 会计学, 帐单, 清帐；[计] 帐户处理, 记帐",
+      "example_sentence": "Do you know accounting?",
+      "example_sentence_cn": "你懂会计吗？",
+      "category": "托福词汇"
+    },
+    {
+      "word": "accoutrement",
+      "phonetic": "/ә'ku:tәmәnt/",
+      "meaning": "n. 装备, 配备",
+      "example_sentence": "",
+      "example_sentence_cn": null,
+      "category": "游戏"
+    },
+    {
+      "word": "accredit",
+      "phonetic": "/əˈkredɪt/",
+      "meaning": "v. 授权；认可",
+      "example_sentence": "This is an example using the word \"accredit\".",
+      "example_sentence_cn": "这是一个使用“accredit”一词的示例。",
+      "category": "商务词汇"
+    },
+    {
+      "word": "accrue",
+      "phonetic": "/əˈkruː/",
+      "meaning": "vi. 自然增加, 产生；[经] 应计, 产生, 出现",
+      "example_sentence": "Benefits accrue to the community from reconstruction.",
+      "example_sentence_cn": "Benefits accrue to the community from reconstruction.",
+      "category": "GRE词汇"
+    },
+    {
+      "word": "accs",
+      "phonetic": "",
+      "meaning": "abbr. 亚洲校园信息化研究项目组（Asian Campus Computing Survey）；空调离合器循环开关（Air Conditoning Cycling Switch）；自动呼叫卡业务（Automatic Calling Card Service）；航天指挥控制系统（Aerospace Command Control System）；空中桥梁，空运线（air cargo community system）",
+      "example_sentence": "",
+      "example_sentence_cn": null,
+      "category": "项目管理"
+    },
+    {
+      "word": "accumulate",
+      "phonetic": "/ә'kju:mjuleit/",
+      "meaning": "v. 积聚, 堆积",
+      "example_sentence": "Interstellar, as opposed to interplanetary, travel was quite impossible until the advent of sub-atomic power. Fortunately this source of power was seldom gained until late in a world's development, when mentality was mature enough to wield this most dangerous of all physical instruments without inevitable disaster. Disasters, however, did occur. Several worlds were accidentally blown to pieces. In others civilization was temporarily destroyed. Sooner or later, however, most of the minded worlds tamed this formidable djin, and set it to work upon a titanic scale, not only in industry, but in such great enterprises as the alteration of planetary orbits for the improvement of climate. This dangerous and delicate process was effected by firing a gigantic sub-atomic rocket-apparatus at such times and places that the recoil would gradually accumulate to divert the planet's course in the desired direction.",
+      "example_sentence_cn": "星際，同行星间相反，直到亚原子力量嘅出現，呢個力量嘅来源好少會得到，但係喺世界发展嘅后期，當時嘅心態已经夠成熟，可以喺冇必然嘅災難嘅情況下使用呢個最危險嘅物理工具將佢設定喺一個巨大嘅規模上，唔单止喺工業上，而係喺改變行星軌道以改善氣候呢啲偉大嘅企業入面。呢個危險而細緻嘅過程係透過喺呢啲時间同地方发射一個巨大嘅亚原子火箭裝置，令到反彈會逐漸累積，將啲行星嘅航線轉向所需嘅方向，從而實現。",
+      "category": "托福词汇"
+    },
+    {
+      "word": "accumulation",
+      "phonetic": "/ә.kju:mju'leiʃәn/",
+      "meaning": "n. 积聚, 累积, 积聚物；[医] 蓄积, 累积",
+      "example_sentence": "Her only interest is the accumulation of money.",
+      "example_sentence_cn": "Her only interest is the accumulation of money.",
+      "category": "托福词汇"
+    },
+    {
+      "word": "accuracy",
+      "phonetic": "/'ækjurәsi/",
+      "meaning": "n. 精确, 正确；[计] 准确度",
+      "example_sentence": "I began to doubt the accuracy of his statement.",
+      "example_sentence_cn": "我开始懷疑他陳述的準確性。",
+      "category": "托福词汇"
+    },
+    {
+      "word": "accurate",
+      "phonetic": "/'ækjurәt/",
+      "meaning": "a. 正确的, 精确的；[经] 准确的, 精确的",
+      "example_sentence": "My Danish pronunciation is not very accurate.",
+      "example_sentence_cn": "我的丹麦语发音不是很标准。",
+      "category": "托福词汇"
+    },
+    {
+      "word": "accurately",
+      "phonetic": "/'ækjurәtli/",
+      "meaning": "adv. 正确地, 精确地",
+      "example_sentence": "I don't remember my grandmother's face accurately.",
+      "example_sentence_cn": "我记不清奶奶的脸。",
+      "category": "通用词汇"
+    },
+    {
+      "word": "accusation",
+      "phonetic": "/ækju:'zeiʃәn/",
+      "meaning": "n. 控告, 指控, 指责；[法] 控告, 起诉, 告发",
+      "example_sentence": "I'm shocked you could make such an accusation.",
+      "example_sentence_cn": "I'm shocked you could make such an accusation.",
+      "category": "托福词汇"
+    },
+    {
+      "word": "accuse",
+      "phonetic": "/ә'kju:z/",
+      "meaning": "vt. 指责, 控告, 归咎于；vi. 指责, 控告",
+      "example_sentence": "You can't accuse him of theft without having proof.",
+      "example_sentence_cn": "没有证据你们不能指责他偷东西。",
+      "category": "托福词汇"
+    },
+    {
+      "word": "accused",
+      "phonetic": "/ә'kju:zd/",
+      "meaning": "n. 被告",
+      "example_sentence": "He accused me of having stolen his watch.",
+      "example_sentence_cn": "他指控我偷了他的手表。",
+      "category": "通用词汇"
+    },
+    {
+      "word": "accustomed",
+      "phonetic": "/əˈkʌstəmd/",
+      "meaning": "a. 惯常的, 习惯了的",
+      "example_sentence": "You will soon get accustomed to living here.",
+      "example_sentence_cn": "你很快就會習慣住在这里。",
+      "category": "雅思词汇"
+    },
+    {
+      "word": "ace",
+      "phonetic": "/eis/",
+      "meaning": "n. 幺点, 好手, 少许, 发球得分；a. 一流的, 杰出的；[计] 应答允许, 自适应计算机试验, 自动呼叫设备, 自动执行控制",
+      "example_sentence": "She was within an ace of saying \"I don't know\".",
+      "example_sentence_cn": "她差點要说「我不知道」了。",
+      "category": "通用词汇"
+    },
+    {
+      "word": "ache",
+      "phonetic": "/eik/",
+      "meaning": "n. 疼痛；vi. 痛, 哀怜, 渴望",
+      "example_sentence": "My joints ache when it gets cold.",
+      "example_sentence_cn": "當天氣變冷的时候，我的关節疼痛。",
+      "category": "四级词汇"
+    },
+    {
+      "word": "achieve",
+      "phonetic": "/əˈtʃiːv/",
+      "meaning": "vt. 完成, 达到；vi. 如愿以偿",
+      "example_sentence": "You'll never achieve anything if you don't study harder.",
+      "example_sentence_cn": "如果你不更加努力学习，你将一事无成。",
+      "category": "雅思词汇"
+    }
+  ]
+}
