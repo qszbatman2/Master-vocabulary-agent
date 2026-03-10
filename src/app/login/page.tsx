@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
@@ -14,6 +15,7 @@ import { ArrowLeft } from 'lucide-react';
 export default function LoginPage() {
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(true); // 默认勾选记住我
   const [registerEmail, setRegisterEmail] = useState('');
   const [registerPassword, setRegisterPassword] = useState('');
   const [registerNickname, setRegisterNickname] = useState('');
@@ -28,7 +30,7 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
 
-    const result = await login(loginEmail, loginPassword);
+    const result = await login(loginEmail, loginPassword, rememberMe);
     
     setLoading(false);
     
@@ -103,6 +105,19 @@ export default function LoginPage() {
                     required
                     className="h-9 text-sm"
                   />
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="remember-me"
+                    checked={rememberMe}
+                    onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                  />
+                  <Label
+                    htmlFor="remember-me"
+                    className="text-xs text-gray-600 dark:text-gray-400 cursor-pointer"
+                  >
+                    记住登录状态
+                  </Label>
                 </div>
                 {error && <p className="text-red-500 text-xs">{error}</p>}
                 <Button type="submit" className="w-full h-9 text-sm" disabled={loading}>
