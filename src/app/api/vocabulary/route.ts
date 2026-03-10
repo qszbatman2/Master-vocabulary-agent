@@ -175,6 +175,18 @@ export async function GET(request: NextRequest) {
           } : null,
         };
       });
+
+      // 去重：同一个单词可能存在于多个分类中
+      const seenWords = new Set<string>();
+      const uniqueWords: any[] = [];
+      for (const word of words) {
+        if (!seenWords.has(word.word)) {
+          seenWords.add(word.word);
+          uniqueWords.push(word);
+        }
+      }
+      words = uniqueWords;
+      totalCount = words.length;
     } else {
       // 普通查询
       let query = client
@@ -201,6 +213,20 @@ export async function GET(request: NextRequest) {
 
       words = wordsData || [];
       totalCount = count || 0;
+
+      // 去重：同一个单词可能存在于多个分类中，搜索时只保留一个
+      if (!categoryId || categoryId === 'all') {
+        const seenWords = new Set<string>();
+        const uniqueWords: any[] = [];
+        for (const word of words) {
+          if (!seenWords.has(word.word)) {
+            seenWords.add(word.word);
+            uniqueWords.push(word);
+          }
+        }
+        words = uniqueWords;
+        totalCount = words.length;
+      }
 
       // 获取用户掌握状态
       if (userId && words.length > 0) {
