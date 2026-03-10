@@ -356,3 +356,88 @@ export const useStore = create<Store>((set) => ({
 3. **遵循 Next.js App Router 规范**，正确区分服务端/客户端组件
 4. **使用 TypeScript** 进行类型安全开发
 5. **使用 `@/` 路径别名** 导入模块（已配置）
+
+
+## 开发经验与常见问题
+
+### 数据脚本开发规范
+
+#### 类型安全：数据字段与类型定义必须一致
+
+**问题描述**：在编写数据导入脚本时，尝试访问数据对象中不存在的属性，导致 TypeScript 编译错误。
+
+**错误示例**：
+```typescript
+// 数据定义中没有 example_sentence 字段
+const words = [
+  { word: 'earnest', phonetic: '/ˈɜːnɪst/', meaning: 'adj. 认真的', category: '托福词汇' },
+  // ...
+];
+
+// 但代码中尝试访问该字段 ❌
+records.push({
+  word,
+  phonetic: w.phonetic || '',
+  meaning: w.meaning.trim(),
+  example_sentence: w.example_sentence || `This is an example...`, // ❌ 类型错误！
+  category_id: categoryIds.get(w.category) || defaultCategoryId,
+});
+```
+
+**正确做法**：
+```typescript
+// 方案1：如果数据中没有该字段，直接使用默认值 ✅
+records.push({
+  word,
+  phonetic: w.phonetic || '',
+  meaning: w.meaning.trim(),
+  example_sentence: `This is an example using the word "${w.word}".`, // ✅
+  category_id: categoryIds.get(w.category) || defaultCategoryId,
+});
+
+// 方案2：如果需要可选字段，在数据类型定义中声明 ✅
+interface WordData {
+  word: string;
+  phonetic: string;
+  meaning: string;
+  category: string;
+  example_sentence?: string; // 可选字段
+}
+```
+
+**经验总结**：
+1. 编写数据脚本前，先确认数据结构的类型定义
+2. 使用 `w.example_sentence || defaultValue` 前需确保类型定义中包含该字段
+3. TypeScript 的严格类型检查会在构建时捕获此类错误
+4. 部署前务必运行 `npx tsc --noEmit` 进行类型检查
+
+#### 脚本文件命名规范
+
+| 文件类型 | 命名规则 | 用途 |
+|---------|---------|------|
+| 数据导入脚本 | `import-*.ts` | 从外部源导入数据 |
+| 数据生成脚本 | `words-*.ts` | 生成单词数据 |
+| 工具脚本 | `utils-*.ts` | 辅助工具函数 |
+| 迁移脚本 | `migrate-*.ts` | 数据库迁移 |
+
+#### 脚本执行注意事项
+
+1. **数据库表名**：使用 `vocabulary_categories` 而非 `categories`
+2. **分类字段**：使用 `category_id` (外键) 而非 `category` (字符串)
+3. **批量插入**：建议每批 100 条，避免单次插入过多数据
+4. **错误处理**：批量失败时降级为逐条插入
+
+### 部署常见错误排查
+
+| 错误信息 | 原因 | 解决方案 |
+|---------|------|---------|
+| `Property 'xxx' does not exist on type` | 访问未定义的属性 | 检查类型定义，添加字段或移除访问 |
+| `Could not find table 'public.xxx'` | 表名错误 | 确认数据库实际表名 |
+| `Transform failed with error` | 语法错误 | 检查文件末尾是否有残留数据 |
+
+### 代码提交前检查清单
+
+- [ ] 运行 `npx tsc --noEmit` 无类型错误
+- [ ] 检查新增脚本的数据类型定义完整性
+- [ ] 确认数据库表名和字段名正确
+- [ ] 验证服务运行正常 `curl -I http://localhost:5000`
