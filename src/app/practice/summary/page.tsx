@@ -28,37 +28,39 @@ export default function SummaryPage() {
       return;
     }
 
-    // 从 URL 参数获取结算数据
+    // 优先从 sessionStorage 获取结算数据
+    const saved = sessionStorage.getItem('practice_summary');
+    if (saved) {
+      try {
+        const data = JSON.parse(saved);
+        console.log('从 sessionStorage 读取结算数据:', data);
+        setSummary(data);
+        sessionStorage.removeItem('practice_summary');
+        return;
+      } catch (e) {
+        console.error('解析 sessionStorage 数据失败:', e);
+      }
+    }
+
+    // 如果 sessionStorage 没有数据，尝试从 URL 参数获取
     const totalPracticed = parseInt(searchParams.get('total') || '0');
     const masteredCount = parseInt(searchParams.get('mastered') || '0');
     const wrongCount = parseInt(searchParams.get('wrong') || '0');
     const correctCount = parseInt(searchParams.get('correct') || '0');
     const duration = parseInt(searchParams.get('duration') || '0');
 
-    // 如果 URL 参数为空，尝试从 sessionStorage 获取
-    if (totalPracticed === 0) {
-      const saved = sessionStorage.getItem('practice_summary');
-      if (saved) {
-        try {
-          setSummary(JSON.parse(saved));
-          sessionStorage.removeItem('practice_summary');
-          return;
-        } catch {
-          // ignore
-        }
-      }
+    if (totalPracticed > 0 || masteredCount > 0 || wrongCount > 0) {
+      setSummary({
+        totalPracticed,
+        masteredCount,
+        wrongCount,
+        correctCount,
+        duration,
+      });
+    } else {
+      // 没有任何数据，返回首页
+      router.push('/');
     }
-
-    setSummary({
-      totalPracticed,
-      masteredCount,
-      wrongCount,
-      correctCount,
-      duration,
-    });
-
-    // 清理 sessionStorage
-    sessionStorage.removeItem('practice_summary');
   }, [user, router, searchParams]);
 
   if (!user || !summary) {

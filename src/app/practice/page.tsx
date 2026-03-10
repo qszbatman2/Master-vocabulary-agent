@@ -74,6 +74,11 @@ export default function PracticePage() {
   const questionsRef = useRef(questions);
   const currentIndexRef = useRef(currentIndex);
   const isLoadingRef = useRef(isLoading);
+  // 结算数据使用 ref 确保实时更新
+  const questionNumberRef = useRef(questionNumber);
+  const roundSuccessCountRef = useRef(roundSuccessCount);
+  const roundWrongCountRef = useRef(roundWrongCount);
+  const startTimeRef = useRef(startTime);
 
   // 更新 ref
   useEffect(() => {
@@ -88,6 +93,18 @@ export default function PracticePage() {
   useEffect(() => {
     isLoadingRef.current = isLoading;
   }, [isLoading]);
+  useEffect(() => {
+    questionNumberRef.current = questionNumber;
+  }, [questionNumber]);
+  useEffect(() => {
+    roundSuccessCountRef.current = roundSuccessCount;
+  }, [roundSuccessCount]);
+  useEffect(() => {
+    roundWrongCountRef.current = roundWrongCount;
+  }, [roundWrongCount]);
+  useEffect(() => {
+    startTimeRef.current = startTime;
+  }, [startTime]);
 
   useEffect(() => {
     if (!user) {
@@ -383,17 +400,22 @@ export default function PracticePage() {
   };
 
   const exitPractice = () => {
-    // 计算学习时长
-    const duration = startTime > 0 ? Math.floor((Date.now() - startTime) / 1000) : 0;
+    // 计算学习时长（使用 ref 获取最新值）
+    const duration = startTimeRef.current > 0 ? Math.floor((Date.now() - startTimeRef.current) / 1000) : 0;
+    const totalPracticed = questionNumberRef.current;
+    const masteredCount = roundSuccessCountRef.current;
+    const wrongCount = roundWrongCountRef.current;
     
     // 构建结算数据
     const summary = {
-      totalPracticed: questionNumber,
-      masteredCount: roundSuccessCount,
-      wrongCount: roundWrongCount,
-      correctCount: questionNumber - roundWrongCount, // 首次正确数 = 总题数 - 首次错误数
+      totalPracticed,
+      masteredCount,
+      wrongCount,
+      correctCount: totalPracticed - wrongCount, // 首次正确数 = 总题数 - 首次错误数
       duration,
     };
+    
+    console.log('结算数据:', summary); // 调试日志
     
     // 保存到 sessionStorage（防止 URL 过长）
     sessionStorage.setItem('practice_summary', JSON.stringify(summary));
