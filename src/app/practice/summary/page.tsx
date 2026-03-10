@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,12 +21,24 @@ export default function SummaryPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [summary, setSummary] = useState<RoundSummary | null>(null);
+  const initializedRef = useRef(false); // 防止重复执行
+  const dataLoadedRef = useRef(false); // 数据是否已加载
 
   useEffect(() => {
+    // 数据已加载，不再重复处理
+    if (dataLoadedRef.current) return;
+    
+    // 等待 user 状态确定
+    if (user === undefined) return;
+    
     if (!user) {
       router.push('/login');
       return;
     }
+
+    // 标记已初始化
+    if (initializedRef.current) return;
+    initializedRef.current = true;
 
     // 优先从 sessionStorage 获取结算数据
     const saved = sessionStorage.getItem('practice_summary');
@@ -35,7 +47,11 @@ export default function SummaryPage() {
         const data = JSON.parse(saved);
         console.log('从 sessionStorage 读取结算数据:', data);
         setSummary(data);
-        sessionStorage.removeItem('practice_summary');
+        dataLoadedRef.current = true;
+        // 数据已读取，延迟清理（确保页面已渲染）
+        setTimeout(() => {
+          sessionStorage.removeItem('practice_summary');
+        }, 100);
         return;
       } catch (e) {
         console.error('解析 sessionStorage 数据失败:', e);
@@ -57,11 +73,12 @@ export default function SummaryPage() {
         correctCount,
         duration,
       });
+      dataLoadedRef.current = true;
     } else {
       // 没有任何数据，返回首页
       router.push('/');
     }
-  }, [user, router, searchParams]);
+  }, [user, router]); // 依赖 user 和 router
 
   if (!user || !summary) {
     return (
