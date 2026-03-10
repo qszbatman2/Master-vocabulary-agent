@@ -3,6 +3,17 @@ import { getSupabaseClient } from '@/storage/database/supabase-client';
 
 const client = getSupabaseClient();
 
+// 单词类型定义
+interface WordToImport {
+  word: string;
+  phonetic?: string;
+  meaning?: string;
+  example_sentence?: string;
+  example_sentence_cn?: string;
+  category?: string;
+  category_id?: number;
+}
+
 // 授权检查
 function isAuthorized(request: NextRequest): boolean {
   const authHeader = request.headers.get('authorization');
@@ -20,10 +31,18 @@ const CATEGORIES = [
   { name: '科技词汇', description: '科技领域专业词汇' },
   { name: '医学词汇', description: '医学领域专业词汇' },
   { name: '法律词汇', description: '法律领域专业词汇' },
+  { name: '互联网', description: '互联网相关词汇' },
+  { name: '六级词汇', description: '大学英语六级词汇' },
+  { name: '四级词汇', description: '大学英语四级词汇' },
+  { name: '游戏', description: '游戏相关词汇' },
+  { name: '通用词汇', description: '通用英语词汇' },
+  { name: '金融', description: '金融领域词汇' },
+  { name: '项目管理', description: '项目管理词汇' },
+  { name: '高考词汇', description: '高考英语词汇' },
 ];
 
 // 完整单词数据 - A-Z 核心词汇
-const ALL_WORDS = [
+const ALL_WORDS: WordToImport[] = [
   // ========== A ==========
   { word: 'abandon', phonetic: '/əˈbændən/', meaning: 'v. 放弃；抛弃', category: '托福词汇' },
   { word: 'abide', phonetic: '/əˈbaɪd/', meaning: 'v. 遵守；忍受', category: 'GRE词汇' },
@@ -462,27 +481,40 @@ const ALL_WORDS = [
   { word: 'bypass', phonetic: '/ˈbaɪpɑːs/', meaning: 'n. 旁路 v. 绕过', category: '托福词汇' },
 ];
 
-async function ensureCategories() {
+async function ensureCategories(extraCategories?: string[]) {
   const categoryIds: Record<string, number> = {};
   
-  for (const cat of CATEGORIES) {
-    const { data: existing } = await client
-      .from('vocabulary_categories')
-      .select('id')
-      .eq('name', cat.name)
-      .single();
-    
-    if (existing) {
-      categoryIds[cat.name] = existing.id;
-    } else {
+  // 合并预定义分类和额外分类
+  const allCategoryNames = new Set<string>(CATEGORIES.map(c => c.name));
+  if (extraCategories) {
+    extraCategories.forEach(name => allCategoryNames.add(name));
+  }
+  
+  // 先获取所有已存在的分类
+  const { data: existingCategories } = await client
+    .from('vocabulary_categories')
+    .select('id, name');
+  
+  if (existingCategories) {
+    existingCategories.forEach(cat => {
+      categoryIds[cat.name] = cat.id;
+    });
+  }
+  
+  // 创建缺失的分类
+  for (const catName of allCategoryNames) {
+    if (!categoryIds[catName]) {
+      const predefined = CATEGORIES.find(c => c.name === catName);
+      const catData = predefined || { name: catName, description: `${catName}词汇` };
+      
       const { data, error } = await client
         .from('vocabulary_categories')
-        .insert(cat)
+        .insert(catData)
         .select('id')
         .single();
       
       if (!error && data) {
-        categoryIds[cat.name] = data.id;
+        categoryIds[catName] = data.id;
       }
     }
   }
@@ -522,7 +554,7 @@ export async function POST(request: NextRequest) {
   try {
     // 解析请求体，检查是否有外部数据
     const body = await request.json().catch(() => ({}));
-    const externalWords = body.words;
+    const externalWords: WordToImport[] | null = body.words || null;
     
     const { count: currentCount } = await client
       .from('words')
@@ -530,8 +562,13 @@ export async function POST(request: NextRequest) {
     
     console.log(`当前单词数: ${currentCount}`);
     
-    // 确保分类存在
-    const categoryIds = await ensureCategories();
+    // 提取外部数据中的分类列表
+    const extraCategories: string[] = externalWords 
+      ? [...new Set(externalWords.map(w => w.category).filter((c): c is string => Boolean(c)))]
+      : [];
+    
+    // 确保分类存在（包括外部数据中的新分类）
+    const categoryIds = await ensureCategories(extraCategories);
     console.log('分类ID映射:', categoryIds);
     
     // 获取已有单词
@@ -553,6 +590,7 @@ export async function POST(request: NextRequest) {
       phonetic: string;
       meaning: string;
       example_sentence: string;
+      example_sentence_cn?: string;
       category_id: number;
     }> = [];
     
@@ -560,13 +598,14 @@ export async function POST(request: NextRequest) {
       const word = w.word.toLowerCase().trim();
       if (!word || existingSet.has(word)) continue;
       
-      const categoryId = w.category_id || categoryIds[w.category] || defaultCategoryId;
+      const categoryId = w.category_id || (w.category ? categoryIds[w.category] : undefined) || defaultCategoryId;
       
       records.push({
         word,
         phonetic: w.phonetic || '',
-        meaning: w.meaning.trim(),
+        meaning: w.meaning?.trim() || '',
         example_sentence: w.example_sentence || `This is an example using the word "${w.word}".`,
+        example_sentence_cn: w.example_sentence_cn || '',
         category_id: categoryId,
       });
       existingSet.add(word);
