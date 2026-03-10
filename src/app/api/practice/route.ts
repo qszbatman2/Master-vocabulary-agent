@@ -57,31 +57,71 @@ export async function GET(request: NextRequest) {
 
     const statusMap = new Map(userStatusData?.map(s => [s.word_id, s]) || []);
 
+    // 构建单词到所有 id 的映射（同一个单词可能在多个分类中）
+    const wordToIds = new Map<string, number[]>();
+    allWords.forEach(w => {
+      const ids = wordToIds.get(w.word) || [];
+      ids.push(w.id);
+      wordToIds.set(w.word, ids);
+    });
+
+    // 检查一个单词是否已被掌握（任意一个 id 被掌握即算掌握）
+    const isWordMastered = (word: string): boolean => {
+      const ids = wordToIds.get(word) || [];
+      return ids.some(id => statusMap.get(id)?.is_mastered);
+    };
+
+    // 检查一个单词是否有错误记录（任意一个 id 有错误即算有错误）
+    const hasWordWrongRecord = (word: string, sevenDaysAgo: Date): boolean => {
+      const ids = wordToIds.get(word) || [];
+      return ids.some(id => {
+        const status = statusMap.get(id);
+        if (!status?.last_wrong_at) return false;
+        return new Date(status.last_wrong_at) >= sevenDaysAgo;
+      });
+    };
+
+    // 去重后的单词列表（按 word 字段去重）
+    const uniqueWords: Map<string, typeof allWords[0]> = new Map();
+    allWords.forEach(w => {
+      if (!uniqueWords.has(w.word)) {
+        uniqueWords.set(w.word, w);
+      }
+    });
+
     // 根据筛选条件过滤
-    let availableWords = allWords;
+    let availableWords: typeof allWords = [];
 
     // 错题集：最近7天有错误记录的单词
     if (filter === 'wrong_words') {
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
       
-      availableWords = allWords.filter(w => {
-        const status = statusMap.get(w.id);
-        if (!status?.last_wrong_at) return false;
-        return new Date(status.last_wrong_at) >= sevenDaysAgo;
+      uniqueWords.forEach((w, word) => {
+        if (hasWordWrongRecord(word, sevenDaysAgo) && !isWordMastered(word)) {
+          availableWords.push(w);
+        }
       });
     } else {
       // 普通模式：排除已掌握的单词
-      availableWords = allWords.filter(w => {
-        const status = statusMap.get(w.id);
-        return !status?.is_mastered;
+      uniqueWords.forEach((w, word) => {
+        if (!isWordMastered(word)) {
+          availableWords.push(w);
+        }
       });
     }
 
-    // 排除本轮已成功的单词
+    // 排除本轮已成功的单词（通过 id 转换为 word 字段来排除）
     if (excludeWordIds.length > 0) {
       const excludeSet = new Set(excludeWordIds);
-      availableWords = availableWords.filter(w => !excludeSet.has(w.id));
+      // 获取所有需要排除的单词文本
+      const excludeWords = new Set<string>();
+      allWords.forEach(w => {
+        if (excludeSet.has(w.id)) {
+          excludeWords.add(w.word);
+        }
+      });
+      availableWords = availableWords.filter(w => !excludeWords.has(w.word));
     }
 
     if (availableWords.length === 0) {
@@ -99,11 +139,19 @@ export async function GET(request: NextRequest) {
     let selectedWords;
     if (priorityWordIds.length > 0) {
       const prioritySet = new Set(priorityWordIds);
-      const priorityWords = availableWords.filter(w => prioritySet.has(w.id));
-      const otherWords = availableWords.filter(w => !prioritySet.has(w.id));
+      // 获取所有需要优先的单词文本
+      const priorityWords = new Set<string>();
+      allWords.forEach(w => {
+        if (prioritySet.has(w.id)) {
+          priorityWords.add(w.word);
+        }
+      });
+      
+      const priorityAvailable = availableWords.filter(w => priorityWords.has(w.word));
+      const otherWords = availableWords.filter(w => !priorityWords.has(w.word));
       
       // 随机打乱两组
-      const shuffledPriority = priorityWords.sort(() => Math.random() - 0.5);
+      const shuffledPriority = priorityAvailable.sort(() => Math.random() - 0.5);
       const shuffledOther = otherWords.sort(() => Math.random() - 0.5);
       
       // 合并，优先词在前
