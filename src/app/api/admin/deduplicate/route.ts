@@ -35,22 +35,36 @@ export async function POST(request: NextRequest) {
 
     console.log(`开始去重分析 (dryRun: ${dryRun})...`);
 
-    // 1. 获取所有单词
-    const { data: allWords, error: wordsError } = await client
-      .from('words')
-      .select('id, word, category_id, created_at')
-      .order('created_at', { ascending: true });
+    // 1. 分页获取所有单词（Supabase默认限制1000条）
+    const allWords: Array<{ id: number; word: string; category_id: number; created_at: string }> = [];
+    const pageSize = 1000;
+    let offset = 0;
+    
+    while (true) {
+      const { data: batch, error: wordsError } = await client
+        .from('words')
+        .select('id, word, category_id, created_at')
+        .order('created_at', { ascending: true })
+        .range(offset, offset + pageSize - 1);
 
-    if (wordsError) {
-      return NextResponse.json({ error: wordsError.message }, { status: 500 });
+      if (wordsError) {
+        return NextResponse.json({ error: wordsError.message }, { status: 500 });
+      }
+
+      if (!batch || batch.length === 0) break;
+      
+      allWords.push(...batch);
+      
+      if (batch.length < pageSize) break;
+      offset += pageSize;
     }
 
-    console.log(`总单词数: ${allWords?.length || 0}`);
+    console.log(`总单词数: ${allWords.length}`);
 
     // 2. 按分类和单词分组
     const grouped = new Map<string, typeof allWords>();
     
-    for (const word of allWords || []) {
+    for (const word of allWords) {
       const key = `${word.category_id}:${word.word.toLowerCase()}`;
       if (!grouped.has(key)) {
         grouped.set(key, []);
@@ -97,7 +111,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         message: '没有发现重复数据',
-        totalWords: allWords?.length || 0,
+        totalWords: allWords.length,
         uniqueWords: grouped.size,
       });
     }
@@ -125,7 +139,7 @@ export async function POST(request: NextRequest) {
         success: true,
         dryRun: true,
         analysis: {
-          totalWords: allWords?.length || 0,
+          totalWords: allWords.length,
           uniqueGroups: grouped.size,
           duplicateGroups: duplicates.length,
           recordsToDelete: totalDuplicates,
@@ -224,7 +238,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: '去重完成',
-      before: allWords?.length || 0,
+      before: allWords.length,
       after: finalCount || 0,
       deleted,
       userRecordsMigrated: migrated,
