@@ -633,7 +633,7 @@ async function insertWords(words: typeof moreWords, categoryIds: Map<string, num
       word,
       phonetic: w.phonetic || '',
       meaning: w.meaning.trim(),
-      example_sentence: w.example_sentence || `This is an example using the word "${w.word}".`,
+      example_sentence: `This is an example using the word "${w.word}".`,
       category_id: categoryIds.get(w.category) || defaultCategoryId,
     });
     existingSet.add(word);
