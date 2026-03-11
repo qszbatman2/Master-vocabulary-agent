@@ -223,7 +223,7 @@ export default function PracticePage() {
     }
   };
 
-  const submitResult = async (wordId: number, isCorrect: boolean, markAsMastered: boolean = false) => {
+  const submitResult = async (wordId: number, isCorrect: boolean, markAsMastered: boolean = false, isRoundWrongWord: boolean = false) => {
     if (!token) return;
     
     try {
@@ -237,13 +237,14 @@ export default function PracticePage() {
           wordId,
           isCorrect,
           markAsMastered,
+          isRoundWrongWord,
         }),
       });
       
       const data = await response.json();
       
-      if (data.autoMastered) {
-        setAutoMasteredMessage('连续4次正确，已掌握！');
+      if (data.dailyCorrectCount === 4 && data.validCorrectRecorded) {
+        setAutoMasteredMessage('连续4天答对，已掌握！');
         setTimeout(() => setAutoMasteredMessage(''), 2000);
       }
       
@@ -263,12 +264,13 @@ export default function PracticePage() {
     const isCorrect = answer === currentQuestion.correctAnswer;
     const wordId = currentQuestion.id;
 
-    // 提交结果到后端
-    await submitResult(wordId, isCorrect);
-
     // 更新本轮状态
     const wasWrongBefore = wrongWordsMap.has(wordId);
     const alreadyCounted = roundCorrectWordsRef.current.has(wordId);
+
+    // 提交结果到后端
+    const isRoundWrongWord = wasWrongBefore;
+    await submitResult(wordId, isCorrect, false, isRoundWrongWord);
     
     if (isCorrect) {
       if (wasWrongBefore) {

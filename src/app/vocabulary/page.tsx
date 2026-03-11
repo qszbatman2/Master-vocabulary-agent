@@ -40,6 +40,7 @@ interface Word {
     correctCount: number;
     wrongCount: number;
     lastWrongAt: string | null;
+    dailyCorrectCount: number;
   } | null;
 }
 
@@ -259,12 +260,16 @@ export default function VocabularyPage() {
                   <Badge variant="outline" className="text-xs px-1.5 py-0 h-5">
                     {word.vocabulary_categories.name}
                   </Badge>
-                  {word.userStatus?.isMastered && (
+                  {word.userStatus?.isMastered ? (
                     <Badge className="text-xs px-1.5 py-0 h-5 bg-green-500">
                       <Check className="w-3 h-3 mr-0.5" />
                       掌握
                     </Badge>
-                  )}
+                  ) : word.userStatus && word.userStatus.dailyCorrectCount > 0 ? (
+                    <Badge variant="outline" className="text-xs px-1.5 py-0 h-5 border-blue-400 text-blue-600 dark:text-blue-400">
+                      {word.userStatus.dailyCorrectCount}/4天
+                    </Badge>
+                  ) : null}
                   {word.userStatus && (
                     <Badge variant="secondary" className="text-xs px-1.5 py-0 h-5">
                       <span className="text-green-600 dark:text-green-400">{word.userStatus.correctCount}</span>

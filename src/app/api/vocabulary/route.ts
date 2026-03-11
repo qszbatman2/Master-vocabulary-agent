@@ -189,43 +189,80 @@ export async function GET(request: NextRequest) {
       totalCount = words.length;
     } else {
       // 普通查询
-      let query = client
-        .from('words')
-        .select('*', { count: 'exact' });
-
-      if (categoryId && categoryId !== 'all') {
-        query = query.eq('category_id', parseInt(categoryId));
-      }
-
-      if (search) {
-        query = query.or(`word.ilike.%${search}%,meaning.ilike.%${search}%`);
-      }
-
-      const from = (page - 1) * pageSize;
-      const to = from + pageSize - 1;
-      const { data: wordsData, error: wordsError, count } = await query
-        .range(from, to)
-        .order('created_at', { ascending: true });
-
-      if (wordsError) {
-        return NextResponse.json({ error: wordsError.message }, { status: 500 });
-      }
-
-      words = wordsData || [];
-      totalCount = count || 0;
-
-      // 去重：同一个单词可能存在于多个分类中，搜索时只保留一个
+      // 如果没有指定分类，需要先去重再分页
       if (!categoryId || categoryId === 'all') {
+        // 首先获取去重后的总数（使用更高效的方式）
+        // 通过分页获取所有单词
+
+        // 获取所有单词（分页获取）
+        let allWordsData: any[] = [];
+        let hasMore = true;
+        let offset = 0;
+        const batchSize = 1000;
+        
+        while (hasMore) {
+          let query = client
+            .from('words')
+            .select('id, word, phonetic, meaning, example_sentence, example_sentence_cn, category_id, created_at')
+            .range(offset, offset + batchSize - 1);
+
+          if (search) {
+            query = query.or(`word.ilike.%${search}%,meaning.ilike.%${search}%`);
+          }
+
+          const { data: batchData, error: wordsError } = await query.order('created_at', { ascending: true });
+
+          if (wordsError) {
+            return NextResponse.json({ error: wordsError.message }, { status: 500 });
+          }
+
+          if (batchData && batchData.length > 0) {
+            allWordsData = allWordsData.concat(batchData);
+            offset += batchSize;
+            hasMore = batchData.length === batchSize;
+          } else {
+            hasMore = false;
+          }
+        }
+
+        // 去重：同一个单词可能存在于多个分类中，只保留第一个出现的
         const seenWords = new Set<string>();
         const uniqueWords: any[] = [];
-        for (const word of words) {
+        for (const word of allWordsData) {
           if (!seenWords.has(word.word)) {
             seenWords.add(word.word);
             uniqueWords.push(word);
           }
         }
-        words = uniqueWords;
-        totalCount = words.length;
+
+        totalCount = uniqueWords.length;
+        const from = (page - 1) * pageSize;
+        const to = from + pageSize;
+        words = uniqueWords.slice(from, to);
+      } else {
+        // 指定了分类，直接分页查询
+        let query = client
+          .from('words')
+          .select('*', { count: 'exact' });
+
+        query = query.eq('category_id', parseInt(categoryId));
+
+        if (search) {
+          query = query.or(`word.ilike.%${search}%,meaning.ilike.%${search}%`);
+        }
+
+        const from = (page - 1) * pageSize;
+        const to = from + pageSize - 1;
+        const { data: wordsData, error: wordsError, count } = await query
+          .range(from, to)
+          .order('created_at', { ascending: true });
+
+        if (wordsError) {
+          return NextResponse.json({ error: wordsError.message }, { status: 500 });
+        }
+
+        words = wordsData || [];
+        totalCount = count || 0;
       }
 
       // 获取用户掌握状态
@@ -233,7 +270,7 @@ export async function GET(request: NextRequest) {
         const wordIds = words.map(w => w.id);
         const { data: statusData } = await client
           .from('user_word_status')
-          .select('word_id, is_mastered, consecutive_correct, total_practice_count, correct_count, wrong_count, last_wrong_at')
+          .select('word_id, is_mastered, consecutive_correct, total_practice_count, correct_count, wrong_count, last_wrong_at, daily_correct_count')
           .eq('user_id', userId)
           .in('word_id', wordIds);
 
@@ -252,6 +289,7 @@ export async function GET(request: NextRequest) {
               correctCount: status.correct_count,
               wrongCount: status.wrong_count,
               lastWrongAt: status.last_wrong_at,
+              dailyCorrectCount: status.daily_correct_count,
             } : null,
           };
         });

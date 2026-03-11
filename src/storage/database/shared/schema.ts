@@ -87,6 +87,10 @@ export const userWordStatus = pgTable(
     correctCount: integer("correct_count").default(0).notNull(),
     wrongCount: integer("wrong_count").default(0).notNull(),
     consecutiveCorrect: integer("consecutive_correct").default(0).notNull(),
+    // 新增：掌握进度相关字段
+    dailyCorrectCount: integer("daily_correct_count").default(0).notNull(), // 有效答对天数（4天=掌握）
+    lastCorrectDate: varchar("last_correct_date", { length: 10 }), // 最后一次有效答对日期 (YYYY-MM-DD)
+    roundConsecutiveCorrect: integer("round_consecutive_correct").default(0).notNull(), // 本轮错题连续答对次数
     lastPracticedAt: timestamp("last_practiced_at", { withTimezone: true }),
     lastWrongAt: timestamp("last_wrong_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
