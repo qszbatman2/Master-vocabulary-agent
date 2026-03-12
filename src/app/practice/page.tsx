@@ -474,21 +474,13 @@ export default function PracticePage() {
   if (!isStarted) {
     return (
       <div className={cn(
-        "min-h-screen flex flex-col relative overflow-hidden",
-        isDark ? "bg-[#121212]" : "bg-gradient-to-br from-pink-50 via-white to-cyan-50"
+        "min-h-screen flex flex-col",
+        isDark ? "bg-[#121212]" : "bg-gray-50"
       )}>
-        {/* 背景装饰 */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className={cn(
-            "absolute -top-1/2 -right-1/2 w-full h-full rounded-full blur-3xl opacity-20",
-            isDark ? "bg-gradient-to-br from-cyan-500/20 to-purple-500/20" : "bg-gradient-to-br from-pink-200 to-cyan-200"
-          )} />
-        </div>
-        
         {/* 头部 */}
         <div className={cn(
           "sticky top-0 z-20 border-b",
-          isDark ? "bg-[#1E1E1E]/95 backdrop-blur-sm border-[#2A2A2A]" : "bg-white/80 backdrop-blur-sm border-gray-100"
+          isDark ? "bg-[#1E1E1E] border-[#2A2A2A]" : "bg-white border-gray-100"
         )}>
           <div className="container mx-auto px-3 py-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -527,7 +519,7 @@ export default function PracticePage() {
         <div className="flex-1 container mx-auto px-3 py-4 relative z-10">
           <div className={cn(
             "max-w-md mx-auto p-5 rounded-2xl",
-            isDark ? "bg-[#1E1E1E] neon-border" : "bg-white shadow-xl"
+            isDark ? "bg-[#1E1E1E] border border-[#333]" : "bg-white shadow-xl"
           )}>
             <div className="space-y-4">
               <div>
@@ -591,7 +583,7 @@ export default function PracticePage() {
 
               <button
                 onClick={startPractice}
-                className="w-full py-4 rounded-xl bg-[#00E5FF] text-black font-medium text-base neon-glow hover:neon-glow-strong transition-all"
+                className="w-full py-4 rounded-xl bg-[#00E5FF] text-black font-medium text-base hover:bg-[#00C8DC] transition-all"
               >
                 开始练习
               </button>
@@ -606,17 +598,9 @@ export default function PracticePage() {
   if (isFinished) {
     return (
       <div className={cn(
-        "min-h-screen flex flex-col relative overflow-hidden",
-        isDark ? "bg-[#121212]" : "bg-gradient-to-br from-pink-50 via-white to-cyan-50"
+        "min-h-screen flex flex-col",
+        isDark ? "bg-[#121212]" : "bg-gray-50"
       )}>
-        {/* 背景装饰 */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className={cn(
-            "absolute -top-1/2 -right-1/2 w-full h-full rounded-full blur-3xl opacity-20",
-            isDark ? "bg-gradient-to-br from-cyan-500/20 to-purple-500/20" : "bg-gradient-to-br from-pink-200 to-cyan-200"
-          )} />
-        </div>
-        
         {/* 头部 */}
         <div className={cn(
           "sticky top-0 z-20 border-b",
@@ -659,7 +643,7 @@ export default function PracticePage() {
         <div className="flex-1 container mx-auto px-3 py-4 relative z-10">
           <div className={cn(
             "max-w-md mx-auto p-6 rounded-2xl text-center",
-            isDark ? "bg-[#1E1E1E] neon-border" : "bg-white shadow-xl"
+            isDark ? "bg-[#1E1E1E] border border-[#333]" : "bg-white shadow-xl"
           )}>
             <div className={cn(
               "mx-auto w-14 h-14 rounded-full flex items-center justify-center mb-3",
@@ -698,7 +682,7 @@ export default function PracticePage() {
             </div>
             <button
               onClick={exitPractice}
-              className="w-full py-3 rounded-xl bg-[#00E5FF] text-black font-medium neon-glow hover:neon-glow-strong transition-all"
+              className="w-full py-3 rounded-xl bg-[#00E5FF] text-black font-medium hover:bg-[#00C8DC] transition-all"
             >
               查看结算
             </button>
@@ -713,7 +697,7 @@ export default function PracticePage() {
     return (
       <div className={cn(
         "min-h-screen flex items-center justify-center",
-        isDark ? "bg-[#121212]" : "bg-gradient-to-br from-pink-50 via-white to-cyan-50"
+        isDark ? "bg-[#121212]" : "bg-gray-50"
       )}>
         <div className="text-center">
           <RefreshCw className={cn(
@@ -736,17 +720,9 @@ export default function PracticePage() {
   // 练习页面
   return (
     <div className={cn(
-      "min-h-screen flex flex-col relative overflow-hidden",
-      isDark ? "bg-[#121212]" : "bg-gradient-to-br from-pink-50 via-white to-cyan-50"
+      "min-h-screen flex flex-col",
+      isDark ? "bg-[#121212]" : "bg-gray-50"
     )}>
-      {/* 背景装饰 */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className={cn(
-          "absolute -top-1/2 -right-1/2 w-full h-full rounded-full blur-3xl opacity-20",
-          isDark ? "bg-gradient-to-br from-cyan-500/20 to-purple-500/20" : "bg-gradient-to-br from-pink-200 to-cyan-200"
-        )} />
-      </div>
-      
       {/* 自动掌握提示 */}
       {autoMasteredMessage && (
         <div className="fixed top-2 left-1/2 transform -translate-x-1/2 z-50">
@@ -760,7 +736,7 @@ export default function PracticePage() {
       {/* 头部 */}
       <div className={cn(
         "sticky top-0 z-20 border-b",
-        isDark ? "bg-[#1E1E1E]/95 backdrop-blur-sm border-[#2A2A2A]" : "bg-white/80 backdrop-blur-sm border-gray-100"
+        isDark ? "bg-[#1E1E1E] border-[#2A2A2A]" : "bg-white border-gray-100"
       )}>
         <div className="container mx-auto px-3 py-2">
           <div className="flex items-center justify-between">
@@ -769,7 +745,7 @@ export default function PracticePage() {
                 onClick={exitPractice}
                 className={cn(
                   "w-8 h-8 rounded-full flex items-center justify-center transition-all",
-                  isDark ? "bg-red-500/20 hover:bg-red-500/30" : "bg-red-50 hover:bg-red-100"
+                  isDark ? "bg-[#2A2A2A] hover:bg-[#333]" : "bg-gray-100 hover:bg-gray-200"
                 )}
               >
                 <LogOut className="w-4 h-4 text-red-500" />
@@ -825,7 +801,7 @@ export default function PracticePage() {
         <div className="px-3 py-4">
           <div className={cn(
             "max-w-md mx-auto p-4 rounded-2xl",
-            isDark ? "bg-[#1E1E1E] neon-border" : "bg-white shadow-lg"
+            isDark ? "bg-[#1E1E1E] border border-[#333]" : "bg-white shadow-lg"
           )}>
             <div className="text-center">
               {currentQuestion.mode === 'en-to-zh' ? (
@@ -833,7 +809,7 @@ export default function PracticePage() {
                   <div className="flex items-center justify-center gap-2 mb-2">
                     <span className={cn(
                       "text-3xl font-bold",
-                      isDark ? "text-white neon-text" : "text-gray-900"
+                      isDark ? "text-white" : "text-gray-900"
                     )}>
                       {currentQuestion.question}
                     </span>
@@ -842,7 +818,7 @@ export default function PracticePage() {
                       className={cn(
                         "w-10 h-10 rounded-full flex items-center justify-center transition-all",
                         isDark 
-                          ? "bg-[#00E5FF]/10 hover:bg-[#00E5FF]/20 neon-glow" 
+                          ? "bg-[#00E5FF]/10 hover:bg-[#00E5FF]/20"
                           : "bg-cyan-50 hover:bg-cyan-100"
                       )}
                     >
@@ -939,8 +915,8 @@ export default function PracticePage() {
                     className={cn(
                       "w-full py-3 px-4 rounded-xl flex items-center gap-3 transition-all",
                       isDark 
-                        ? "bg-[#1E1E1E] hover:bg-[#00E5FF]/10 hover:neon-border" 
-                        : "bg-white shadow-sm hover:shadow-md border border-gray-100 hover:border-[#00E5FF]"
+                        ? "bg-[#1E1E1E] hover:bg-[#252525] border border-[#333]"
+                        : "bg-white shadow-sm hover:shadow-md border border-gray-100"
                     )}
                   >
                     <div className={cn(
@@ -1052,7 +1028,7 @@ export default function PracticePage() {
                 {/* 下一题按钮 */}
                 <button
                   onClick={nextQuestion}
-                  className="w-full py-4 rounded-xl bg-[#00E5FF] text-black font-medium text-base neon-glow hover:neon-glow-strong transition-all"
+                  className="w-full py-4 rounded-xl bg-[#00E5FF] text-black font-medium text-base hover:bg-[#00C8DC] transition-all"
                 >
                   下一题
                 </button>
