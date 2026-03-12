@@ -4,12 +4,11 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { BookOpen, GraduationCap, LogIn, LogOut, User, TrendingUp, CheckCircle, RotateCcw, BookMarked, Settings, Flame, Sparkles } from 'lucide-react';
+import { BookOpen, GraduationCap, LogIn, LogOut, User, CheckCircle, RotateCcw, BookMarked, Settings } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { cn } from '@/lib/utils';
 
 interface Stats {
   today: {
@@ -29,75 +28,6 @@ interface DailyProgress {
   completed: number;
   progress: number;
   isCompleted: boolean;
-}
-
-// 火焰进度组件
-function FireProgress({ 
-  completed, 
-  goal, 
-  onSettingsClick 
-}: { 
-  completed: number; 
-  goal: number; 
-  onSettingsClick: () => void;
-}) {
-  const progress = Math.min(100, Math.round((completed / goal) * 100));
-  const isCompleted = completed >= goal;
-  
-  // 计算火焰数量（0-10个）
-  const fireCount = Math.min(10, Math.floor(progress / 10));
-  
-  return (
-    <div className="relative py-1">
-      {/* 火焰进度条 */}
-      <div className="flex items-center justify-center gap-0.5 mb-1">
-        {[...Array(10)].map((_, i) => (
-          <div
-            key={i}
-            className={cn(
-              "transition-all duration-300 transform",
-              i < fireCount ? "scale-100 opacity-100" : "scale-75 opacity-30"
-            )}
-          >
-            <Flame 
-              className={cn(
-                "w-4 h-4",
-                i < fireCount 
-                  ? "text-orange-500 animate-pulse" 
-                  : "text-gray-300 dark:text-gray-600"
-              )}
-              style={{ animationDelay: `${i * 100}ms` }}
-            />
-          </div>
-        ))}
-      </div>
-      
-      {/* 进度文字 */}
-      <div className="flex items-center justify-center gap-2">
-        {isCompleted ? (
-          <div className="flex items-center gap-1 text-green-600 dark:text-green-400 text-sm">
-            <Sparkles className="w-4 h-4 animate-bounce" />
-            <span className="font-bold">目标达成！</span>
-            <Sparkles className="w-4 h-4 animate-bounce" />
-          </div>
-        ) : (
-          <span className="text-base font-bold text-gray-900 dark:text-white">
-            <span className="text-orange-500">{completed}</span>
-            <span className="text-gray-400 mx-1">/</span>
-            <span className="text-gray-600">{goal}</span>
-          </span>
-        )}
-      </div>
-      
-      {/* 设置按钮 */}
-      <button
-        onClick={onSettingsClick}
-        className="absolute right-0 top-1 p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
-      >
-        <Settings className="w-3.5 h-3.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" />
-      </button>
-    </div>
-  );
 }
 
 export default function Home() {
@@ -255,10 +185,24 @@ export default function Home() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="p-3 pt-0 hidden md:block">
-                <p className="text-gray-600 dark:text-gray-400 text-sm text-center">
-                  {user ? '英译中/中译英随机模式' : '登录后记录学习进度'}
-                </p>
+              <CardContent className="p-3 pt-0">
+                {user && dailyProgress ? (
+                  <div 
+                    className="text-center"
+                    onClick={(e) => e.preventDefault()}
+                  >
+                    <button 
+                      onClick={(e) => { e.preventDefault(); setShowGoalDialog(true); }}
+                      className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                    >
+                      今日学习 <span className="text-orange-500 font-semibold">{dailyProgress.completed}</span>/<span>{dailyProgress.dailyGoal}</span>
+                    </button>
+                  </div>
+                ) : (
+                  <p className="text-gray-600 dark:text-gray-400 text-sm text-center hidden md:block">
+                    {user ? '英译中/中译英随机模式' : '登录后记录学习进度'}
+                  </p>
+                )}
               </CardContent>
             </Card>
           </Link>
@@ -268,28 +212,6 @@ export default function Home() {
         <div className="mb-4">
           {user && stats ? (
             <div className="max-w-2xl mx-auto">
-              {/* 今日学习进度 - 火焰进度条 */}
-              <Card className="mb-2">
-                <CardHeader className="p-2 pb-1">
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <Flame className="w-4 h-4 text-orange-500" />
-                    今日学习进度
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-2 pt-0">
-                  {dailyProgress ? (
-                    <FireProgress 
-                      completed={dailyProgress.completed}
-                      goal={dailyProgress.dailyGoal}
-                      onSettingsClick={() => setShowGoalDialog(true)}
-                    />
-                  ) : (
-                    <div className="flex items-center justify-center py-2">
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-orange-500"></div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
 
               {/* 目标设置弹窗 */}
               <Dialog open={showGoalDialog} onOpenChange={setShowGoalDialog}>
