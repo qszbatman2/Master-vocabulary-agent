@@ -3,10 +3,10 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { BookOpen, GraduationCap, LogIn, LogOut, User, TrendingUp, CheckCircle, RotateCcw, BookMarked } from 'lucide-react';
+import { BookOpen, GraduationCap, LogIn, LogOut, User, TrendingUp, CheckCircle, RotateCcw, BookMarked, Sparkles, Moon, Sun } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
+import { cn } from '@/lib/utils';
 
 interface Stats {
   today: {
@@ -25,6 +25,21 @@ export default function Home() {
   const { user, logout, token } = useAuth();
   const router = useRouter();
   const [stats, setStats] = useState<Stats | null>(null);
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    // 检测深色模式
+    const checkDark = () => {
+      setIsDark(document.documentElement.classList.contains('dark'));
+    };
+    checkDark();
+    
+    // 监听主题变化
+    const observer = new MutationObserver(checkDark);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     if (user && token) {
@@ -52,221 +67,368 @@ export default function Home() {
     logout();
   };
 
+  const toggleTheme = () => {
+    document.documentElement.classList.toggle('dark');
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex flex-col">
-      <div className="container mx-auto px-4 py-6 flex-1 flex flex-col">
+    <div className={cn(
+      "min-h-screen flex flex-col relative overflow-hidden",
+      isDark 
+        ? "bg-[#121212]" 
+        : "bg-gradient-to-br from-pink-50 via-white to-cyan-50"
+    )}>
+      {/* 背景装饰 */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className={cn(
+          "absolute -top-1/2 -right-1/2 w-full h-full rounded-full blur-3xl opacity-30",
+          isDark ? "bg-gradient-to-br from-cyan-500/20 to-purple-500/20" : "bg-gradient-to-br from-pink-200 to-cyan-200"
+        )} />
+        <div className={cn(
+          "absolute -bottom-1/2 -left-1/2 w-full h-full rounded-full blur-3xl opacity-20",
+          isDark ? "bg-gradient-to-tr from-purple-500/20 to-cyan-500/20" : "bg-gradient-to-tr from-cyan-200 to-purple-200"
+        )} />
+      </div>
+
+      <div className="container mx-auto px-4 py-6 flex-1 flex flex-col relative z-10">
         {/* 头部导航 */}
-        <div className="flex justify-end mb-4">
-          {user ? (
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1 text-gray-700 dark:text-gray-300 text-sm">
-                <User className="w-4 h-4" />
-                <span>{user.nickname}</span>
-              </div>
-              <Button variant="outline" size="sm" onClick={handleLogout}>
-                <LogOut className="w-4 h-4 mr-1" />
-                登出
-              </Button>
+        <div className="flex justify-between items-center mb-8">
+          <div className="flex items-center gap-2">
+            <div className={cn(
+              "w-10 h-10 rounded-xl flex items-center justify-center",
+              isDark ? "bg-[#1E1E1E] neon-border" : "bg-white shadow-lg"
+            )}>
+              <Sparkles className="w-5 h-5 text-[#00E5FF]" />
             </div>
-          ) : (
-            <Link href="/login">
-              <Button size="sm">
-                <LogIn className="w-4 h-4 mr-1" />
-                登录/注册
-              </Button>
-            </Link>
-          )}
+            <span className={cn(
+              "font-bold text-lg",
+              isDark ? "text-white neon-text" : "text-gray-900"
+            )}>
+              Vocab
+            </span>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            {/* 深浅模式切换 */}
+            <button
+              onClick={toggleTheme}
+              className={cn(
+                "w-10 h-10 rounded-full flex items-center justify-center transition-all",
+                isDark 
+                  ? "bg-[#1E1E1E] hover:bg-[#2A2A2A] neon-border" 
+                  : "bg-white shadow-md hover:shadow-lg"
+              )}
+            >
+              {isDark ? (
+                <Sun className="w-5 h-5 text-[#00E5FF]" />
+              ) : (
+                <Moon className="w-5 h-5 text-gray-600" />
+              )}
+            </button>
+            
+            {user ? (
+              <div className="flex items-center gap-2">
+                <div className={cn(
+                  "flex items-center gap-2 px-3 py-1.5 rounded-full text-sm",
+                  isDark ? "bg-[#1E1E1E] text-white" : "bg-white shadow-sm text-gray-700"
+                )}>
+                  <User className="w-4 h-4 text-[#00E5FF]" />
+                  <span>{user.nickname}</span>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className={cn(
+                    "flex items-center gap-1 px-3 py-1.5 rounded-full text-sm transition-all",
+                    isDark 
+                      ? "bg-[#1E1E1E] text-gray-400 hover:text-white hover:bg-[#2A2A2A]" 
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  )}
+                >
+                  <LogOut className="w-4 h-4" />
+                  登出
+                </button>
+              </div>
+            ) : (
+              <Link href="/login">
+                <button className="flex items-center gap-1 px-4 py-1.5 rounded-full bg-[#00E5FF] text-black font-medium text-sm neon-glow hover:neon-glow-strong transition-all">
+                  <LogIn className="w-4 h-4" />
+                  登录
+                </button>
+              </Link>
+            )}
+          </div>
         </div>
 
         {/* 主标题 */}
-        <div className="text-center mb-6">
-          <h1 className="text-2xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2">
-            英语单词学习平台
+        <div className="text-center mb-8">
+          <h1 className={cn(
+            "text-3xl md:text-5xl font-bold mb-3",
+            isDark ? "text-white" : "text-gray-900"
+          )}>
+            <span className="gradient-text">背单词</span>
           </h1>
-          <p className="text-sm md:text-base text-gray-600 dark:text-gray-300">
-            收录雅思、托福、GRE、日常等词汇，助你高效记忆单词
+          <p className={cn(
+            "text-sm md:text-base",
+            isDark ? "text-gray-400" : "text-gray-600"
+          )}>
+            今天学习了吗？每天进步一点点
           </p>
         </div>
 
         {/* 功能卡片 */}
-        <div className="grid grid-cols-2 gap-3 md:gap-6 md:max-w-4xl md:mx-auto mb-6">
+        <div className="grid grid-cols-2 gap-4 max-w-md mx-auto mb-8">
           {/* 单词库卡片 */}
           <Link href="/vocabulary" className="block">
-            <Card className="group hover:shadow-lg transition-all duration-300 cursor-pointer border-2 hover:border-blue-500 h-full">
-              <CardHeader className="p-3 md:p-4">
-                <div className="flex flex-col items-center text-center gap-2">
-                  <div className="p-2 md:p-3 bg-blue-100 dark:bg-blue-900 rounded-lg">
-                    <BookOpen className="w-6 h-6 md:w-8 md:h-8 text-blue-600 dark:text-blue-400" />
+            <div className={cn(
+              "group p-4 rounded-2xl transition-all duration-300 cursor-pointer card-hover h-full",
+              isDark 
+                ? "bg-[#1E1E1E] neon-border hover:neon-glow" 
+                : "bg-white shadow-lg hover:shadow-xl border border-gray-100"
+            )}>
+              <div className="flex flex-col items-center text-center gap-3">
+                <div className={cn(
+                  "w-14 h-14 rounded-xl flex items-center justify-center",
+                  isDark ? "bg-[#00E5FF]/10" : "bg-cyan-50"
+                )}>
+                  <BookOpen className="w-7 h-7 text-[#00E5FF]" />
+                </div>
+                <div>
+                  <div className={cn(
+                    "font-bold text-lg mb-1",
+                    isDark ? "text-white" : "text-gray-900"
+                  )}>
+                    单词库
                   </div>
-                  <div>
-                    <CardTitle className="text-base md:text-xl">单词库</CardTitle>
-                    <CardDescription className="text-xs md:text-sm">
-                      浏览词汇
-                    </CardDescription>
+                  <div className={cn(
+                    "text-xs",
+                    isDark ? "text-gray-500" : "text-gray-500"
+                  )}>
+                    13,220 词
                   </div>
                 </div>
-              </CardHeader>
-              <CardContent className="p-3 pt-0 hidden md:block">
-                <p className="text-gray-600 dark:text-gray-400 text-sm text-center">
-                  雅思、托福、GRE等词汇
-                </p>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </Link>
 
           {/* 背单词卡片 */}
           <Link href={user ? "/practice" : "/login"} className="block">
-            <Card className="group hover:shadow-lg transition-all duration-300 cursor-pointer border-2 hover:border-purple-500 h-full">
-              <CardHeader className="p-3 md:p-4">
-                <div className="flex flex-col items-center text-center gap-2">
-                  <div className="p-2 md:p-3 bg-purple-100 dark:bg-purple-900 rounded-lg">
-                    <GraduationCap className="w-6 h-6 md:w-8 md:h-8 text-purple-600 dark:text-purple-400" />
+            <div className={cn(
+              "group p-4 rounded-2xl transition-all duration-300 cursor-pointer card-hover h-full",
+              isDark 
+                ? "bg-[#00E5FF] neon-glow-strong" 
+                : "bg-gradient-to-br from-cyan-400 to-cyan-500 shadow-lg"
+            )}>
+              <div className="flex flex-col items-center text-center gap-3">
+                <div className="w-14 h-14 rounded-xl flex items-center justify-center bg-white/20">
+                  <GraduationCap className="w-7 h-7 text-white" />
+                </div>
+                <div>
+                  <div className="font-bold text-lg mb-1 text-white">
+                    背单词
                   </div>
-                  <div>
-                    <CardTitle className="text-base md:text-xl">背单词</CardTitle>
-                    <CardDescription className="text-xs md:text-sm">
-                      {user ? '开始练习' : '登录练习'}
-                    </CardDescription>
+                  <div className="text-xs text-white/80">
+                    {user ? '开始练习' : '登录练习'}
                   </div>
                 </div>
-              </CardHeader>
-              <CardContent className="p-3 pt-0 hidden md:block">
-                <p className="text-gray-600 dark:text-gray-400 text-sm text-center">
-                  {user ? '英译中/中译英随机模式' : '登录后记录学习进度'}
-                </p>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </Link>
         </div>
 
         {/* 统计信息 */}
-        <div className="mb-4">
+        <div className="max-w-md mx-auto w-full">
           {user && stats ? (
-            <div className="max-w-2xl mx-auto">
+            <div className="space-y-4">
               {/* 今日统计 */}
-              <Card className="mb-3">
-                <CardHeader className="p-3 pb-2">
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <TrendingUp className="w-4 h-4 text-blue-500" />
-                    今日学习
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-3 pt-0">
-                  <div className="flex justify-around">
-                    <div className="text-center">
-                      <div className="text-xl md:text-2xl font-bold text-blue-600">{stats.today.practicedCount}</div>
-                      <div className="text-xs text-gray-500">已背单词</div>
-                    </div>
-                    <div className="w-px h-10 bg-gray-200 dark:bg-gray-700"></div>
-                    <div className="text-center">
-                      <div className="text-xl md:text-2xl font-bold text-green-600">{stats.today.masteredCount}</div>
-                      <div className="text-xs text-gray-500">今日掌握</div>
-                    </div>
+              <div className={cn(
+                "p-4 rounded-2xl",
+                isDark ? "bg-[#1E1E1E] neon-border" : "bg-white shadow-lg"
+              )}>
+                <div className="flex items-center gap-2 mb-3">
+                  <TrendingUp className="w-4 h-4 text-[#00E5FF]" />
+                  <span className={cn(
+                    "text-sm font-medium",
+                    isDark ? "text-white" : "text-gray-900"
+                  )}>今日学习</span>
+                </div>
+                <div className="flex justify-around">
+                  <div className="text-center">
+                    <div className={cn(
+                      "text-2xl font-bold",
+                      isDark ? "text-[#00E5FF] neon-text" : "text-cyan-500"
+                    )}>{stats.today.practicedCount}</div>
+                    <div className={cn(
+                      "text-xs mt-1",
+                      isDark ? "text-gray-500" : "text-gray-500"
+                    )}>已背单词</div>
                   </div>
-                </CardContent>
-              </Card>
+                  <div className={cn(
+                    "w-px h-10",
+                    isDark ? "bg-[#2A2A2A]" : "bg-gray-200"
+                  )} />
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-green-500">{stats.today.masteredCount}</div>
+                    <div className={cn(
+                      "text-xs mt-1",
+                      isDark ? "text-gray-500" : "text-gray-500"
+                    )}>今日掌握</div>
+                  </div>
+                </div>
+              </div>
 
               {/* 累计统计 */}
-              <Card>
-                <CardHeader className="p-3 pb-2">
-                  <CardTitle className="text-sm">累计进度</CardTitle>
-                </CardHeader>
-                <CardContent className="p-3 pt-0">
-                  <div className="grid grid-cols-3 gap-2">
-                    <div className="text-center p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                      <div className="flex items-center justify-center gap-1 mb-1">
-                        <CheckCircle className="w-3 h-3 text-green-500" />
-                        <span className="text-lg md:text-xl font-bold text-green-600">{stats.total.masteredCount}</span>
-                      </div>
-                      <div className="text-xs text-gray-500">已掌握</div>
+              <div className={cn(
+                "p-4 rounded-2xl",
+                isDark ? "bg-[#1E1E1E] neon-border" : "bg-white shadow-lg"
+              )}>
+                <div className={cn(
+                  "text-sm font-medium mb-3",
+                  isDark ? "text-white" : "text-gray-900"
+                )}>累计进度</div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className={cn(
+                    "text-center p-3 rounded-xl",
+                    isDark ? "bg-green-500/10" : "bg-green-50"
+                  )}>
+                    <div className="flex items-center justify-center gap-1 mb-1">
+                      <CheckCircle className="w-3 h-3 text-green-500" />
+                      <span className="text-xl font-bold text-green-500">{stats.total.masteredCount}</span>
                     </div>
-                    <div className="text-center p-2 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
-                      <div className="flex items-center justify-center gap-1 mb-1">
-                        <RotateCcw className="w-3 h-3 text-orange-500" />
-                        <span className="text-lg md:text-xl font-bold text-orange-600">{stats.total.reviewingCount}</span>
-                      </div>
-                      <div className="text-xs text-gray-500">复习中</div>
-                    </div>
-                    <div className="text-center p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                      <div className="flex items-center justify-center gap-1 mb-1">
-                        <BookMarked className="w-3 h-3 text-blue-500" />
-                        <span className="text-lg md:text-xl font-bold text-blue-600">{stats.total.newWordsCount}</span>
-                      </div>
-                      <div className="text-xs text-gray-500">剩余新词</div>
-                    </div>
+                    <div className={cn(
+                      "text-xs",
+                      isDark ? "text-gray-500" : "text-gray-500"
+                    )}>已掌握</div>
                   </div>
-                  {/* 进度条 */}
-                  <div className="mt-3">
-                    <div className="flex justify-between text-xs text-gray-500 mb-1">
-                      <span>总进度</span>
-                      <span>{stats.total.totalWords > 0 ? Math.round(stats.total.masteredCount / stats.total.totalWords * 100) : 0}%</span>
+                  <div className={cn(
+                    "text-center p-3 rounded-xl",
+                    isDark ? "bg-orange-500/10" : "bg-orange-50"
+                  )}>
+                    <div className="flex items-center justify-center gap-1 mb-1">
+                      <RotateCcw className="w-3 h-3 text-orange-500" />
+                      <span className="text-xl font-bold text-orange-500">{stats.total.reviewingCount}</span>
                     </div>
-                    <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-gradient-to-r from-green-400 to-green-600 rounded-full transition-all duration-300"
-                        style={{ width: `${stats.total.totalWords > 0 ? Math.min(100, stats.total.masteredCount / stats.total.totalWords * 100) : 0}%` }}
-                      ></div>
-                    </div>
+                    <div className={cn(
+                      "text-xs",
+                      isDark ? "text-gray-500" : "text-gray-500"
+                    )}>复习中</div>
                   </div>
-                </CardContent>
-              </Card>
+                  <div className={cn(
+                    "text-center p-3 rounded-xl",
+                    isDark ? "bg-[#00E5FF]/10" : "bg-cyan-50"
+                  )}>
+                    <div className="flex items-center justify-center gap-1 mb-1">
+                      <BookMarked className="w-3 h-3 text-[#00E5FF]" />
+                      <span className="text-xl font-bold text-[#00E5FF]">{stats.total.newWordsCount}</span>
+                    </div>
+                    <div className={cn(
+                      "text-xs",
+                      isDark ? "text-gray-500" : "text-gray-500"
+                    )}>剩余新词</div>
+                  </div>
+                </div>
+                
+                {/* 进度条 */}
+                <div className="mt-4">
+                  <div className="flex justify-between text-xs mb-2">
+                    <span className={isDark ? "text-gray-500" : "text-gray-500"}>总进度</span>
+                    <span className="text-[#00E5FF] font-medium">
+                      {stats.total.totalWords > 0 ? Math.round(stats.total.masteredCount / stats.total.totalWords * 100) : 0}%
+                    </span>
+                  </div>
+                  <div className={cn(
+                    "h-2 rounded-full overflow-hidden",
+                    isDark ? "bg-[#2A2A2A]" : "bg-gray-100"
+                  )}>
+                    <div 
+                      className="h-full rounded-full transition-all duration-500"
+                      style={{ 
+                        width: `${stats.total.totalWords > 0 ? Math.min(100, stats.total.masteredCount / stats.total.totalWords * 100) : 0}%`,
+                        background: 'linear-gradient(90deg, #00E5FF 0%, #D900FF 100%)',
+                        boxShadow: '0 0 10px rgba(0, 229, 255, 0.5)'
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
           ) : (
-            <div className="text-center">
-              <div className="inline-flex items-center gap-4 md:gap-8 px-4 py-2 md:px-8 md:py-4 bg-white dark:bg-gray-800 rounded-full shadow-md text-xs md:text-sm">
-                <div className="text-center">
-                  <div className="text-lg md:text-2xl font-bold text-blue-600 dark:text-blue-400">8</div>
-                  <div className="text-gray-600 dark:text-gray-400">词库</div>
-                </div>
-                <div className="w-px h-8 bg-gray-300 dark:bg-gray-600"></div>
-                <div className="text-center">
-                  <div className="text-lg md:text-2xl font-bold text-purple-600 dark:text-purple-400">8500+</div>
-                  <div className="text-gray-600 dark:text-gray-400">单词</div>
-                </div>
-                <div className="w-px h-8 bg-gray-300 dark:bg-gray-600"></div>
-                <div className="text-center">
-                  <div className="text-lg md:text-2xl font-bold text-green-600 dark:text-green-400">2</div>
-                  <div className="text-gray-600 dark:text-gray-400">模式</div>
-                </div>
+            /* 未登录状态 */
+            <div className={cn(
+              "inline-flex items-center gap-6 px-6 py-4 rounded-2xl mx-auto",
+              isDark ? "bg-[#1E1E1E] neon-border" : "bg-white shadow-lg"
+            )}>
+              <div className="text-center">
+                <div className={cn(
+                  "text-2xl font-bold",
+                  isDark ? "text-[#00E5FF] neon-text" : "text-cyan-500"
+                )}>16</div>
+                <div className={cn(
+                  "text-xs mt-1",
+                  isDark ? "text-gray-500" : "text-gray-500"
+                )}>词库</div>
+              </div>
+              <div className={cn(
+                "w-px h-10",
+                isDark ? "bg-[#2A2A2A]" : "bg-gray-200"
+              )} />
+              <div className="text-center">
+                <div className={cn(
+                  "text-2xl font-bold",
+                  isDark ? "text-[#E5FF00]" : "text-yellow-500"
+                )}>13K+</div>
+                <div className={cn(
+                  "text-xs mt-1",
+                  isDark ? "text-gray-500" : "text-gray-500"
+                )}>单词</div>
+              </div>
+              <div className={cn(
+                "w-px h-10",
+                isDark ? "bg-[#2A2A2A]" : "bg-gray-200"
+              )} />
+              <div className="text-center">
+                <div className={cn(
+                  "text-2xl font-bold",
+                  isDark ? "text-[#D900FF]" : "text-purple-500"
+                )}>2</div>
+                <div className={cn(
+                  "text-xs mt-1",
+                  isDark ? "text-gray-500" : "text-gray-500"
+                )}>模式</div>
               </div>
             </div>
           )}
         </div>
 
         {/* 功能说明 */}
-        <div className="max-w-4xl mx-auto w-full">
-          <h2 className="text-lg md:text-xl font-bold text-center mb-4 text-gray-900 dark:text-white">核心功能</h2>
-          <div className="grid grid-cols-3 gap-2 md:gap-4">
-            <Card className="p-2 md:p-4">
-              <CardHeader className="p-0 mb-1 md:mb-2">
-                <CardTitle className="text-xs md:text-base">智能学习</CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                <p className="text-gray-600 dark:text-gray-400 text-xs md:text-sm">
-                  连续4次正确自动掌握
-                </p>
-              </CardContent>
-            </Card>
-            <Card className="p-2 md:p-4">
-              <CardHeader className="p-0 mb-1 md:mb-2">
-                <CardTitle className="text-xs md:text-base">随机模式</CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                <p className="text-gray-600 dark:text-gray-400 text-xs md:text-sm">
-                  英译中/中译英随机
-                </p>
-              </CardContent>
-            </Card>
-            <Card className="p-2 md:p-4">
-              <CardHeader className="p-0 mb-1 md:mb-2">
-                <CardTitle className="text-xs md:text-base">进度追踪</CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                <p className="text-gray-600 dark:text-gray-400 text-xs md:text-sm">
-                  记录学习数据
-                </p>
-              </CardContent>
-            </Card>
+        <div className="max-w-md mx-auto w-full mt-8">
+          <h2 className={cn(
+            "text-lg font-bold text-center mb-4",
+            isDark ? "text-white" : "text-gray-900"
+          )}>核心功能</h2>
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              { title: "智能学习", desc: "4天掌握机制", icon: "🧠" },
+              { title: "错题复习", desc: "自动记录错题", icon: "🔄" },
+              { title: "多词库", desc: "雅思托福GRE", icon: "📚" },
+            ].map((item, i) => (
+              <div
+                key={i}
+                className={cn(
+                  "p-3 rounded-xl text-center",
+                  isDark ? "bg-[#1E1E1E]" : "bg-white shadow-sm"
+                )}
+              >
+                <div className="text-2xl mb-2">{item.icon}</div>
+                <div className={cn(
+                  "text-sm font-medium mb-1",
+                  isDark ? "text-white" : "text-gray-900"
+                )}>{item.title}</div>
+                <div className={cn(
+                  "text-xs",
+                  isDark ? "text-gray-500" : "text-gray-500"
+                )}>{item.desc}</div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
