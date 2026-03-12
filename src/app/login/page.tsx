@@ -124,7 +124,7 @@ export default function LoginPage() {
 
         {/* 卡片主体 */}
         <div 
-          className="rounded-3xl p-6 transition-all duration-700 delay-200 group"
+          className="rounded-3xl p-6 transition-all duration-700 delay-200 group relative"
           style={{ 
             background: '#1e1e2e',
             boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)',
@@ -140,17 +140,15 @@ export default function LoginPage() {
             }}
           />
 
-          {/* 返回按钮 */}
-          <div className="absolute -top-3 -left-3">
-            <Link href="/">
-              <button 
-                className="w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95"
-                style={{ background: '#2a2a3e', color: '#a0a0b0' }}
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </button>
-            </Link>
-          </div>
+          {/* 返回按钮 - 卡片内部左上角 */}
+          <Link href="/" className="absolute top-4 left-4 z-10">
+            <button 
+              className="w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95"
+              style={{ background: 'rgba(255,255,255,0.05)', color: '#a0a0b0' }}
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+          </Link>
 
           <Tabs defaultValue="login" className="w-full relative">
             <TabsList 
