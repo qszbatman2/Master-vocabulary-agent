@@ -592,7 +592,7 @@ export default function PracticePage() {
 
   // 练习页面
   return (
-    <div className="min-h-screen flex flex-col overflow-hidden" style={{ background: '#12121e' }}>
+    <div className="min-h-screen flex flex-col" style={{ background: '#12121e' }}>
       {/* 背景网格 */}
       <div className="fixed inset-0 pointer-events-none opacity-[0.03]" style={{ backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`, backgroundSize: '40px 40px' }} />
 
@@ -681,11 +681,19 @@ export default function PracticePage() {
         </div>
       </div>
 
-      {/* 中间空白区域 - 可滚动区域 */}
-      <div className="flex-1"></div>
+      {/* 中间区域 - 为底部fixed留出空间 */}
+      <div className="flex-1" style={{ paddingBottom: '320px' }}></div>
 
-      {/* 底部答题区 - 置底吸附 */}
-      <div className="sticky bottom-0 z-20 px-4 py-3 pb-6" style={{ background: 'rgba(18, 18, 30, 0.95)' }}>
+      {/* 底部答题区 - 固定在底部 */}
+      <div 
+        className="fixed bottom-0 left-0 right-0 z-20 px-4 py-3 pb-6"
+        style={{ 
+          background: 'rgba(18, 18, 30, 0.98)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          borderTop: '1px solid rgba(255,255,255,0.05)'
+        }}
+      >
           <div className="max-w-md mx-auto space-y-2">
             {!showResult ? (
               <>
@@ -793,7 +801,7 @@ export default function PracticePage() {
               </>
             )}
           </div>
-        </div>
+      </div>
     </div>
   );
 }
