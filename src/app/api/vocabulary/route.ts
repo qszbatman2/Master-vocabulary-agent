@@ -210,7 +210,7 @@ export async function GET(request: NextRequest) {
             query = query.or(`word.ilike.%${search}%,meaning.ilike.%${search}%`);
           }
 
-          const { data: batchData, error: wordsError } = await query.order('created_at', { ascending: true });
+          const { data: batchData, error: wordsError } = await query.order('word', { ascending: true });
 
           if (wordsError) {
             return NextResponse.json({ error: wordsError.message }, { status: 500 });
@@ -235,6 +235,9 @@ export async function GET(request: NextRequest) {
           }
         }
 
+        // 按字母顺序排序（小写比较）
+        uniqueWords.sort((a, b) => a.word.toLowerCase().localeCompare(b.word.toLowerCase()));
+
         totalCount = uniqueWords.length;
         const from = (page - 1) * pageSize;
         const to = from + pageSize;
@@ -255,7 +258,7 @@ export async function GET(request: NextRequest) {
         const to = from + pageSize - 1;
         const { data: wordsData, error: wordsError, count } = await query
           .range(from, to)
-          .order('created_at', { ascending: true });
+          .order('word', { ascending: true });
 
         if (wordsError) {
           return NextResponse.json({ error: wordsError.message }, { status: 500 });

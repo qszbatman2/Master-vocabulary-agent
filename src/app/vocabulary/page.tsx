@@ -130,7 +130,7 @@ export default function VocabularyPage() {
       <div className="sticky top-0 z-20 bg-white dark:bg-gray-800 border-b shadow-sm">
         <div className="container mx-auto px-3 py-3">
           {/* 标题栏 */}
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Link href="/">
                 <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -138,9 +138,6 @@ export default function VocabularyPage() {
                 </Button>
               </Link>
               <h1 className="text-lg font-bold text-gray-900 dark:text-white">单词库</h1>
-              <Badge variant="secondary" className="text-xs">
-                {data?.total || 0} 词
-              </Badge>
             </div>
             
             {user ? (
@@ -158,17 +155,8 @@ export default function VocabularyPage() {
             )}
           </div>
 
-          {/* 统计栏 - 仅登录用户显示 */}
-          {user && data?.stats && (
-            <div className="flex items-center gap-4 text-xs mb-3 text-gray-600 dark:text-gray-400">
-              <span>总计 <strong className="text-blue-600 dark:text-blue-400">{data.stats.totalWords}</strong></span>
-              <span>已掌握 <strong className="text-green-600 dark:text-green-400">{data.stats.masteredWords}</strong></span>
-              <span>未掌握 <strong className="text-orange-600 dark:text-orange-400">{data.stats.unmasteredWords}</strong></span>
-            </div>
-          )}
-
           {/* 筛选栏 */}
-          <div className="flex gap-2">
+          <div className="flex gap-2 mt-3">
             <div className="flex-1 relative">
               <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <Input
@@ -231,53 +219,40 @@ export default function VocabularyPage() {
               <div 
                 key={word.id} 
                 className={cn(
-                  "flex items-center gap-3 p-3 bg-white dark:bg-gray-800 rounded-lg border cursor-pointer hover:border-blue-300 dark:hover:border-blue-600 transition-colors",
-                  word.userStatus?.isMastered && "border-green-400 dark:border-green-600 bg-green-50 dark:bg-green-900/20"
+                  "flex items-center gap-3 p-3 bg-white dark:bg-gray-800 rounded-lg border cursor-pointer transition-colors",
+                  word.userStatus?.isMastered 
+                    ? "border-2 border-green-500 dark:border-green-500 bg-green-50 dark:bg-green-900/20" 
+                    : "hover:border-blue-300 dark:hover:border-blue-600"
                 )}
                 onClick={() => setSelectedWord(word)}
               >
-                {/* 单词 */}
-                <div className="flex-shrink-0 w-24">
+                {/* 单词 - 完整显示 */}
+                <div className="flex-shrink-0 min-w-0">
                   <div className="flex items-center gap-1">
-                    <span className="font-semibold text-gray-900 dark:text-white text-sm">{word.word}</span>
+                    <span className="font-semibold text-gray-900 dark:text-white">{word.word}</span>
                     <button 
                       onClick={(e) => playAudio(word.word, e)}
                       className="p-0.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
                     >
-                      <Volume2 className="w-3 h-3 text-gray-400" />
+                      <Volume2 className="w-3.5 h-3.5 text-blue-500" />
                     </button>
                   </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{word.phonetic}</p>
                 </div>
 
-                {/* 释义 */}
+                {/* 释义 - 完整显示中文 */}
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-gray-700 dark:text-gray-300 truncate">{word.meaning}</p>
+                  <p className="text-sm text-gray-700 dark:text-gray-300 break-words">{word.meaning}</p>
                 </div>
 
-                {/* 状态标签 */}
-                <div className="flex-shrink-0 flex items-center gap-1">
-                  <Badge variant="outline" className="text-xs px-1.5 py-0 h-5">
-                    {word.vocabulary_categories.name}
-                  </Badge>
-                  {word.userStatus?.isMastered ? (
-                    <Badge className="text-xs px-1.5 py-0 h-5 bg-green-500">
+                {/* 掌握状态 - 简洁显示 */}
+                {word.userStatus?.isMastered && (
+                  <div className="flex-shrink-0">
+                    <Badge className="text-xs px-2 py-0.5 h-5 bg-green-500">
                       <Check className="w-3 h-3 mr-0.5" />
                       掌握
                     </Badge>
-                  ) : word.userStatus && word.userStatus.dailyCorrectCount > 0 ? (
-                    <Badge variant="outline" className="text-xs px-1.5 py-0 h-5 border-blue-400 text-blue-600 dark:text-blue-400">
-                      {word.userStatus.dailyCorrectCount}/4天
-                    </Badge>
-                  ) : null}
-                  {word.userStatus && (
-                    <Badge variant="secondary" className="text-xs px-1.5 py-0 h-5">
-                      <span className="text-green-600 dark:text-green-400">{word.userStatus.correctCount}</span>
-                      <span className="text-gray-400 mx-0.5">/</span>
-                      <span className="text-red-600 dark:text-red-400">{word.userStatus.wrongCount}</span>
-                    </Badge>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
