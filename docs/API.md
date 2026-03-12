@@ -4,7 +4,8 @@
 
 ## 基础信息
 
-- **Base URL**: `http://localhost:5000`（开发环境）或你的生产环境域名
+- **开发环境**: `http://localhost:5000`
+- **生产环境**: `https://8qcfzhhw7t.coze.site`
 - **授权方式**: Bearer Token
 - **Content-Type**: `application/json`
 
@@ -39,29 +40,33 @@ GET /api/admin/words
 ### 请求示例
 
 ```bash
-# 获取第1页，每页20个单词
+# 生产环境
+curl -H "Authorization: Bearer vocabulary-admin-2024" \
+  "https://8qcfzhhw7t.coze.site/api/admin/words?page=1&pageSize=20"
+
+# 开发环境
 curl -H "Authorization: Bearer vocabulary-admin-2024" \
   "http://localhost:5000/api/admin/words?page=1&pageSize=20"
 
 # 按分类筛选（使用分类ID）
 curl -H "Authorization: Bearer vocabulary-admin-2024" \
-  "http://localhost:5000/api/admin/words?category=51"
+  "https://8qcfzhhw7t.coze.site/api/admin/words?category=51"
 
 # 按分类筛选（使用分类名称）
 curl -H "Authorization: Bearer vocabulary-admin-2024" \
-  "http://localhost:5000/api/admin/words?category=GRE词汇"
+  "https://8qcfzhhw7t.coze.site/api/admin/words?category=GRE词汇"
 
 # 搜索单词
 curl -H "Authorization: Bearer vocabulary-admin-2024" \
-  "http://localhost:5000/api/admin/words?search=abandon"
+  "https://8qcfzhhw7t.coze.site/api/admin/words?search=abandon"
 
 # 只获取例句为空的单词（需要补充内容的）
 curl -H "Authorization: Bearer vocabulary-admin-2024" \
-  "http://localhost:5000/api/admin/words?hasEmptyExample=true&pageSize=100"
+  "https://8qcfzhhw7t.coze.site/api/admin/words?hasEmptyExample=true&pageSize=100"
 
 # 组合查询：搜索 + 空例句筛选
 curl -H "Authorization: Bearer vocabulary-admin-2024" \
-  "http://localhost:5000/api/admin/words?search=test&hasEmptyExample=true"
+  "https://8qcfzhhw7t.coze.site/api/admin/words?search=test&hasEmptyExample=true"
 ```
 
 ### 响应示例
@@ -186,7 +191,7 @@ curl -X PUT \
     "example_sentence": "Never abandon your dreams.",
     "example_sentence_cn": "永远不要放弃你的梦想。"
   }' \
-  "http://localhost:5000/api/admin/words"
+  "https://8qcfzhhw7t.coze.site/api/admin/words"
 
 # 更新完整信息
 curl -X PUT \
@@ -200,7 +205,7 @@ curl -X PUT \
     "example_sentence": "He abandoned his family.",
     "example_sentence_cn": "他抛弃了他的家人。"
   }' \
-  "http://localhost:5000/api/admin/words"
+  "https://8qcfzhhw7t.coze.site/api/admin/words"
 ```
 
 ### 响应示例
@@ -271,7 +276,7 @@ curl -X PATCH \
       { "id": 38917, "example_sentence": "New sentence 3", "example_sentence_cn": "新翻译3" }
     ]
   }' \
-  "http://localhost:5000/api/admin/words"
+  "https://8qcfzhhw7t.coze.site/api/admin/words"
 ```
 
 ### 响应示例
@@ -342,7 +347,7 @@ curl -X PATCH \
 **步骤1：获取需要补充的单词**
 ```bash
 curl -s -H "Authorization: Bearer vocabulary-admin-2024" \
-  "http://localhost:5000/api/admin/words?hasEmptyExample=true&pageSize=50" \
+  "https://8qcfzhhw7t.coze.site/api/admin/words?hasEmptyExample=true&pageSize=50" \
   | python3 -c "import sys,json; data=json.load(sys.stdin); print(f'共 {data[\"total\"]} 个单词需要补充例句')"
 ```
 
@@ -350,7 +355,7 @@ curl -s -H "Authorization: Bearer vocabulary-admin-2024" \
 ```bash
 # 获取第一个需要补充的单词
 WORD_ID=$(curl -s -H "Authorization: Bearer vocabulary-admin-2024" \
-  "http://localhost:5000/api/admin/words?hasEmptyExample=true&pageSize=1" \
+  "https://8qcfzhhw7t.coze.site/api/admin/words?hasEmptyExample=true&pageSize=1" \
   | python3 -c "import sys,json; print(json.load(sys.stdin)['words'][0]['id'])")
 
 echo "准备更新单词ID: $WORD_ID"
@@ -360,7 +365,7 @@ curl -X PUT \
   -H "Authorization: Bearer vocabulary-admin-2024" \
   -H "Content-Type: application/json" \
   -d "{\"id\": $WORD_ID, \"example_sentence\": \"This is an example.\", \"example_sentence_cn\": \"这是一个例子。\"}" \
-  "http://localhost:5000/api/admin/words"
+  "https://8qcfzhhw7t.coze.site/api/admin/words"
 ```
 
 ### 场景2：批量修正某一分类的单词
@@ -368,7 +373,7 @@ curl -X PUT \
 ```bash
 # 1. 获取该分类的所有单词
 curl -s -H "Authorization: Bearer vocabulary-admin-2024" \
-  "http://localhost:5000/api/admin/words?category=GRE词汇&pageSize=1000" \
+  "https://8qcfzhhw7t.coze.site/api/admin/words?category=GRE词汇&pageSize=1000" \
   > gre_words.json
 
 # 2. 处理后批量更新
@@ -376,7 +381,7 @@ curl -X PATCH \
   -H "Authorization: Bearer vocabulary-admin-2024" \
   -H "Content-Type: application/json" \
   -d @updates.json \
-  "http://localhost:5000/api/admin/words"
+  "https://8qcfzhhw7t.coze.site/api/admin/words"
 ```
 
 ### 场景3：备份所有单词
@@ -384,7 +389,7 @@ curl -X PATCH \
 ```bash
 # 导出所有单词
 curl -s -H "Authorization: Bearer vocabulary-admin-2024" \
-  "http://localhost:5000/api/admin/words?pageSize=15000" \
+  "https://8qcfzhhw7t.coze.site/api/admin/words?pageSize=15000" \
   > words_backup_$(date +%Y%m%d).json
 
 echo "备份完成，文件大小: $(ls -lh words_backup_*.json | tail -1)"
@@ -401,7 +406,9 @@ echo "备份完成，文件大小: $(ls -lh words_backup_*.json | tail -1)"
 import requests
 import time
 
-BASE_URL = "http://localhost:5000"
+# 开发环境: http://localhost:5000
+# 生产环境: https://8qcfzhhw7t.coze.site
+BASE_URL = "https://8qcfzhhw7t.coze.site"
 HEADERS = {
     "Authorization": "Bearer vocabulary-admin-2024",
     "Content-Type": "application/json"
