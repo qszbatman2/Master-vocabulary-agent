@@ -50,7 +50,320 @@ This design system provides a modern, gradient-based UI framework that can be ea
 | Body | 16px | Regular | Main content |
 | Small | 14px | Regular | Auxiliary text |
 
-## Components
+---
+
+### 4. Animation & Interaction Best Practices
+
+Based on real-world optimization experience:
+
+#### Entry Animations
+
+```css
+/* Staggered fade-in with slide up */
+.element {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.7s ease;
+}
+
+.element.loaded {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Use delay for staggered effect */
+.card-1 { transition-delay: 100ms; }
+.card-2 { transition-delay: 200ms; }
+.card-3 { transition-delay: 300ms; }
+```
+
+#### Hover Effects
+
+```css
+/* Card lift + scale + glow */
+.card {
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 0 30px rgba(255, 107, 157, 0.3);
+}
+
+/* Icon scale on hover */
+.card:hover .icon {
+  transform: scale(1.1);
+}
+```
+
+#### Click Feedback
+
+```css
+/* Button press effect */
+.btn {
+  transition: all 0.2s ease;
+}
+
+.btn:active {
+  transform: scale(0.95);
+}
+```
+
+#### Subtle Animations
+
+```css
+/* Pulse breathing effect */
+.pulse-icon {
+  animation: pulse 3s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* Background glow pulse */
+.bg-glow {
+  animation: bgPulse 4s ease-in-out infinite;
+}
+
+@keyframes bgPulse {
+  0%, 100% { opacity: 0.25; }
+  50% { opacity: 0.35; }
+}
+```
+
+### 5. Visual Layering
+
+#### Background Depth
+
+```css
+/* Grid texture overlay */
+.bg-grid {
+  background-image: 
+    linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* Gradient orbs */
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+  /* Use gradient colors from primary/accent/success */
+}
+```
+
+#### Card Glow Effect
+
+```css
+/* Edge glow on hover */
+.card-glow {
+  position: relative;
+}
+
+.card-glow::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: 
+    0 0 30px rgba(0, 240, 255, 0.3),
+    inset 0 0 30px rgba(0, 240, 255, 0.05);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.card-glow:hover::after {
+  opacity: 1;
+}
+```
+
+### 6. Performance Optimization
+
+#### Animation Performance Rules
+
+1. **Use only transform and opacity** for animations
+2. **Avoid reflow triggers**: width, height, top, left, margin, padding
+3. **Use will-change sparingly** only for complex animations
+4. **Prefer CSS over JS** for animations when possible
+
+```css
+/* Good - GPU accelerated */
+.optimized {
+  transition: transform 0.3s, opacity 0.3s;
+}
+
+/* Bad - Triggers reflow */
+.avoid {
+  transition: width 0.3s, height 0.3s;
+}
+```
+
+### 7. Component States
+
+#### Stat Cards with Color Coding
+
+```html
+<div class="stat-card success">
+  <div class="stat-icon">
+    <CheckCircle />
+  </div>
+  <div class="stat-value">1,234</div>
+  <div class="stat-label">Mastered</div>
+</div>
+
+<style>
+.stat-card.success {
+  background: rgba(0, 255, 136, 0.08);
+}
+
+.stat-card.success .stat-icon,
+.stat-card.success .stat-value {
+  color: #00ff88;
+}
+
+.stat-card.warning {
+  background: rgba(255, 107, 157, 0.08);
+}
+
+.stat-card.info {
+  background: rgba(0, 240, 255, 0.08);
+}
+</style>
+```
+
+#### Progress Bar Animation
+
+```html
+<div class="progress-wrapper">
+  <div class="progress-bar" style="width: 75%"></div>
+</div>
+
+<style>
+.progress-wrapper {
+  height: 10px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(135deg, #00ff88, #00d4ff);
+  border-radius: 999px;
+  transition: width 1s ease-out;
+}
+</style>
+```
+
+### 8. Optimization Checklist
+
+#### Visual Design
+- [ ] Deep background color (#12121e)
+- [ ] Card background with contrast (#1e1e2e)
+- [ ] Consistent gradient direction (135deg)
+- [ ] Large border radius (24px for cards)
+- [ ] Soft shadows (0 10px 40px rgba(0,0,0,0.3))
+
+#### Interaction
+- [ ] Entry animation (fade + slide up)
+- [ ] Hover feedback (lift + scale)
+- [ ] Click feedback (scale down)
+- [ ] Loading states (skeleton or spinner)
+
+#### Performance
+- [ ] Use CSS transforms only
+- [ ] Avoid layout thrashing
+- [ ] Lazy load images
+- [ ] Debounce scroll handlers
+
+#### Accessibility
+- [ ] Sufficient color contrast (WCAG AA)
+- [ ] Focus visible states
+- [ ] Keyboard navigation
+- [ ] ARIA labels for icons
+
+### 9. React/Next.js Implementation
+
+```tsx
+'use client';
+
+import { useState, useEffect } from 'react';
+
+export default function AnimatedCard() {
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  useEffect(() => {
+    setIsLoaded(true);
+  }, []);
+
+  return (
+    <div
+      className="card transition-all duration-700"
+      style={{
+        opacity: isLoaded ? 1 : 0,
+        transform: isLoaded ? 'translateY(0)' : 'translateY(30px)',
+        transitionDelay: '200ms'
+      }}
+    >
+      {/* Card content */}
+    </div>
+  );
+}
+```
+
+### 10. Common Patterns
+
+#### Gradient Text
+
+```css
+.gradient-text {
+  background: linear-gradient(135deg, #ff6b9d, #c44cff, #4cc9ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+```
+
+#### Gradient Button
+
+```css
+.btn-gradient {
+  background: linear-gradient(135deg, #ff6b9d, #c44cff, #4cc9ff);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 24px;
+  transition: all 0.2s ease;
+}
+
+.btn-gradient:hover {
+  transform: scale(1.05);
+}
+
+.btn-gradient:active {
+  transform: scale(0.95);
+}
+```
+
+#### Icon Badge
+
+```css
+.icon-badge {
+  padding: 16px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #ff6b9d, #c44cff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.3s ease;
+}
+
+.icon-badge:hover {
+  transform: scale(1.1);
+}
+```
 
 ### Buttons
 
