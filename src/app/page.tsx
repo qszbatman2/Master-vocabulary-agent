@@ -4,9 +4,12 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { BookOpen, GraduationCap, LogIn, LogOut, User, TrendingUp, CheckCircle, RotateCcw, BookMarked } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { BookOpen, GraduationCap, LogIn, LogOut, User, TrendingUp, CheckCircle, RotateCcw, BookMarked, Settings, Flame, Sparkles } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
+import { cn } from '@/lib/utils';
 
 interface Stats {
   today: {
@@ -21,14 +24,99 @@ interface Stats {
   };
 }
 
+interface DailyProgress {
+  dailyGoal: number;
+  completed: number;
+  progress: number;
+  isCompleted: boolean;
+}
+
+// 火焰进度组件
+function FireProgress({ 
+  completed, 
+  goal, 
+  onSettingsClick 
+}: { 
+  completed: number; 
+  goal: number; 
+  onSettingsClick: () => void;
+}) {
+  const progress = Math.min(100, Math.round((completed / goal) * 100));
+  const isCompleted = completed >= goal;
+  
+  // 计算火焰数量（0-10个）
+  const fireCount = Math.min(10, Math.floor(progress / 10));
+  
+  return (
+    <div className="relative">
+      {/* 火焰进度条 */}
+      <div className="flex items-center justify-center gap-1 mb-2">
+        {[...Array(10)].map((_, i) => (
+          <div
+            key={i}
+            className={cn(
+              "transition-all duration-300 transform",
+              i < fireCount ? "scale-100 opacity-100" : "scale-75 opacity-30"
+            )}
+          >
+            <Flame 
+              className={cn(
+                "w-5 h-5 md:w-6 md:h-6",
+                i < fireCount 
+                  ? "text-orange-500 animate-pulse" 
+                  : "text-gray-300 dark:text-gray-600"
+              )}
+              style={{ animationDelay: `${i * 100}ms` }}
+            />
+          </div>
+        ))}
+      </div>
+      
+      {/* 进度文字 */}
+      <div className="flex items-center justify-center gap-2">
+        {isCompleted ? (
+          <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
+            <Sparkles className="w-5 h-5 animate-bounce" />
+            <span className="font-bold">目标达成！</span>
+            <Sparkles className="w-5 h-5 animate-bounce" />
+          </div>
+        ) : (
+          <span className="text-lg md:text-xl font-bold text-gray-900 dark:text-white">
+            <span className="text-orange-500">{completed}</span>
+            <span className="text-gray-400 mx-1">/</span>
+            <span className="text-gray-600">{goal}</span>
+          </span>
+        )}
+      </div>
+      
+      {/* 提示文字 */}
+      <div className="text-center text-xs text-gray-500 dark:text-gray-400 mt-1">
+        {isCompleted ? "太棒了！继续保持" : `还需 ${goal - completed} 个单词`}
+      </div>
+      
+      {/* 设置按钮 */}
+      <button
+        onClick={onSettingsClick}
+        className="absolute right-0 top-0 p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+      >
+        <Settings className="w-4 h-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" />
+      </button>
+    </div>
+  );
+}
+
 export default function Home() {
   const { user, logout, token } = useAuth();
   const router = useRouter();
   const [stats, setStats] = useState<Stats | null>(null);
+  const [dailyProgress, setDailyProgress] = useState<DailyProgress | null>(null);
+  const [showGoalDialog, setShowGoalDialog] = useState(false);
+  const [newGoal, setNewGoal] = useState('200');
 
   useEffect(() => {
     if (user && token) {
       fetchStats();
+      fetchDailyProgress();
     }
   }, [user, token]);
 
@@ -45,6 +133,48 @@ export default function Home() {
       }
     } catch (error) {
       console.error('Failed to fetch stats:', error);
+    }
+  };
+
+  const fetchDailyProgress = async () => {
+    try {
+      const response = await fetch('/api/daily-progress', {
+        headers: {
+          authorization: `Bearer ${token}`,
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setDailyProgress(data);
+        setNewGoal(data.dailyGoal.toString());
+      }
+    } catch (error) {
+      console.error('Failed to fetch daily progress:', error);
+    }
+  };
+
+  const handleUpdateGoal = async () => {
+    const goal = parseInt(newGoal);
+    if (!goal || goal < 1 || goal > 1000) {
+      return;
+    }
+    
+    try {
+      const response = await fetch('/api/daily-progress', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ dailyGoal: goal }),
+      });
+      
+      if (response.ok) {
+        setDailyProgress(prev => prev ? { ...prev, dailyGoal: goal } : null);
+        setShowGoalDialog(false);
+      }
+    } catch (error) {
+      console.error('Failed to update goal:', error);
     }
   };
 
@@ -143,28 +273,71 @@ export default function Home() {
         <div className="mb-4">
           {user && stats ? (
             <div className="max-w-2xl mx-auto">
-              {/* 今日统计 */}
+              {/* 今日学习进度 - 火焰进度条 */}
               <Card className="mb-3">
                 <CardHeader className="p-3 pb-2">
                   <CardTitle className="text-sm flex items-center gap-2">
-                    <TrendingUp className="w-4 h-4 text-blue-500" />
-                    今日学习
+                    <Flame className="w-4 h-4 text-orange-500" />
+                    今日学习进度
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-3 pt-0">
-                  <div className="flex justify-around">
-                    <div className="text-center">
-                      <div className="text-xl md:text-2xl font-bold text-blue-600">{stats.today.practicedCount}</div>
-                      <div className="text-xs text-gray-500">已背单词</div>
+                  {dailyProgress ? (
+                    <FireProgress 
+                      completed={dailyProgress.completed}
+                      goal={dailyProgress.dailyGoal}
+                      onSettingsClick={() => setShowGoalDialog(true)}
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center py-4">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-500"></div>
                     </div>
-                    <div className="w-px h-10 bg-gray-200 dark:bg-gray-700"></div>
-                    <div className="text-center">
-                      <div className="text-xl md:text-2xl font-bold text-green-600">{stats.today.masteredCount}</div>
-                      <div className="text-xs text-gray-500">今日掌握</div>
-                    </div>
-                  </div>
+                  )}
                 </CardContent>
               </Card>
+
+              {/* 目标设置弹窗 */}
+              <Dialog open={showGoalDialog} onOpenChange={setShowGoalDialog}>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>设置每日学习目标</DialogTitle>
+                  </DialogHeader>
+                  <div className="py-4">
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {[50, 100, 200, 300, 500].map(g => (
+                        <Button
+                          key={g}
+                          variant={newGoal === g.toString() ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setNewGoal(g.toString())}
+                        >
+                          {g} 个
+                        </Button>
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-500">自定义：</span>
+                      <Input
+                        type="number"
+                        value={newGoal}
+                        onChange={(e) => setNewGoal(e.target.value)}
+                        className="w-24"
+                        min={1}
+                        max={1000}
+                      />
+                      <span className="text-sm text-gray-500">个单词</span>
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button variant="outline" onClick={() => setShowGoalDialog(false)}>
+                      取消
+                    </Button>
+                    <Button onClick={handleUpdateGoal}>
+                      确定
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
 
               {/* 累计统计 */}
               <Card>

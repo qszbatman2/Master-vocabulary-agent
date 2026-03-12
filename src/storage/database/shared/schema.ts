@@ -63,6 +63,7 @@ export const users = pgTable(
     email: varchar("email", { length: 255 }).notNull().unique(),
     password: varchar("password", { length: 255 }).notNull(),
     nickname: varchar("nickname", { length: 100 }),
+    dailyGoal: integer("daily_goal").default(200).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
