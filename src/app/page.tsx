@@ -48,9 +48,9 @@ function FireProgress({
   const fireCount = Math.min(10, Math.floor(progress / 10));
   
   return (
-    <div className="relative">
+    <div className="relative py-1">
       {/* 火焰进度条 */}
-      <div className="flex items-center justify-center gap-1 mb-2">
+      <div className="flex items-center justify-center gap-0.5 mb-1">
         {[...Array(10)].map((_, i) => (
           <div
             key={i}
@@ -61,7 +61,7 @@ function FireProgress({
           >
             <Flame 
               className={cn(
-                "w-5 h-5 md:w-6 md:h-6",
+                "w-4 h-4",
                 i < fireCount 
                   ? "text-orange-500 animate-pulse" 
                   : "text-gray-300 dark:text-gray-600"
@@ -75,13 +75,13 @@ function FireProgress({
       {/* 进度文字 */}
       <div className="flex items-center justify-center gap-2">
         {isCompleted ? (
-          <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
-            <Sparkles className="w-5 h-5 animate-bounce" />
+          <div className="flex items-center gap-1 text-green-600 dark:text-green-400 text-sm">
+            <Sparkles className="w-4 h-4 animate-bounce" />
             <span className="font-bold">目标达成！</span>
-            <Sparkles className="w-5 h-5 animate-bounce" />
+            <Sparkles className="w-4 h-4 animate-bounce" />
           </div>
         ) : (
-          <span className="text-lg md:text-xl font-bold text-gray-900 dark:text-white">
+          <span className="text-base font-bold text-gray-900 dark:text-white">
             <span className="text-orange-500">{completed}</span>
             <span className="text-gray-400 mx-1">/</span>
             <span className="text-gray-600">{goal}</span>
@@ -89,17 +89,12 @@ function FireProgress({
         )}
       </div>
       
-      {/* 提示文字 */}
-      <div className="text-center text-xs text-gray-500 dark:text-gray-400 mt-1">
-        {isCompleted ? "太棒了！继续保持" : `还需 ${goal - completed} 个单词`}
-      </div>
-      
       {/* 设置按钮 */}
       <button
         onClick={onSettingsClick}
-        className="absolute right-0 top-0 p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+        className="absolute right-0 top-1 p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
       >
-        <Settings className="w-4 h-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" />
+        <Settings className="w-3.5 h-3.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" />
       </button>
     </div>
   );
@@ -274,14 +269,14 @@ export default function Home() {
           {user && stats ? (
             <div className="max-w-2xl mx-auto">
               {/* 今日学习进度 - 火焰进度条 */}
-              <Card className="mb-3">
-                <CardHeader className="p-3 pb-2">
+              <Card className="mb-2">
+                <CardHeader className="p-2 pb-1">
                   <CardTitle className="text-sm flex items-center gap-2">
                     <Flame className="w-4 h-4 text-orange-500" />
                     今日学习进度
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="p-3 pt-0">
+                <CardContent className="p-2 pt-0">
                   {dailyProgress ? (
                     <FireProgress 
                       completed={dailyProgress.completed}
@@ -289,8 +284,8 @@ export default function Home() {
                       onSettingsClick={() => setShowGoalDialog(true)}
                     />
                   ) : (
-                    <div className="flex items-center justify-center py-4">
-                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-500"></div>
+                    <div className="flex items-center justify-center py-2">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-orange-500"></div>
                     </div>
                   )}
                 </CardContent>
