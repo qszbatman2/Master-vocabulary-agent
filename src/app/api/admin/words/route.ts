@@ -34,23 +34,10 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search');
     const hasEmptyExample = searchParams.get('hasEmptyExample') === 'true';
 
-    // 构建查询
+    // 构建查询 - 使用简化的select
     let query = client
       .from('words')
-      .select(`
-        id,
-        word,
-        phonetic,
-        meaning,
-        example_sentence,
-        example_sentence_cn,
-        category_id,
-        created_at,
-        vocabulary_categories (
-          id,
-          name
-        )
-      `, { count: 'exact' });
+      .select('*', { count: 'exact' });
 
     // 分类筛选
     if (category && category !== 'all') {
@@ -101,9 +88,18 @@ export async function GET(request: NextRequest) {
       .select('id, name')
       .order('name');
 
+    // 获取分类名称映射
+    const categoryMap = new Map((categories || []).map(c => [c.id, c.name]));
+
+    // 组装返回数据
+    const wordsWithCategory = (words || []).map(w => ({
+      ...w,
+      category_name: categoryMap.get(w.category_id) || '',
+    }));
+
     return NextResponse.json({
       success: true,
-      words: words || [],
+      words: wordsWithCategory,
       total: count || 0,
       page,
       pageSize,
@@ -160,19 +156,7 @@ export async function PUT(request: NextRequest) {
       .from('words')
       .update(updateData)
       .eq('id', id)
-      .select(`
-        id,
-        word,
-        phonetic,
-        meaning,
-        example_sentence,
-        example_sentence_cn,
-        category_id,
-        vocabulary_categories (
-          id,
-          name
-        )
-      `)
+      .select()
       .single();
 
     if (error) {
