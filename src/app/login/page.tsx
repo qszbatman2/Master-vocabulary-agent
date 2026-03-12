@@ -96,6 +96,16 @@ export default function LoginPage() {
         />
       </div>
 
+      {/* 页面顶部返回按钮 */}
+      <Link href="/" className="fixed top-6 left-6 z-50">
+        <button 
+          className="w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95"
+          style={{ background: 'rgba(30, 30, 46, 0.8)', color: '#a0a0b0', backdropFilter: 'blur(8px)' }}
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+      </Link>
+
       {/* 登录卡片 */}
       <div 
         className="relative w-full max-w-sm transition-all duration-700"
@@ -139,16 +149,6 @@ export default function LoginPage() {
               boxShadow: '0 0 30px rgba(196, 76, 255, 0.2), inset 0 0 30px rgba(196, 76, 255, 0.03)'
             }}
           />
-
-          {/* 返回按钮 - 卡片内部左上角 */}
-          <Link href="/" className="absolute top-4 left-4 z-10">
-            <button 
-              className="w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95"
-              style={{ background: 'rgba(255,255,255,0.05)', color: '#a0a0b0' }}
-            >
-              <ArrowLeft className="w-4 h-4" />
-            </button>
-          </Link>
 
           <Tabs defaultValue="login" className="w-full relative">
             <TabsList 
