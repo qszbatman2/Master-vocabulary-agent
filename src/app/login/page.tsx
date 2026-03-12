@@ -154,26 +154,18 @@ export default function LoginPage() {
 
           <Tabs defaultValue="login" className="w-full relative">
             <TabsList 
-              className="grid w-full grid-cols-2 h-11 rounded-xl mb-5"
+              className="grid w-full grid-cols-2 h-11 rounded-xl mb-5 relative p-1"
               style={{ background: 'rgba(255,255,255,0.05)' }}
             >
               <TabsTrigger 
                 value="login" 
-                className="rounded-lg text-sm font-medium transition-all duration-200 data-[state=active]:text-white"
-                style={{ 
-                  background: 'transparent',
-                  color: '#a0a0b0'
-                }}
+                className="rounded-lg text-sm font-medium transition-all duration-200 data-[state=active]:bg-gradient-to-r data-[state=active]:from-pink-500 data-[state=active]:to-purple-500 data-[state=active]:text-white data-[state=inactive]:text-gray-400"
               >
                 登录
               </TabsTrigger>
               <TabsTrigger 
                 value="register"
-                className="rounded-lg text-sm font-medium transition-all duration-200 data-[state=active]:text-white"
-                style={{ 
-                  background: 'transparent',
-                  color: '#a0a0b0'
-                }}
+                className="rounded-lg text-sm font-medium transition-all duration-200 data-[state=active]:bg-gradient-to-r data-[state=active]:from-pink-500 data-[state=active]:to-purple-500 data-[state=active]:text-white data-[state=inactive]:text-gray-400"
               >
                 注册
               </TabsTrigger>
