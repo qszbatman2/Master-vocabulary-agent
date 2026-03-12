@@ -640,49 +640,52 @@ export default function PracticePage() {
         </div>
       </div>
 
-      {/* 题目卡片 */}
-      <div className="flex-1 flex flex-col">
-        <div className="px-4 py-4">
-          <div 
-            className="max-w-md mx-auto rounded-3xl p-6"
-            style={{ background: '#1e1e2e', boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)' }}
-          >
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="text-2xl font-bold text-white">
-                {currentQuestion.mode === 'en-to-zh' ? (
-                  <div className="flex items-center gap-3">
-                    {currentQuestion.question}
-                    <button
-                      onClick={() => playAudio(currentQuestion.question)}
-                      className="p-2 rounded-xl transition-all duration-200 hover:scale-110 active:scale-95"
-                      style={{ background: 'rgba(0, 240, 255, 0.1)' }}
-                    >
-                      <Volume2 className="w-5 h-5" style={{ color: '#00f0ff' }} />
-                    </button>
-                  </div>
-                ) : (
-                  currentQuestion.question
-                )}
-              </h2>
-            </div>
-            {currentQuestion.mode === 'en-to-zh' && currentQuestion.phonetic && (
-              <p className="text-sm" style={{ color: '#a0a0b0' }}>{currentQuestion.phonetic}</p>
-            )}
-            {isWrongWord && (
-              <div className="mt-3">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium" style={{ background: 'rgba(255, 165, 0, 0.1)', color: '#ffa500' }}>
-                  <AlertCircle className="w-3.5 h-3.5" />
-                  本轮错题 · 需连续对 {3 - (wrongStatus?.consecutiveCorrect || 0)} 次
-                </span>
-              </div>
-            )}
+      {/* 题目卡片 - 置顶吸附 */}
+      <div 
+        className="sticky top-[57px] z-10 px-4 py-3"
+        style={{ background: 'rgba(18, 18, 30, 0.95)', backdropFilter: 'blur(12px)' }}
+      >
+        <div 
+          className="max-w-md mx-auto rounded-2xl p-5"
+          style={{ background: '#1e1e2e', boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)' }}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-2xl font-bold text-white">
+              {currentQuestion.mode === 'en-to-zh' ? (
+                <div className="flex items-center gap-3">
+                  {currentQuestion.question}
+                  <button
+                    onClick={() => playAudio(currentQuestion.question)}
+                    className="p-2 rounded-xl transition-all duration-200 hover:scale-110 active:scale-95"
+                    style={{ background: 'rgba(0, 240, 255, 0.1)' }}
+                  >
+                    <Volume2 className="w-5 h-5" style={{ color: '#00f0ff' }} />
+                  </button>
+                </div>
+              ) : (
+                currentQuestion.question
+              )}
+            </h2>
           </div>
+          {currentQuestion.mode === 'en-to-zh' && currentQuestion.phonetic && (
+            <p className="text-sm" style={{ color: '#a0a0b0' }}>{currentQuestion.phonetic}</p>
+          )}
+          {isWrongWord && (
+            <div className="mt-3">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium" style={{ background: 'rgba(255, 165, 0, 0.1)', color: '#ffa500' }}>
+                <AlertCircle className="w-3.5 h-3.5" />
+                本轮错题 · 需连续对 {3 - (wrongStatus?.consecutiveCorrect || 0)} 次
+              </span>
+            </div>
+          )}
         </div>
+      </div>
 
-        <div className="flex-1"></div>
+      {/* 中间空白区域 - 可滚动区域 */}
+      <div className="flex-1"></div>
 
-        {/* 底部答题区 */}
-        <div className="sticky bottom-0 z-20 px-4 py-3 pb-6" style={{ background: 'rgba(18, 18, 30, 0.95)' }}>
+      {/* 底部答题区 - 置底吸附 */}
+      <div className="sticky bottom-0 z-20 px-4 py-3 pb-6" style={{ background: 'rgba(18, 18, 30, 0.95)' }}>
           <div className="max-w-md mx-auto space-y-2">
             {!showResult ? (
               <>
@@ -791,7 +794,6 @@ export default function PracticePage() {
             )}
           </div>
         </div>
-      </div>
     </div>
   );
 }
