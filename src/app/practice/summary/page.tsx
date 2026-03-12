@@ -3,17 +3,16 @@
 import { useEffect, useState, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Trophy, Target, CheckCircle, RotateCcw, Home } from 'lucide-react';
+import { ArrowLeft, Trophy, Target, CheckCircle, RotateCcw, Home, Clock, TrendingUp, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface RoundSummary {
-  totalPracticed: number;      // 本轮已背单词数
-  masteredCount: number;       // 本轮掌握数
-  wrongCount: number;          // 本轮首次错误数
-  correctCount: number;        // 本轮首次正确数
-  duration: number;            // 学习时长（秒）
+  totalPracticed: number;
+  masteredCount: number;
+  wrongCount: number;
+  correctCount: number;
+  duration: number;
 }
 
 function SummaryContent() {
@@ -21,8 +20,13 @@ function SummaryContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [summary, setSummary] = useState<RoundSummary | null>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
   const initializedRef = useRef(false);
   const dataLoadedRef = useRef(false);
+
+  useEffect(() => {
+    setIsLoaded(true);
+  }, []);
 
   useEffect(() => {
     if (dataLoadedRef.current) return;
@@ -67,10 +71,10 @@ function SummaryContent() {
 
   if (!user || !summary) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#12121e' }}>
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-500">加载中...</p>
+          <div className="w-12 h-12 rounded-full animate-spin mx-auto" style={{ border: '2px solid rgba(255,255,255,0.1)', borderTopColor: '#c44cff' }} />
+          <p className="mt-3" style={{ color: '#a0a0b0' }}>加载中...</p>
         </div>
       </div>
     );
@@ -88,79 +92,160 @@ function SummaryContent() {
     : 0;
 
   return (
-    <div className="flex-1 container mx-auto px-3 py-4 flex flex-col items-center justify-center">
-      <Card className="w-full max-w-sm mb-4 overflow-hidden">
-        <div className="h-24 bg-gradient-to-r from-purple-500 to-blue-500 flex items-center justify-center">
-          <div className="text-center text-white">
-            <Trophy className="w-10 h-10 mx-auto mb-1" />
+    <div className="flex-1 container mx-auto px-4 py-6 flex flex-col items-center justify-center max-w-md">
+      {/* 主卡片 */}
+      <div 
+        className="w-full rounded-3xl overflow-hidden transition-all duration-700"
+        style={{ 
+          background: '#1e1e2e',
+          boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)',
+          opacity: isLoaded ? 1 : 0,
+          transform: isLoaded ? 'translateY(0)' : 'translateY(30px)'
+        }}
+      >
+        {/* 顶部渐变区域 */}
+        <div 
+          className="h-28 flex items-center justify-center relative"
+          style={{ background: 'linear-gradient(135deg, #c44cff, #7c4dff)' }}
+        >
+          <div 
+            className="absolute inset-0 opacity-50"
+            style={{
+              background: 'radial-gradient(circle at 30% 50%, rgba(255,255,255,0.2) 0%, transparent 50%)'
+            }}
+          />
+          <div className="text-center text-white relative">
+            <div 
+              className="w-16 h-16 rounded-2xl mx-auto mb-2 flex items-center justify-center transition-transform duration-300 hover:scale-110"
+              style={{ background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(10px)' }}
+            >
+              <Trophy className="w-8 h-8" />
+            </div>
             <p className="text-sm opacity-90">学习完成</p>
           </div>
         </div>
 
-        <CardHeader className="p-4 pb-2">
-          <CardTitle className="text-center text-lg">本轮成绩</CardTitle>
-        </CardHeader>
-        
-        <CardContent className="p-4 pt-0 space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-              <Target className="w-5 h-5 text-blue-500 mx-auto mb-1" />
-              <div className="text-2xl font-bold text-blue-600">{summary.totalPracticed}</div>
-              <div className="text-xs text-gray-500">已背单词</div>
+        {/* 内容区域 */}
+        <div className="p-6">
+          <h2 className="text-xl font-bold text-white text-center mb-5">本轮成绩</h2>
+          
+          {/* 主要统计 */}
+          <div 
+            className="grid grid-cols-2 gap-3 mb-5 transition-all duration-700 delay-100"
+            style={{ 
+              opacity: isLoaded ? 1 : 0,
+              transform: isLoaded ? 'translateY(0)' : 'translateY(20px)'
+            }}
+          >
+            <div 
+              className="text-center p-4 rounded-2xl transition-transform duration-200 hover:scale-105"
+              style={{ background: 'rgba(0, 240, 255, 0.08)' }}
+            >
+              <Target className="w-6 h-6 mx-auto mb-2" style={{ color: '#00f0ff' }} />
+              <div className="text-3xl font-bold" style={{ color: '#00f0ff' }}>{summary.totalPracticed}</div>
+              <div className="text-xs mt-1" style={{ color: '#a0a0b0' }}>已背单词</div>
             </div>
-            <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-              <CheckCircle className="w-5 h-5 text-green-500 mx-auto mb-1" />
-              <div className="text-2xl font-bold text-green-600">{summary.masteredCount}</div>
-              <div className="text-xs text-gray-500">本轮掌握</div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2 text-center">
-            <div className="p-2 bg-gray-50 dark:bg-gray-800 rounded">
-              <div className="text-lg font-semibold text-gray-700 dark:text-gray-300">{summary.correctCount}</div>
-              <div className="text-xs text-gray-500">首次正确</div>
-            </div>
-            <div className="p-2 bg-gray-50 dark:bg-gray-800 rounded">
-              <div className="text-lg font-semibold text-red-600">{summary.wrongCount}</div>
-              <div className="text-xs text-gray-500">首次错误</div>
-            </div>
-            <div className="p-2 bg-gray-50 dark:bg-gray-800 rounded">
-              <div className="text-lg font-semibold text-purple-600">{accuracy}%</div>
-              <div className="text-xs text-gray-500">正确率</div>
+            <div 
+              className="text-center p-4 rounded-2xl transition-transform duration-200 hover:scale-105"
+              style={{ background: 'rgba(0, 255, 136, 0.08)' }}
+            >
+              <CheckCircle className="w-6 h-6 mx-auto mb-2" style={{ color: '#00ff88' }} />
+              <div className="text-3xl font-bold" style={{ color: '#00ff88' }}>{summary.masteredCount}</div>
+              <div className="text-xs mt-1" style={{ color: '#a0a0b0' }}>本轮掌握</div>
             </div>
           </div>
 
-          <div className="text-center p-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-            <div className="text-sm text-gray-600 dark:text-gray-400">学习时长</div>
-            <div className="text-xl font-bold text-purple-600">{formatDuration(summary.duration)}</div>
+          {/* 次要统计 */}
+          <div 
+            className="grid grid-cols-3 gap-2 mb-5 text-center transition-all duration-700 delay-200"
+            style={{ 
+              opacity: isLoaded ? 1 : 0,
+              transform: isLoaded ? 'translateY(0)' : 'translateY(20px)'
+            }}
+          >
+            <div className="p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)' }}>
+              <div className="text-xl font-semibold text-white">{summary.correctCount}</div>
+              <div className="text-xs" style={{ color: '#a0a0b0' }}>首次正确</div>
+            </div>
+            <div className="p-3 rounded-xl" style={{ background: 'rgba(255, 107, 157, 0.08)' }}>
+              <div className="text-xl font-semibold" style={{ color: '#ff6b9d' }}>{summary.wrongCount}</div>
+              <div className="text-xs" style={{ color: '#a0a0b0' }}>首次错误</div>
+            </div>
+            <div className="p-3 rounded-xl" style={{ background: 'rgba(196, 76, 255, 0.08)' }}>
+              <div className="text-xl font-semibold" style={{ color: '#c44cff' }}>{accuracy}%</div>
+              <div className="text-xs" style={{ color: '#a0a0b0' }}>正确率</div>
+            </div>
           </div>
 
-          <div className="text-center py-2">
+          {/* 学习时长 */}
+          <div 
+            className="text-center p-4 rounded-2xl mb-5 transition-all duration-700 delay-300"
+            style={{ 
+              background: 'rgba(196, 76, 255, 0.08)',
+              opacity: isLoaded ? 1 : 0,
+              transform: isLoaded ? 'translateY(0)' : 'translateY(20px)'
+            }}
+          >
+            <Clock className="w-5 h-5 mx-auto mb-2" style={{ color: '#c44cff' }} />
+            <div className="text-sm" style={{ color: '#a0a0b0' }}>学习时长</div>
+            <div className="text-2xl font-bold mt-1" style={{ color: '#c44cff' }}>{formatDuration(summary.duration)}</div>
+          </div>
+
+          {/* 激励语 */}
+          <div 
+            className="text-center py-3 mb-4 transition-all duration-700 delay-400"
+            style={{ 
+              opacity: isLoaded ? 1 : 0,
+              transform: isLoaded ? 'translateY(0)' : 'translateY(20px)'
+            }}
+          >
             {summary.masteredCount >= 10 ? (
-              <p className="text-green-600 font-medium">太棒了！继续保持！</p>
+              <div className="flex items-center justify-center gap-2">
+                <Sparkles className="w-5 h-5" style={{ color: '#00ff88' }} />
+                <p className="font-medium" style={{ color: '#00ff88' }}>太棒了！继续保持！</p>
+              </div>
             ) : summary.masteredCount >= 5 ? (
-              <p className="text-blue-600 font-medium">进步很大，加油！</p>
+              <div className="flex items-center justify-center gap-2">
+                <TrendingUp className="w-5 h-5" style={{ color: '#00f0ff' }} />
+                <p className="font-medium" style={{ color: '#00f0ff' }}>进步很大，加油！</p>
+              </div>
             ) : summary.totalPracticed > 0 ? (
-              <p className="text-purple-600 font-medium">每一次练习都是进步！</p>
+              <div className="flex items-center justify-center gap-2">
+                <Target className="w-5 h-5" style={{ color: '#c44cff' }} />
+                <p className="font-medium" style={{ color: '#c44cff' }}>每一次练习都是进步！</p>
+              </div>
             ) : (
-              <p className="text-gray-500">开始你的学习之旅吧！</p>
+              <p style={{ color: '#a0a0b0' }}>开始你的学习之旅吧！</p>
             )}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      <div className="w-full max-w-sm space-y-2">
+      {/* 按钮区域 */}
+      <div 
+        className="w-full space-y-3 mt-5 transition-all duration-700 delay-500"
+        style={{ 
+          opacity: isLoaded ? 1 : 0,
+          transform: isLoaded ? 'translateY(0)' : 'translateY(20px)'
+        }}
+      >
         <Link href="/practice" className="block">
-          <Button className="w-full h-11" size="lg">
-            <RotateCcw className="w-4 h-4 mr-2" />
+          <button 
+            className="w-full h-12 rounded-xl text-white font-medium flex items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] active:scale-95"
+            style={{ background: 'linear-gradient(135deg, #ff6b9d, #c44cff, #4cc9ff)' }}
+          >
+            <RotateCcw className="w-5 h-5" />
             继续练习
-          </Button>
+          </button>
         </Link>
         <Link href="/" className="block">
-          <Button variant="outline" className="w-full h-11" size="lg">
-            <Home className="w-4 h-4 mr-2" />
+          <button 
+            className="w-full h-12 rounded-xl font-medium flex items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] active:scale-95"
+            style={{ background: 'rgba(255,255,255,0.05)', color: '#a0a0b0' }}
+          >
+            <Home className="w-5 h-5" />
             返回首页
-          </Button>
+          </button>
         </Link>
       </div>
     </div>
@@ -169,26 +254,65 @@ function SummaryContent() {
 
 function LoadingFallback() {
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+    <div className="min-h-screen flex items-center justify-center" style={{ background: '#12121e' }}>
       <div className="text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-        <p className="mt-2 text-gray-500">加载中...</p>
+        <div className="w-12 h-12 rounded-full animate-spin mx-auto" style={{ border: '2px solid rgba(255,255,255,0.1)', borderTopColor: '#c44cff' }} />
+        <p className="mt-3" style={{ color: '#a0a0b0' }}>加载中...</p>
       </div>
     </div>
   );
 }
 
 export default function SummaryPage() {
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  useEffect(() => {
+    setIsLoaded(true);
+  }, []);
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 flex flex-col">
-      <div className="sticky top-0 z-20 bg-white/80 dark:bg-gray-800/80 backdrop-blur border-b">
-        <div className="container mx-auto px-3 py-3 flex items-center gap-2">
+    <div className="min-h-screen flex flex-col overflow-hidden" style={{ background: '#12121e' }}>
+      {/* 背景网格纹理 */}
+      <div 
+        className="fixed inset-0 pointer-events-none opacity-[0.03]"
+        style={{
+          backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
+          backgroundSize: '40px 40px'
+        }}
+      />
+      
+      {/* 背景渐变光晕 */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div 
+          className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[500px] h-[500px] rounded-full blur-[120px] animate-pulse"
+          style={{ background: 'linear-gradient(135deg, #c44cff, #7c4dff)', opacity: 0.2, animationDuration: '4s' }}
+        />
+        <div 
+          className="absolute bottom-0 right-0 w-[400px] h-[400px] rounded-full blur-[100px] animate-pulse"
+          style={{ background: 'linear-gradient(135deg, #00ff88, #00d4ff)', opacity: 0.15, animationDuration: '5s', animationDelay: '1s' }}
+        />
+      </div>
+
+      {/* 头部 */}
+      <div 
+        className="sticky top-0 z-20 border-b backdrop-blur-xl transition-all duration-700"
+        style={{ 
+          background: 'rgba(30, 30, 46, 0.9)',
+          borderColor: 'rgba(255,255,255,0.05)',
+          opacity: isLoaded ? 1 : 0,
+          transform: isLoaded ? 'translateY(0)' : 'translateY(-20px)'
+        }}
+      >
+        <div className="container mx-auto px-4 py-4 max-w-2xl flex items-center gap-3">
           <Link href="/">
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <ArrowLeft className="w-4 h-4" />
-            </Button>
+            <button 
+              className="w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95"
+              style={{ background: 'rgba(255,255,255,0.05)', color: '#a0a0b0' }}
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
           </Link>
-          <h1 className="text-lg font-bold text-gray-900 dark:text-white">本轮结算</h1>
+          <h1 className="text-xl font-bold text-white">本轮结算</h1>
         </div>
       </div>
 
