@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ArrowLeft, CheckCircle, XCircle, Volume2, BookmarkCheck, Sparkles, LogOut, RefreshCw, AlertCircle, Moon, Sun } from 'lucide-react';
+import { ArrowLeft, CheckCircle, XCircle, Volume2, BookmarkCheck, Sparkles, LogOut, RefreshCw, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -56,7 +56,6 @@ export default function PracticePage() {
   const [isStarted, setIsStarted] = useState(false);
   const [autoMasteredMessage, setAutoMasteredMessage] = useState('');
   const [remainingWords, setRemainingWords] = useState(0);
-  const [isDark, setIsDark] = useState(false);
   
   // 无尽模式状态
   const [roundSuccessCount, setRoundSuccessCount] = useState(0); // 本轮成功数
@@ -69,21 +68,6 @@ export default function PracticePage() {
   const [finishMessage, setFinishMessage] = useState('');
   const [masteredThisRound, setMasteredThisRound] = useState<Set<number>>(new Set()); // 本轮标记掌握的词
   const [startTime, setStartTime] = useState<number>(0); // 开始时间
-
-  // 深浅模式检测
-  useEffect(() => {
-    const checkDark = () => {
-      setIsDark(document.documentElement.classList.contains('dark'));
-    };
-    checkDark();
-    const observer = new MutationObserver(checkDark);
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-    return () => observer.disconnect();
-  }, []);
-
-  const toggleTheme = () => {
-    document.documentElement.classList.toggle('dark');
-  };
 
   // 使用 ref 确保在 nextQuestion 中访问最新状态
   const roundCorrectWordsRef = useRef(roundCorrectWords);
@@ -473,65 +457,30 @@ export default function PracticePage() {
   // 开始前选择页面
   if (!isStarted) {
     return (
-      <div className={cn(
-        "min-h-screen flex flex-col",
-        isDark ? "bg-[#121212]" : "bg-gray-50"
-      )}>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
         {/* 头部 */}
-        <div className={cn(
-          "sticky top-0 z-20 border-b",
-          isDark ? "bg-[#1E1E1E] border-[#2A2A2A]" : "bg-white border-gray-100"
-        )}>
-          <div className="container mx-auto px-3 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Link href="/">
-                <button className={cn(
-                  "w-8 h-8 rounded-full flex items-center justify-center",
-                  isDark ? "bg-[#2A2A2A] hover:bg-[#333]" : "bg-gray-100 hover:bg-gray-200"
-                )}>
-                  <ArrowLeft className={cn("w-4 h-4", isDark ? "text-white" : "text-gray-600")} />
-                </button>
-              </Link>
-              <h1 className={cn(
-                "text-lg font-bold",
-                isDark ? "text-white" : "text-gray-900"
-              )}>背单词</h1>
-            </div>
-            <button
-              onClick={toggleTheme}
-              className={cn(
-                "w-10 h-10 rounded-full flex items-center justify-center transition-all",
-                isDark 
-                  ? "bg-[#1E1E1E] hover:bg-[#2A2A2A]" 
-                  : "bg-white shadow-md hover:shadow-lg"
-              )}
-            >
-              {isDark ? (
-                <Sun className="w-5 h-5 text-[#00E5FF]" />
-              ) : (
-                <Moon className="w-5 h-5 text-gray-600" />
-              )}
-            </button>
+        <div className="sticky top-0 z-20 bg-white dark:bg-gray-800 border-b">
+          <div className="container mx-auto px-3 py-3 flex items-center gap-2">
+            <Link href="/">
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <ArrowLeft className="w-4 h-4" />
+              </Button>
+            </Link>
+            <h1 className="text-lg font-bold text-gray-900 dark:text-white">背单词</h1>
           </div>
         </div>
 
         {/* 内容 */}
-        <div className="flex-1 container mx-auto px-3 py-4 relative z-10">
-          <div className={cn(
-            "max-w-md mx-auto p-5 rounded-2xl",
-            isDark ? "bg-[#1E1E1E] border border-[#333]" : "bg-white shadow-xl"
-          )}>
-            <div className="space-y-4">
+        <div className="flex-1 container mx-auto px-3 py-4">
+          <Card className="max-w-md mx-auto">
+            <CardHeader className="p-4">
+              <CardTitle className="text-base">练习设置</CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 pt-0 space-y-4">
               <div>
-                <label className={cn(
-                  "text-sm font-medium mb-2 block",
-                  isDark ? "text-gray-300" : "text-gray-700"
-                )}>选择词库</label>
+                <label className="text-sm font-medium mb-2 block">选择词库</label>
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger className={cn(
-                    "h-11 rounded-xl",
-                    isDark && "bg-[#2A2A2A] border-[#333]"
-                  )}>
+                  <SelectTrigger className="h-10">
                     <SelectValue placeholder="选择词库" />
                   </SelectTrigger>
                   <SelectContent>
@@ -546,15 +495,9 @@ export default function PracticePage() {
               </div>
 
               <div>
-                <label className={cn(
-                  "text-sm font-medium mb-2 block",
-                  isDark ? "text-gray-300" : "text-gray-700"
-                )}>练习模式</label>
+                <label className="text-sm font-medium mb-2 block">练习模式</label>
                 <Select value={selectedFilter} onValueChange={(v) => setSelectedFilter(v as 'all' | 'wrong_words')}>
-                  <SelectTrigger className={cn(
-                    "h-11 rounded-xl",
-                    isDark && "bg-[#2A2A2A] border-[#333]"
-                  )}>
+                  <SelectTrigger className="h-10">
                     <SelectValue placeholder="选择模式" />
                   </SelectTrigger>
                   <SelectContent>
@@ -564,31 +507,22 @@ export default function PracticePage() {
                 </Select>
               </div>
 
-              <div className={cn(
-                "p-4 rounded-xl",
-                isDark ? "bg-[#00E5FF]/10" : "bg-cyan-50"
-              )}>
-                <p className={cn(
-                  "text-xs",
-                  isDark ? "text-cyan-300" : "text-cyan-800"
-                )}>
+              <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                <p className="text-xs text-blue-800 dark:text-blue-200">
                   <strong>无尽模式</strong><br/>
                   • 持续练习直到主动退出<br/>
                   • 首次正确即记为"本轮成功"<br/>
                   • 错误的词需连续对3次才算成功<br/>
                   • 错题会穿插出现在后续题目中<br/>
-                  • 连续4天答对自动掌握
+                  • 连续4次正确自动掌握
                 </p>
               </div>
 
-              <button
-                onClick={startPractice}
-                className="w-full py-4 rounded-xl bg-[#00E5FF] text-black font-medium text-base hover:bg-[#00C8DC] transition-all"
-              >
+              <Button onClick={startPractice} className="w-full h-11">
                 开始练习
-              </button>
-            </div>
-          </div>
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
@@ -597,96 +531,45 @@ export default function PracticePage() {
   // 完成页面（所有单词都掌握或错题集清空）
   if (isFinished) {
     return (
-      <div className={cn(
-        "min-h-screen flex flex-col",
-        isDark ? "bg-[#121212]" : "bg-gray-50"
-      )}>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
         {/* 头部 */}
-        <div className={cn(
-          "sticky top-0 z-20 border-b",
-          isDark ? "bg-[#1E1E1E] border-[#2A2A2A]" : "bg-white/80 backdrop-blur-sm border-gray-100"
-        )}>
-          <div className="container mx-auto px-3 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Link href="/">
-                <button className={cn(
-                  "w-8 h-8 rounded-full flex items-center justify-center",
-                  isDark ? "bg-[#2A2A2A] hover:bg-[#333]" : "bg-gray-100 hover:bg-gray-200"
-                )}>
-                  <ArrowLeft className={cn("w-4 h-4", isDark ? "text-white" : "text-gray-600")} />
-                </button>
-              </Link>
-              <h1 className={cn(
-                "text-lg font-bold",
-                isDark ? "text-white" : "text-gray-900"
-              )}>练习完成</h1>
-            </div>
-            <button
-              onClick={toggleTheme}
-              className={cn(
-                "w-10 h-10 rounded-full flex items-center justify-center transition-all",
-                isDark 
-                  ? "bg-[#1E1E1E] hover:bg-[#2A2A2A]" 
-                  : "bg-white shadow-md hover:shadow-lg"
-              )}
-            >
-              {isDark ? (
-                <Sun className="w-5 h-5 text-[#00E5FF]" />
-              ) : (
-                <Moon className="w-5 h-5 text-gray-600" />
-              )}
-            </button>
+        <div className="sticky top-0 z-20 bg-white dark:bg-gray-800 border-b">
+          <div className="container mx-auto px-3 py-3 flex items-center gap-2">
+            <Link href="/">
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <ArrowLeft className="w-4 h-4" />
+              </Button>
+            </Link>
+            <h1 className="text-lg font-bold text-gray-900 dark:text-white">练习完成</h1>
           </div>
         </div>
 
         {/* 内容 */}
-        <div className="flex-1 container mx-auto px-3 py-4 relative z-10">
-          <div className={cn(
-            "max-w-md mx-auto p-6 rounded-2xl text-center",
-            isDark ? "bg-[#1E1E1E] border border-[#333]" : "bg-white shadow-xl"
-          )}>
-            <div className={cn(
-              "mx-auto w-14 h-14 rounded-full flex items-center justify-center mb-3",
-              isDark ? "bg-green-500/20" : "bg-green-100"
-            )}>
-              <Sparkles className={cn(
-                "w-7 h-7",
-                isDark ? "text-green-400" : "text-green-600"
-              )} />
-            </div>
-            <h2 className={cn(
-              "text-lg font-bold mb-4",
-              isDark ? "text-white" : "text-gray-900"
-            )}>{finishMessage}</h2>
-            <div className="grid grid-cols-2 gap-3 mb-4">
-              <div className={cn(
-                "p-3 rounded-xl",
-                isDark ? "bg-[#2A2A2A]" : "bg-gray-50"
-              )}>
-                <div className="text-xl font-bold text-green-500">{roundSuccessCount}</div>
-                <div className={cn(
-                  "text-xs",
-                  isDark ? "text-gray-500" : "text-gray-500"
-                )}>本轮成功</div>
+        <div className="flex-1 container mx-auto px-3 py-4">
+          <Card className="max-w-md mx-auto">
+            <CardHeader className="p-4 text-center">
+              <div className="mx-auto w-14 h-14 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mb-3">
+                <Sparkles className="w-7 h-7 text-green-600 dark:text-green-400" />
               </div>
-              <div className={cn(
-                "p-3 rounded-xl",
-                isDark ? "bg-[#2A2A2A]" : "bg-gray-50"
-              )}>
-                <div className="text-xl font-bold text-red-500">{roundWrongCount}</div>
-                <div className={cn(
-                  "text-xs",
-                  isDark ? "text-gray-500" : "text-gray-500"
-                )}>首次错误</div>
+              <CardTitle className="text-lg">{finishMessage}</CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 pt-0 space-y-4">
+              <div className="grid grid-cols-2 gap-2 text-center">
+                <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                  <div className="text-xl font-bold text-green-600">{roundSuccessCount}</div>
+                  <div className="text-xs text-gray-500">本轮成功</div>
+                </div>
+                <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                  <div className="text-xl font-bold text-red-600">{roundWrongCount}</div>
+                  <div className="text-xs text-gray-500">首次错误</div>
+                </div>
               </div>
-            </div>
-            <button
-              onClick={exitPractice}
-              className="w-full py-3 rounded-xl bg-[#00E5FF] text-black font-medium hover:bg-[#00C8DC] transition-all"
-            >
-              查看结算
-            </button>
-          </div>
+
+              <Button onClick={exitPractice} className="w-full h-10">
+                查看结算
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
@@ -695,19 +578,10 @@ export default function PracticePage() {
   // 加载中
   if (questions.length === 0 || currentIndex >= questions.length) {
     return (
-      <div className={cn(
-        "min-h-screen flex items-center justify-center",
-        isDark ? "bg-[#121212]" : "bg-gray-50"
-      )}>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <RefreshCw className={cn(
-            "w-8 h-8 animate-spin mx-auto",
-            "text-[#00E5FF]"
-          )} />
-          <p className={cn(
-            "mt-2",
-            isDark ? "text-gray-400" : "text-gray-500"
-          )}>加载中...</p>
+          <RefreshCw className="w-8 h-8 animate-spin mx-auto text-blue-600" />
+          <p className="mt-2 text-gray-500">加载中...</p>
         </div>
       </div>
     );
@@ -719,10 +593,7 @@ export default function PracticePage() {
 
   // 练习页面
   return (
-    <div className={cn(
-      "min-h-screen flex flex-col",
-      isDark ? "bg-[#121212]" : "bg-gray-50"
-    )}>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
       {/* 自动掌握提示 */}
       {autoMasteredMessage && (
         <div className="fixed top-2 left-1/2 transform -translate-x-1/2 z-50">
@@ -734,62 +605,32 @@ export default function PracticePage() {
       )}
       
       {/* 头部 */}
-      <div className={cn(
-        "sticky top-0 z-20 border-b",
-        isDark ? "bg-[#1E1E1E] border-[#2A2A2A]" : "bg-white border-gray-100"
-      )}>
+      <div className="sticky top-0 z-20 bg-white dark:bg-gray-800 border-b">
         <div className="container mx-auto px-3 py-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <button 
-                onClick={exitPractice}
-                className={cn(
-                  "w-8 h-8 rounded-full flex items-center justify-center transition-all",
-                  isDark ? "bg-[#2A2A2A] hover:bg-[#333]" : "bg-gray-100 hover:bg-gray-200"
-                )}
-              >
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={exitPractice}>
                 <LogOut className="w-4 h-4 text-red-500" />
-              </button>
+              </Button>
               <div>
-                <div className={cn(
-                  "text-sm font-bold",
-                  isDark ? "text-white" : "text-gray-900"
-                )}>
-                  第 <span className="text-[#00E5FF]">{questionNumber + 1}</span> 题
+                <div className="text-sm font-bold text-gray-900 dark:text-white">
+                  第 {questionNumber + 1} 题
                 </div>
-                <div className={cn(
-                  "text-xs",
-                  isDark ? "text-gray-500" : "text-gray-500"
-                )}>
+                <div className="text-xs text-gray-500">
                   {currentQuestion.mode === 'en-to-zh' ? '英译中' : '中译英'}
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={toggleTheme}
-                className={cn(
-                  "w-8 h-8 rounded-full flex items-center justify-center transition-all",
-                  isDark ? "bg-[#2A2A2A] hover:bg-[#333]" : "bg-gray-100 hover:bg-gray-200"
-                )}
-              >
-                {isDark ? (
-                  <Sun className="w-4 h-4 text-[#00E5FF]" />
-                ) : (
-                  <Moon className="w-4 h-4 text-gray-600" />
-                )}
-              </button>
-              <div className="flex items-center gap-2 text-sm">
-                <span className="text-green-500 font-semibold">✓{roundSuccessCount}</span>
-                <span className={isDark ? "text-gray-600" : "text-gray-300"}>|</span>
-                <span className="text-red-500 font-semibold">✗{roundWrongCount}</span>
-                {wrongWordsMap.size > 0 && (
-                  <>
-                    <span className={isDark ? "text-gray-600" : "text-gray-300"}>|</span>
-                    <span className="text-orange-500">待复习 {wrongWordsMap.size}</span>
-                  </>
-                )}
-              </div>
+            <div className="text-sm flex items-center gap-2">
+              <span className="text-green-600 font-semibold">成功 {roundSuccessCount}</span>
+              <span className="text-gray-300">|</span>
+              <span className="text-red-600 font-semibold">错误 {roundWrongCount}</span>
+              {wrongWordsMap.size > 0 && (
+                <>
+                  <span className="text-gray-300">|</span>
+                  <span className="text-orange-600">待复习 {wrongWordsMap.size}</span>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -798,189 +639,127 @@ export default function PracticePage() {
       {/* 内容区 */}
       <div className="flex-1 flex flex-col">
         {/* 题目卡片 - 置顶在上半区 */}
-        <div className="px-3 py-4">
-          <div className={cn(
-            "max-w-md mx-auto p-4 rounded-2xl",
-            isDark ? "bg-[#1E1E1E] border border-[#333]" : "bg-white shadow-lg"
-          )}>
-            <div className="text-center">
-              {currentQuestion.mode === 'en-to-zh' ? (
-                <div>
-                  <div className="flex items-center justify-center gap-2 mb-2">
-                    <span className={cn(
-                      "text-3xl font-bold",
-                      isDark ? "text-white" : "text-gray-900"
-                    )}>
+        <div className="px-3 py-3">
+          <Card className="max-w-md mx-auto border-0 shadow-sm">
+            <CardHeader className="p-3 pb-1">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xl">
+                  {currentQuestion.mode === 'en-to-zh' ? (
+                    <div className="flex items-center gap-2">
                       {currentQuestion.question}
-                    </span>
-                    <button
-                      onClick={() => playAudio(currentQuestion.question)}
-                      className={cn(
-                        "w-10 h-10 rounded-full flex items-center justify-center transition-all",
-                        isDark 
-                          ? "bg-[#00E5FF]/10 hover:bg-[#00E5FF]/20"
-                          : "bg-cyan-50 hover:bg-cyan-100"
-                      )}
-                    >
-                      <Volume2 className="w-5 h-5 text-[#00E5FF]" />
-                    </button>
-                  </div>
-                  <p className={cn(
-                    "text-sm",
-                    isDark ? "text-gray-500" : "text-gray-400"
-                  )}>
-                    {currentQuestion.phonetic}
-                  </p>
-                </div>
-              ) : (
-                <div className={cn(
-                  "text-xl font-medium",
-                  isDark ? "text-white" : "text-gray-900"
-                )}>
-                  {currentQuestion.question}
-                </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => playAudio(currentQuestion.question)}
+                      >
+                        <Volume2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    currentQuestion.question
+                  )}
+                </CardTitle>
+              </div>
+              {currentQuestion.mode === 'en-to-zh' && (
+                <p className="text-xs text-gray-500 mt-1">
+                  {currentQuestion.phonetic}
+                </p>
               )}
-              
               {/* 错题标记 */}
               {isWrongWord && (
-                <div className="mt-3 flex justify-center">
-                  <div className={cn(
-                    "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs",
-                    isDark ? "bg-orange-500/20 text-orange-400" : "bg-orange-50 text-orange-600"
-                  )}>
-                    <AlertCircle className="w-3 h-3" />
+                <div className="mt-2">
+                  <Badge variant="outline" className="text-xs border-orange-300 text-orange-600">
+                    <AlertCircle className="w-3 h-3 mr-1" />
                     本轮错题 · 需连续对 {3 - (wrongStatus?.consecutiveCorrect || 0)} 次
-                  </div>
+                  </Badge>
                 </div>
               )}
-            </div>
-          </div>
+            </CardHeader>
+          </Card>
         </div>
 
         {/* 中间空白区域 */}
         <div className="flex-1"></div>
 
         {/* 底部吸附区域 - 答题前显示选项，答题后显示答案解析 */}
-        <div className={cn(
-          "sticky bottom-0 z-20 px-3 py-3 pb-6",
-          isDark ? "bg-[#121212]/95 backdrop-blur-sm" : "bg-white/80 backdrop-blur-sm"
-        )}>
+        <div className="sticky bottom-0 z-20 px-3 py-2 pb-4 bg-gray-50 dark:bg-gray-900">
           <div className="max-w-md mx-auto space-y-2">
             {!showResult ? (
               /* 答题前：显示标记掌握 + 四个选项 */
               <>
                 {/* 标记掌握按钮 */}
-                <button
+                <Button
+                  variant="outline"
+                  className={cn(
+                    'w-full h-auto py-3 px-4 justify-start border-green-300 dark:border-green-700',
+                    masteredThisRound.has(currentQuestion.id) && 'bg-green-50 dark:bg-green-900/30 border-green-500'
+                  )}
                   onClick={() => handleMarkAsMastered(true)}
                   disabled={masteredThisRound.has(currentQuestion.id)}
-                  className={cn(
-                    "w-full py-3 px-4 rounded-xl flex items-center gap-3 transition-all",
-                    masteredThisRound.has(currentQuestion.id)
-                      ? isDark 
-                        ? "bg-green-500/20 border border-green-500/50" 
-                        : "bg-green-50 border border-green-200"
-                      : isDark
-                        ? "bg-[#1E1E1E] hover:bg-[#2A2A2A] border border-[#2A2A2A]"
-                        : "bg-gray-50 hover:bg-gray-100 border border-gray-200"
-                  )}
                 >
-                  <div className={cn(
-                    "w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0",
-                    masteredThisRound.has(currentQuestion.id)
-                      ? "bg-green-500 text-white"
-                      : isDark ? "bg-[#2A2A2A]" : "bg-white"
-                  )}>
-                    <BookmarkCheck className={cn(
-                      "w-4 h-4",
-                      masteredThisRound.has(currentQuestion.id) 
-                        ? "text-white" 
-                        : "text-green-500"
-                    )} />
+                  <div className="flex items-center gap-3 w-full">
+                    <div className="w-7 h-7 rounded-full bg-green-100 dark:bg-green-800 flex items-center justify-center flex-shrink-0 text-green-600">
+                      <BookmarkCheck className="w-4 h-4" />
+                    </div>
+                    <span className="flex-1 text-left text-green-600 dark:text-green-400">
+                      {masteredThisRound.has(currentQuestion.id) ? '已标记掌握' : '标记掌握'}
+                    </span>
                   </div>
-                  <span className={cn(
-                    "flex-1 text-left text-sm",
-                    masteredThisRound.has(currentQuestion.id)
-                      ? "text-green-500"
-                      : isDark ? "text-gray-400" : "text-gray-600"
-                  )}>
-                    {masteredThisRound.has(currentQuestion.id) ? '已标记掌握' : '标记掌握'}
-                  </span>
-                </button>
+                </Button>
 
                 {/* 四个选项 */}
-                {currentQuestion.options.map((option, index) => (
-                  <button
-                    key={index}
-                    onClick={() => handleAnswer(option)}
-                    className={cn(
-                      "w-full py-3 px-4 rounded-xl flex items-center gap-3 transition-all",
-                      isDark 
-                        ? "bg-[#1E1E1E] hover:bg-[#252525] border border-[#333]"
-                        : "bg-white shadow-sm hover:shadow-md border border-gray-100"
-                    )}
-                  >
-                    <div className={cn(
-                      "w-7 h-7 rounded-full flex items-center justify-center text-sm font-semibold flex-shrink-0",
-                      isDark ? "bg-[#00E5FF]/20 text-[#00E5FF]" : "bg-cyan-50 text-cyan-600"
-                    )}>
-                      {String.fromCharCode(65 + index)}
-                    </div>
-                    <span className={cn(
-                      "flex-1 text-left text-sm line-clamp-2",
-                      isDark ? "text-white" : "text-gray-900"
-                    )}>{option}</span>
-                  </button>
-                ))}
+                {currentQuestion.options.map((option, index) => {
+                  return (
+                    <Button
+                      key={index}
+                      variant="outline"
+                      className="w-full h-auto py-3 px-4 justify-start"
+                      onClick={() => handleAnswer(option)}
+                    >
+                      <div className="flex items-center gap-3 w-full">
+                        <div className="w-7 h-7 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-sm font-semibold flex-shrink-0">
+                          {String.fromCharCode(65 + index)}
+                        </div>
+                        <span className="flex-1 text-left line-clamp-2">{option}</span>
+                      </div>
+                    </Button>
+                  );
+                })}
               </>
             ) : (
               /* 答题后：显示答案解析 + 标记掌握 + 下一题 */
               <>
                 {/* 答案结果 */}
                 <div className={cn(
-                  "p-4 rounded-xl",
+                  "p-4 rounded-lg",
                   selectedAnswer === currentQuestion.correctAnswer 
-                    ? isDark
-                      ? "bg-green-500/20 border border-green-500/50"
-                      : "bg-green-50 border border-green-200"
-                    : isDark
-                      ? "bg-red-500/20 border border-red-500/50"
-                      : "bg-red-50 border border-red-200"
+                    ? "bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800" 
+                    : "bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800"
                 )}>
                   <div className="flex items-center gap-2 mb-2">
                     {selectedAnswer === currentQuestion.correctAnswer ? (
-                      <CheckCircle className="w-5 h-5 text-green-500" />
+                      <CheckCircle className="w-5 h-5 text-green-600" />
                     ) : (
-                      <XCircle className="w-5 h-5 text-red-500" />
+                      <XCircle className="w-5 h-5 text-red-600" />
                     )}
                     <span className={cn(
                       "font-semibold",
-                      selectedAnswer === currentQuestion.correctAnswer ? "text-green-500" : "text-red-500"
+                      selectedAnswer === currentQuestion.correctAnswer ? "text-green-600" : "text-red-600"
                     )}>
                       {selectedAnswer === currentQuestion.correctAnswer ? '回答正确' : '回答错误'}
                     </span>
                   </div>
                   <div className="text-sm space-y-1">
-                    <p className={isDark ? "text-gray-300" : "text-gray-700"}>
-                      <span className={isDark ? "text-gray-500" : "text-gray-500"}>正确答案：</span>
-                      <span className="font-medium">{currentQuestion.correctAnswer}</span>
-                    </p>
+                    <p><span className="text-gray-500">正确答案：</span><span className="font-medium">{currentQuestion.correctAnswer}</span></p>
                     {currentQuestion.mode === 'zh-to-en' && (
-                      <p className={isDark ? "text-gray-400" : "text-gray-600"}>
-                        <span className={isDark ? "text-gray-500" : "text-gray-500"}>音标：</span>
-                        {currentQuestion.phonetic}
-                      </p>
+                      <p><span className="text-gray-500">音标：</span>{currentQuestion.phonetic}</p>
                     )}
                     {currentQuestion.example_sentence && (
-                      <div className={cn(
-                        "mt-2 p-2 rounded-lg",
-                        isDark ? "bg-white/5" : "bg-white/50"
-                      )}>
-                        <p className={isDark ? "text-gray-300" : "text-gray-700"}>{currentQuestion.example_sentence}</p>
+                      <div className="mt-2 p-2 bg-white/50 dark:bg-gray-900/50 rounded">
+                        <p className="text-gray-700 dark:text-gray-300">{currentQuestion.example_sentence}</p>
                         {currentQuestion.example_sentence_cn && (
-                          <p className={cn(
-                            "text-xs mt-1",
-                            isDark ? "text-gray-500" : "text-gray-500"
-                          )}>{currentQuestion.example_sentence_cn}</p>
+                          <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">{currentQuestion.example_sentence_cn}</p>
                         )}
                       </div>
                     )}
@@ -988,50 +767,29 @@ export default function PracticePage() {
                 </div>
 
                 {/* 标记掌握按钮（答题后 - 不自动跳） */}
-                <button
+                <Button
+                  variant="outline"
+                  className={cn(
+                    'w-full h-auto py-3 px-4 justify-start border-green-300 dark:border-green-700',
+                    masteredThisRound.has(currentQuestion.id) && 'bg-green-50 dark:bg-green-900/30 border-green-500'
+                  )}
                   onClick={() => handleMarkAsMastered(false)}
                   disabled={masteredThisRound.has(currentQuestion.id)}
-                  className={cn(
-                    "w-full py-3 px-4 rounded-xl flex items-center gap-3 transition-all",
-                    masteredThisRound.has(currentQuestion.id)
-                      ? isDark 
-                        ? "bg-green-500/20 border border-green-500/50" 
-                        : "bg-green-50 border border-green-200"
-                      : isDark
-                        ? "bg-[#1E1E1E] hover:bg-[#2A2A2A] border border-[#2A2A2A]"
-                        : "bg-gray-50 hover:bg-gray-100 border border-gray-200"
-                  )}
                 >
-                  <div className={cn(
-                    "w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0",
-                    masteredThisRound.has(currentQuestion.id)
-                      ? "bg-green-500 text-white"
-                      : isDark ? "bg-[#2A2A2A]" : "bg-white"
-                  )}>
-                    <BookmarkCheck className={cn(
-                      "w-4 h-4",
-                      masteredThisRound.has(currentQuestion.id) 
-                        ? "text-white" 
-                        : "text-green-500"
-                    )} />
+                  <div className="flex items-center gap-3 w-full">
+                    <div className="w-7 h-7 rounded-full bg-green-100 dark:bg-green-800 flex items-center justify-center flex-shrink-0 text-green-600">
+                      <BookmarkCheck className="w-4 h-4" />
+                    </div>
+                    <span className="flex-1 text-left text-green-600 dark:text-green-400">
+                      {masteredThisRound.has(currentQuestion.id) ? '已标记掌握' : '标记掌握'}
+                    </span>
                   </div>
-                  <span className={cn(
-                    "flex-1 text-left text-sm",
-                    masteredThisRound.has(currentQuestion.id)
-                      ? "text-green-500"
-                      : isDark ? "text-gray-400" : "text-gray-600"
-                  )}>
-                    {masteredThisRound.has(currentQuestion.id) ? '已标记掌握' : '标记掌握'}
-                  </span>
-                </button>
+                </Button>
 
                 {/* 下一题按钮 */}
-                <button
-                  onClick={nextQuestion}
-                  className="w-full py-4 rounded-xl bg-[#00E5FF] text-black font-medium text-base hover:bg-[#00C8DC] transition-all"
-                >
+                <Button onClick={nextQuestion} className="w-full h-12 text-base">
                   下一题
-                </button>
+                </Button>
               </>
             )}
           </div>
