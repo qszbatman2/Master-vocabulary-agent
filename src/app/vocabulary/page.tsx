@@ -70,11 +70,20 @@ export default function VocabularyPage() {
   const [filter, setFilter] = useState('all');
   const [page, setPage] = useState(1);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const pageSize = 30;
 
   useEffect(() => {
     setIsLoaded(true);
   }, []);
+
+  // 搜索防抖
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const fetchVocabulary = useCallback(async () => {
     try {
@@ -83,8 +92,8 @@ export default function VocabularyPage() {
       if (selectedCategory !== 'all') {
         params.append('categoryId', selectedCategory);
       }
-      if (searchQuery) {
-        params.append('search', searchQuery);
+      if (debouncedSearch) {
+        params.append('search', debouncedSearch);
       }
       if (masteredStatus !== 'all') {
         params.append('mastered', masteredStatus);
@@ -108,7 +117,7 @@ export default function VocabularyPage() {
     } finally {
       setLoading(false);
     }
-  }, [selectedCategory, searchQuery, masteredStatus, filter, page, token]);
+  }, [selectedCategory, debouncedSearch, masteredStatus, filter, page, token]);
 
   useEffect(() => {
     fetchVocabulary();
@@ -116,7 +125,7 @@ export default function VocabularyPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [selectedCategory, searchQuery, masteredStatus, filter]);
+  }, [selectedCategory, debouncedSearch, masteredStatus, filter]);
 
   const playAudio = (word: string, e?: React.MouseEvent) => {
     e?.stopPropagation();
@@ -246,10 +255,17 @@ export default function VocabularyPage() {
               >
                 <SelectValue placeholder="词库" />
               </SelectTrigger>
-              <SelectContent style={{ background: '#1e1e2e', border: 'none' }}>
-                <SelectItem value="all">全部</SelectItem>
+              <SelectContent 
+                className="rounded-xl border-0"
+                style={{ background: '#1e1e2e' }}
+              >
+                <SelectItem value="all" className="text-white hover:bg-white/10 focus:bg-white/10">全部</SelectItem>
                 {(data?.categories || []).map((category) => (
-                  <SelectItem key={category.id} value={category.id.toString()}>
+                  <SelectItem 
+                    key={category.id} 
+                    value={category.id.toString()}
+                    className="text-white hover:bg-white/10 focus:bg-white/10"
+                  >
                     {category.name}
                   </SelectItem>
                 ))}
@@ -265,9 +281,12 @@ export default function VocabularyPage() {
                   >
                     <SelectValue placeholder="类型" />
                   </SelectTrigger>
-                  <SelectContent style={{ background: '#1e1e2e', border: 'none' }}>
-                    <SelectItem value="all">全部</SelectItem>
-                    <SelectItem value="wrong_words">错题集</SelectItem>
+                  <SelectContent 
+                    className="rounded-xl border-0"
+                    style={{ background: '#1e1e2e' }}
+                  >
+                    <SelectItem value="all" className="text-white hover:bg-white/10 focus:bg-white/10">全部</SelectItem>
+                    <SelectItem value="wrong_words" className="text-white hover:bg-white/10 focus:bg-white/10">错题集</SelectItem>
                   </SelectContent>
                 </Select>
                 <Select value={masteredStatus} onValueChange={setMasteredStatus}>
@@ -277,10 +296,13 @@ export default function VocabularyPage() {
                   >
                     <SelectValue placeholder="状态" />
                   </SelectTrigger>
-                  <SelectContent style={{ background: '#1e1e2e', border: 'none' }}>
-                    <SelectItem value="all">全部</SelectItem>
-                    <SelectItem value="mastered">已掌握</SelectItem>
-                    <SelectItem value="unmastered">未掌握</SelectItem>
+                  <SelectContent 
+                    className="rounded-xl border-0"
+                    style={{ background: '#1e1e2e' }}
+                  >
+                    <SelectItem value="all" className="text-white hover:bg-white/10 focus:bg-white/10">全部</SelectItem>
+                    <SelectItem value="mastered" className="text-white hover:bg-white/10 focus:bg-white/10">已掌握</SelectItem>
+                    <SelectItem value="unmastered" className="text-white hover:bg-white/10 focus:bg-white/10">未掌握</SelectItem>
                   </SelectContent>
                 </Select>
               </>
