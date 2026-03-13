@@ -12,16 +12,26 @@ function getUserIdFromToken(token: string): number | null {
   }
 }
 
-// 获取今天的日期字符串 (YYYY-MM-DD)
+// 获取今天的日期字符串 (YYYY-MM-DD) - 使用上海时区
 function getTodayDateString(): string {
   const now = new Date();
-  return now.toISOString().split('T')[0];
+  // 使用上海时区 (UTC+8)
+  const shanghaiTime = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+  return shanghaiTime.toISOString().split('T')[0];
 }
 
-// 检查日期是否是今天
+// 检查日期是否是今天 - 使用上海时区
 function isToday(dateString: string | null): boolean {
   if (!dateString) return false;
   return dateString === getTodayDateString();
+}
+
+// 检查日期是否是昨天 - 用于修复历史数据
+function isYesterday(dateString: string | null): boolean {
+  if (!dateString) return false;
+  const yesterday = new Date();
+  yesterday.setTime(yesterday.getTime() + 8 * 60 * 60 * 1000 - 24 * 60 * 60 * 1000);
+  return dateString === yesterday.toISOString().split('T')[0];
 }
 
 export async function POST(request: NextRequest) {

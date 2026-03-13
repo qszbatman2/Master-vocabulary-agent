@@ -4,6 +4,12 @@ import { getSupabaseClient } from '@/storage/database/supabase-client';
 // 管理员授权码
 const ADMIN_TOKEN = 'vocabulary-admin-2024';
 
+// 获取上海时区的日期字符串
+function getShanghaiDateString(date: Date): string {
+  const shanghaiTime = new Date(date.getTime() + 8 * 60 * 60 * 1000);
+  return shanghaiTime.toISOString().split('T')[0];
+}
+
 export async function GET(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization');
@@ -15,6 +21,7 @@ export async function GET(request: NextRequest) {
 
     const email = request.nextUrl.searchParams.get('email');
     const word = request.nextUrl.searchParams.get('word');
+    const fix = request.nextUrl.searchParams.get('fix'); // 是否修复数据
 
     if (!email) {
       return NextResponse.json({ error: '缺少email参数' }, { status: 400 });
@@ -53,6 +60,7 @@ export async function GET(request: NextRequest) {
     let statusQuery = client
       .from('user_word_status')
       .select(`
+        id,
         word_id,
         is_mastered,
         total_practice_count,
@@ -106,18 +114,61 @@ export async function GET(request: NextRequest) {
       let masteryAnalysis = null;
       if (detailedStatus.length > 0) {
         const status = detailedStatus[0];
+        
+        // 计算实际有效答对天数
+        // 基于：created_at 是首次学习时间，last_practiced_at 是最后学习时间
+        // 如果 correct_count >= 1，说明至少有1次有效答对
+        // 我们需要估算实际应该有多少天有效答对
+        
+        const createdAt = new Date(status.created_at);
+        const lastPracticedAt = new Date(status.last_practiced_at);
+        const daysDiff = Math.floor((lastPracticedAt.getTime() - createdAt.getTime()) / (24 * 60 * 60 * 1000));
+        
+        // 假设：如果跨天学习且全部答对，应该有 min(daysDiff + 1, correct_count) 天有效答对
+        const estimatedDailyCorrect = Math.min(daysDiff + 1, status.correct_count);
+        
         masteryAnalysis = {
           current_mastered: status.is_mastered,
           daily_correct_count: status.daily_correct_count,
+          estimated_correct_days: estimatedDailyCorrect,
+          days_between_first_and_last: daysDiff,
           last_correct_date: status.last_correct_date,
           total_correct: status.correct_count,
           total_wrong: status.wrong_count,
-          should_be_mastered: status.daily_correct_count >= 4,
-          reason: status.daily_correct_count >= 4 
-            ? `已累计 ${status.daily_correct_count} 天有效答对，达到4天标准` 
-            : `仅累计 ${status.daily_correct_count} 天有效答对，需要4天`,
-          practice_dates: [] as string[], // 可以扩展查询每日记录
+          should_be_mastered: estimatedDailyCorrect >= 4,
+          reason: estimatedDailyCorrect >= 4 
+            ? `估算应有 ${estimatedDailyCorrect} 天有效答对（跨 ${daysDiff} 天），达到4天标准` 
+            : `估算应有 ${estimatedDailyCorrect} 天有效答对（跨 ${daysDiff} 天），需要4天`,
+          bug_explanation: daysDiff > 0 && status.daily_correct_count === 1 
+            ? `检测到BUG：跨 ${daysDiff} 天学习但 daily_correct_count 只有 1，可能是时区问题导致` 
+            : null,
         };
+        
+        // 如果请求修复
+        if (fix === 'true' && estimatedDailyCorrect !== status.daily_correct_count) {
+          const newDailyCorrectCount = Math.min(estimatedDailyCorrect, 4); // 最多4天就掌握
+          const newIsMastered = newDailyCorrectCount >= 4;
+          
+          const { error: updateError } = await client
+            .from('user_word_status')
+            .update({
+              daily_correct_count: newDailyCorrectCount,
+              is_mastered: newIsMastered,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', status.id);
+          
+          if (updateError) {
+            masteryAnalysis.fix_result = { success: false, error: updateError.message };
+          } else {
+            masteryAnalysis.fix_result = { 
+              success: true, 
+              old_daily_correct_count: status.daily_correct_count,
+              new_daily_correct_count: newDailyCorrectCount,
+              new_is_mastered: newIsMastered,
+            };
+          }
+        }
       }
 
       return NextResponse.json({
