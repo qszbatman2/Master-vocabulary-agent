@@ -184,6 +184,101 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    // 批量诊断模式
+    const diagnose = request.nextUrl.searchParams.get('diagnose') === 'true';
+    const batchFix = request.nextUrl.searchParams.get('batchFix') === 'true';
+    
+    if (diagnose || batchFix) {
+      // 获取所有单词信息
+      const wordIds = statuses?.map(s => s.word_id) || [];
+      const { data: words } = await client
+        .from('words')
+        .select('id, word')
+        .in('id', wordIds);
+      
+      const wordMap = new Map(words?.map(w => [w.id, w.word]) || []);
+      
+      // 分析每条记录
+      const issues: any[] = [];
+      const fixed: any[] = [];
+      const now = new Date();
+      const shanghaiTime = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+      const today = shanghaiTime.toISOString().split('T')[0];
+      
+      for (const status of statuses || []) {
+        // 只分析未掌握且全对或大部分对的记录
+        if (status.is_mastered) continue;
+        if (status.correct_count < 2) continue;
+        
+        const createdAt = new Date(status.created_at);
+        const lastPracticedAt = new Date(status.last_practiced_at);
+        const daysSpan = Math.floor((lastPracticedAt.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
+        
+        // 计算预期的有效答对天数
+        const expectedDailyCorrect = Math.min(daysSpan + 1, status.correct_count);
+        const actualDailyCorrect = status.daily_correct_count || 0;
+        
+        // 如果预期值大于实际值，说明有问题
+        if (expectedDailyCorrect > actualDailyCorrect) {
+          const wordText = wordMap.get(status.word_id) || `word_id:${status.word_id}`;
+          const issue = {
+            word: wordText,
+            word_id: status.word_id,
+            status_id: status.id,
+            analysis: {
+              days_span: daysSpan,
+              correct_count: status.correct_count,
+              wrong_count: status.wrong_count,
+              expected_daily_correct: expectedDailyCorrect,
+              actual_daily_correct: actualDailyCorrect,
+              gap: expectedDailyCorrect - actualDailyCorrect,
+              should_be_mastered: expectedDailyCorrect >= 4,
+            }
+          };
+          
+          if (batchFix) {
+            const newDailyCorrectCount = Math.min(expectedDailyCorrect, 4);
+            const newIsMastered = newDailyCorrectCount >= 4;
+            
+            const { error: updateError } = await client
+              .from('user_word_status')
+              .update({
+                daily_correct_count: newDailyCorrectCount,
+                is_mastered: newIsMastered,
+                last_correct_date: today,
+                updated_at: now.toISOString(),
+              })
+              .eq('id', status.id);
+
+            if (!updateError) {
+              fixed.push({
+                ...issue,
+                fix_result: {
+                  old_daily_correct_count: actualDailyCorrect,
+                  new_daily_correct_count: newDailyCorrectCount,
+                  new_is_mastered: newIsMastered,
+                }
+              });
+            }
+          } else {
+            issues.push(issue);
+          }
+        }
+      }
+
+      return NextResponse.json({
+        user: {
+          id: user.id,
+          email: user.email,
+          nickname: user.nickname,
+        },
+        total_records: statuses?.length || 0,
+        issues_found: issues.length,
+        issues: issues.sort((a, b) => b.analysis.gap - a.analysis.gap),
+        ...(batchFix ? { fixed_count: fixed.length, fixed } : {}),
+      });
+    }
+
     // 返回用户概览
     return NextResponse.json({
       user: {

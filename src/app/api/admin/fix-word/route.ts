@@ -13,10 +13,10 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { email, word, fix = false } = body;
+    const { email, word, wordId: bodyWordId, fix = false } = body;
 
-    if (!email || !word) {
-      return NextResponse.json({ error: '缺少email或word参数' }, { status: 400 });
+    if (!email || (!word && !bodyWordId)) {
+      return NextResponse.json({ error: '缺少email或word/wordId参数' }, { status: 400 });
     }
 
     const client = getSupabaseClient();
@@ -32,17 +32,32 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '用户不存在' }, { status: 404 });
     }
 
-    // 查找单词
-    const { data: words } = await client
-      .from('words')
-      .select('id, word, meaning')
-      .eq('word', word);
-
-    if (!words || words.length === 0) {
-      return NextResponse.json({ error: '单词不存在' }, { status: 404 });
+    // 查找单词 - 支持通过 wordId 或 word 文本查找
+    let wordId = bodyWordId;
+    let wordText = word;
+    
+    if (wordId) {
+      const { data: wordData } = await client
+        .from('words')
+        .select('id, word, meaning')
+        .eq('id', wordId)
+        .single();
+      if (wordData) {
+        wordText = wordData.word;
+      }
+    } else if (word) {
+      const { data: words } = await client
+        .from('words')
+        .select('id, word, meaning')
+        .eq('word', word);
+      if (words && words.length > 0) {
+        wordId = words[0].id;
+      }
     }
 
-    const wordId = words[0].id;
+    if (!wordId) {
+      return NextResponse.json({ error: '单词不存在' }, { status: 404 });
+    }
 
     // 查询当前状态
     const { data: status, error: statusError } = await client
