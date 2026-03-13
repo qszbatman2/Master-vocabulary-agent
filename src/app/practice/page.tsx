@@ -723,13 +723,13 @@ export default function PracticePage() {
                   <button
                     key={index}
                     onClick={() => handleAnswer(option)}
-                    className="w-full h-12 rounded-xl flex items-center gap-3 px-4 transition-all duration-200 hover:scale-[1.01] active:scale-95"
+                    className="w-full h-14 rounded-xl flex items-center gap-3 px-4 transition-all duration-200 hover:scale-[1.01] active:scale-95"
                     style={{ background: '#1e1e2e', border: '1px solid rgba(255,255,255,0.05)' }}
                   >
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-semibold flex-shrink-0" style={{ background: 'rgba(255,255,255,0.05)', color: '#a0a0b0' }}>
+                    <div className="w-9 h-9 rounded-lg flex items-center justify-center text-base font-semibold flex-shrink-0" style={{ background: 'rgba(255,255,255,0.05)', color: '#a0a0b0' }}>
                       {String.fromCharCode(65 + index)}
                     </div>
-                    <span className="flex-1 text-left text-sm line-clamp-2 text-white">{option}</span>
+                    <span className="flex-1 text-left text-base line-clamp-2 text-white">{option}</span>
                   </button>
                 ))}
               </>
@@ -749,20 +749,20 @@ export default function PracticePage() {
                     ) : (
                       <XCircle className="w-5 h-5" style={{ color: '#ff6b9d' }} />
                     )}
-                    <span className="font-semibold" style={{ color: selectedAnswer === currentQuestion.correctAnswer ? '#00ff88' : '#ff6b9d' }}>
+                    <span className="font-semibold text-base" style={{ color: selectedAnswer === currentQuestion.correctAnswer ? '#00ff88' : '#ff6b9d' }}>
                       {selectedAnswer === currentQuestion.correctAnswer ? '回答正确' : '回答错误'}
                     </span>
                   </div>
-                  <div className="text-sm space-y-1.5">
+                  <div className="text-base space-y-2">
                     <p><span style={{ color: '#a0a0b0' }}>正确答案：</span><span className="font-medium text-white">{currentQuestion.correctAnswer}</span></p>
                     {currentQuestion.mode === 'zh-to-en' && currentQuestion.phonetic && (
                       <p><span style={{ color: '#a0a0b0' }}>音标：</span><span className="text-white">{currentQuestion.phonetic}</span></p>
                     )}
                     {currentQuestion.example_sentence && (
                       <div className="mt-3 p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)' }}>
-                        <p className="text-white">{currentQuestion.example_sentence}</p>
+                        <p className="text-base text-white">{currentQuestion.example_sentence}</p>
                         {currentQuestion.example_sentence_cn && (
-                          <p className="text-xs mt-1.5" style={{ color: '#a0a0b0' }}>{currentQuestion.example_sentence_cn}</p>
+                          <p className="text-sm mt-2" style={{ color: '#a0a0b0' }}>{currentQuestion.example_sentence_cn}</p>
                         )}
                       </div>
                     )}
