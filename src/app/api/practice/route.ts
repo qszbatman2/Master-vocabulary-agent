@@ -30,6 +30,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Fisher-Yates 洗牌算法 - 真正均匀随机
+    function shuffleArray<T>(array: T[]): T[] {
+      const result = [...array];
+      for (let i = result.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [result[i], result[j]] = [result[j], result[i]];
+      }
+      return result;
+    }
+
     // 获取指定词库的所有单词
     let query = client
       .from('words')
@@ -162,15 +172,15 @@ export async function GET(request: NextRequest) {
       const priorityAvailable = availableWords.filter(w => priorityWords.has(w.word));
       const otherWords = availableWords.filter(w => !priorityWords.has(w.word));
       
-      // 随机打乱两组
-      const shuffledPriority = priorityAvailable.sort(() => Math.random() - 0.5);
-      const shuffledOther = otherWords.sort(() => Math.random() - 0.5);
+      // 使用 Fisher-Yates 洗牌
+      const shuffledPriority = shuffleArray(priorityAvailable);
+      const shuffledOther = shuffleArray(otherWords);
       
       // 合并，优先词在前
       selectedWords = [...shuffledPriority, ...shuffledOther].slice(0, limit);
     } else {
-      // 随机选择指定数量的单词
-      const shuffled = availableWords.sort(() => Math.random() - 0.5);
+      // 使用 Fisher-Yates 洗牌选择指定数量的单词
+      const shuffled = shuffleArray(availableWords);
       selectedWords = shuffled.slice(0, Math.min(limit, shuffled.length));
     }
 
@@ -185,7 +195,7 @@ export async function GET(request: NextRequest) {
         }
       });
       const otherWords = Array.from(otherWordsMap.values());
-      const shuffledOptions = otherWords.sort(() => Math.random() - 0.5).slice(0, 3);
+      const shuffledOptions = shuffleArray(otherWords).slice(0, 3);
       
       // 随机选择模式：en-to-zh 或 zh-to-en
       const mode = Math.random() > 0.5 ? 'en-to-zh' : 'zh-to-en';
@@ -227,7 +237,7 @@ export async function GET(request: NextRequest) {
       }
 
       // 打乱选项顺序
-      const shuffledFinal = uniqueOptions.sort(() => Math.random() - 0.5);
+      const shuffledFinal = shuffleArray(uniqueOptions);
 
       return {
         id: word.id,
