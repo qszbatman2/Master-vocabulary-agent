@@ -49,13 +49,18 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'No words found' }, { status: 404 });
     }
 
-    // 获取用户掌握状态
+    // 获取用户掌握状态 - 增加 last_correct_date 字段
     const { data: userStatusData } = await client
       .from('user_word_status')
-      .select('word_id, is_mastered, last_wrong_at')
+      .select('word_id, is_mastered, last_wrong_at, last_correct_date')
       .eq('user_id', userId);
 
     const statusMap = new Map(userStatusData?.map(s => [s.word_id, s]) || []);
+    
+    // 获取今天的日期（上海时区）
+    const now = new Date();
+    const shanghaiTime = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+    const today = shanghaiTime.toISOString().split('T')[0];
 
     // 构建单词到所有 id 的映射（同一个单词可能在多个分类中）
     const wordToIds = new Map<string, number[]>();
@@ -69,6 +74,12 @@ export async function GET(request: NextRequest) {
     const isWordMastered = (word: string): boolean => {
       const ids = wordToIds.get(word) || [];
       return ids.some(id => statusMap.get(id)?.is_mastered);
+    };
+
+    // 检查一个单词今天是否已答对（任意一个 id 今天答对即算已答对）
+    const isWordCorrectToday = (word: string): boolean => {
+      const ids = wordToIds.get(word) || [];
+      return ids.some(id => statusMap.get(id)?.last_correct_date === today);
     };
 
     // 检查一个单词是否有错误记录（任意一个 id 有错误即算有错误）
@@ -98,14 +109,15 @@ export async function GET(request: NextRequest) {
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
       
       uniqueWords.forEach((w, word) => {
-        if (hasWordWrongRecord(word, sevenDaysAgo) && !isWordMastered(word)) {
+        // 排除已掌握的单词和今天已答对的单词
+        if (hasWordWrongRecord(word, sevenDaysAgo) && !isWordMastered(word) && !isWordCorrectToday(word)) {
           availableWords.push(w);
         }
       });
     } else {
-      // 普通模式：排除已掌握的单词
+      // 普通模式：排除已掌握的单词和今天已答对的单词
       uniqueWords.forEach((w, word) => {
-        if (!isWordMastered(word)) {
+        if (!isWordMastered(word) && !isWordCorrectToday(word)) {
           availableWords.push(w);
         }
       });
