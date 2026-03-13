@@ -142,6 +142,7 @@ export async function GET(request: NextRequest) {
           bug_explanation: daysDiff > 0 && status.daily_correct_count === 1 
             ? `检测到BUG：跨 ${daysDiff} 天学习但 daily_correct_count 只有 1，可能是时区问题导致` 
             : null,
+          fix_result: null as { success: boolean; error?: string; old_daily_correct_count?: number; new_daily_correct_count?: number; new_is_mastered?: boolean } | null,
         };
         
         // 如果请求修复
