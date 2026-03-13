@@ -187,6 +187,54 @@ export async function GET(request: NextRequest) {
     // 批量诊断模式
     const diagnose = request.nextUrl.searchParams.get('diagnose') === 'true';
     const batchFix = request.nextUrl.searchParams.get('batchFix') === 'true';
+    const fixMastery = request.nextUrl.searchParams.get('fixMastery') === 'true';
+    
+    // 修复已达到4天有效答对但未标记掌握的单词
+    if (fixMastery) {
+      const now = new Date();
+      const masteryIssues: any[] = [];
+      const masteryFixed: any[] = [];
+      
+      // 获取所有单词信息
+      const wordIds = statuses?.map(s => s.word_id) || [];
+      const { data: words } = await client
+        .from('words')
+        .select('id, word')
+        .in('id', wordIds);
+      const wordMap = new Map(words?.map(w => [w.id, w.word]) || []);
+      
+      for (const status of statuses || []) {
+        // 找出 daily_correct_count >= 4 但 is_mastered = false 的记录
+        const dailyCorrect = status.daily_correct_count || 0;
+        if (dailyCorrect >= 4 && !status.is_mastered) {
+          const wordText = wordMap.get(status.word_id) || `word_id:${status.word_id}`;
+          
+          const { error: updateError } = await client
+            .from('user_word_status')
+            .update({
+              is_mastered: true,
+              updated_at: now.toISOString(),
+            })
+            .eq('id', status.id);
+
+          if (!updateError) {
+            masteryFixed.push({
+              word: wordText,
+              word_id: status.word_id,
+              old_daily_correct_count: dailyCorrect,
+              old_is_mastered: false,
+              new_is_mastered: true,
+            });
+          }
+        }
+      }
+
+      return NextResponse.json({
+        user: { id: user.id, email: user.email },
+        fixed_count: masteryFixed.length,
+        fixed: masteryFixed,
+      });
+    }
     
     if (diagnose || batchFix) {
       // 获取所有单词信息
