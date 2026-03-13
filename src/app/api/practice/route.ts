@@ -49,15 +49,18 @@ export async function GET(request: NextRequest) {
       query = query.eq('category_id', parseInt(categoryId));
     }
 
-    const { data: allWords, error: wordsError } = await query;
+    const { data, error: wordsError } = await query;
 
     if (wordsError) {
       return NextResponse.json({ error: wordsError.message }, { status: 500 });
     }
 
-    if (!allWords || allWords.length === 0) {
+    if (!data || data.length === 0) {
       return NextResponse.json({ error: 'No words found' }, { status: 404 });
     }
+
+    // 立即洗牌，避免数据库默认排序（通常按 id/字母顺序）导致集中
+    const allWords = shuffleArray(data || []);
 
     // 获取用户掌握状态 - 增加 last_correct_date 字段
     const { data: userStatusData } = await client
