@@ -40,7 +40,8 @@ export async function GET(request: NextRequest) {
       return result;
     }
 
-    // 获取指定词库的所有单词
+    // 获取指定词库的所有单词 - 使用数据库随机排序更可靠
+    // PostgreSQL 的 RANDOM() 函数在数据库层面随机排序
     let query = client
       .from('words')
       .select('*');
@@ -49,6 +50,7 @@ export async function GET(request: NextRequest) {
       query = query.eq('category_id', parseInt(categoryId));
     }
 
+    // 注意：Supabase 不直接支持 ORDER BY RANDOM()，需要在应用层处理
     const { data, error: wordsError } = await query;
 
     if (wordsError) {
@@ -160,6 +162,66 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    // 分层抽样：按首字母分组，确保分布均匀
+    const groupByFirstLetter = (words: typeof availableWords): Map<string, typeof availableWords> => {
+      const groups = new Map<string, typeof availableWords>();
+      words.forEach(w => {
+        const firstLetter = w.word[0].toUpperCase();
+        if (!groups.has(firstLetter)) {
+          groups.set(firstLetter, []);
+        }
+        groups.get(firstLetter)!.push(w);
+      });
+      return groups;
+    };
+
+    // 从每个字母组中均匀选择单词
+    const selectBalancedWords = (words: typeof availableWords, count: number): typeof availableWords => {
+      if (words.length <= count) return shuffleArray(words);
+      
+      const groups = groupByFirstLetter(words);
+      const letters = Array.from(groups.keys());
+      const shuffledLetters = shuffleArray(letters);
+      
+      const result: typeof availableWords = [];
+      const usedIndices = new Map<string, number>(); // 追踪每个组已使用的索引
+      
+      // 初始化
+      groups.forEach((_, letter) => usedIndices.set(letter, 0));
+      
+      // 轮询每个字母组，每次选一个
+      let letterIndex = 0;
+      while (result.length < count) {
+        const letter = shuffledLetters[letterIndex % shuffledLetters.length];
+        const group = groups.get(letter)!;
+        const usedIdx = usedIndices.get(letter) || 0;
+        
+        if (usedIdx < group.length) {
+          // 每次选择前，打乱组内顺序
+          if (usedIdx === 0) {
+            groups.set(letter, shuffleArray(group));
+          }
+          const shuffledGroup = groups.get(letter)!;
+          result.push(shuffledGroup[usedIdx]);
+          usedIndices.set(letter, usedIdx + 1);
+        }
+        
+        letterIndex++;
+        
+        // 如果所有组都用完了但还不够，从剩余中随机选择
+        if (letterIndex > count * 2 && result.length < count) {
+          const allRemaining = words.filter(w => !result.includes(w));
+          const shuffledRemaining = shuffleArray(allRemaining);
+          const needed = count - result.length;
+          result.push(...shuffledRemaining.slice(0, needed));
+          break;
+        }
+      }
+      
+      // 最终洗牌，避免字母顺序固定
+      return shuffleArray(result);
+    };
+
     // 优先选择需要复习的错题（优先词列表）
     let selectedWords;
     if (priorityWordIds.length > 0) {
@@ -175,16 +237,16 @@ export async function GET(request: NextRequest) {
       const priorityAvailable = availableWords.filter(w => priorityWords.has(w.word));
       const otherWords = availableWords.filter(w => !priorityWords.has(w.word));
       
-      // 使用 Fisher-Yates 洗牌
-      const shuffledPriority = shuffleArray(priorityAvailable);
-      const shuffledOther = shuffleArray(otherWords);
+      // 使用分层抽样选择
+      const selectedPriority = selectBalancedWords(priorityAvailable, Math.min(limit, priorityAvailable.length));
+      const remainingLimit = limit - selectedPriority.length;
+      const selectedOther = remainingLimit > 0 ? selectBalancedWords(otherWords, remainingLimit) : [];
       
       // 合并，优先词在前
-      selectedWords = [...shuffledPriority, ...shuffledOther].slice(0, limit);
+      selectedWords = [...selectedPriority, ...selectedOther];
     } else {
-      // 使用 Fisher-Yates 洗牌选择指定数量的单词
-      const shuffled = shuffleArray(availableWords);
-      selectedWords = shuffled.slice(0, Math.min(limit, shuffled.length));
+      // 使用分层抽样选择，确保首字母分布均匀
+      selectedWords = selectBalancedWords(availableWords, Math.min(limit, availableWords.length));
     }
 
     // 为每个单词生成选项，并随机选择模式
