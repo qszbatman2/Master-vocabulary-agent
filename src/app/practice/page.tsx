@@ -668,17 +668,38 @@ export default function PracticePage() {
         
         {/* 今日进度条 */}
         {dailyProgress && (
-          <div className="w-full" style={{ height: '20px', background: 'rgba(255,255,255,0.03)' }}>
+          <div 
+            className="relative w-full overflow-hidden"
+            style={{ height: '7px', background: 'rgba(255,255,255,0.03)' }}
+          >
+            {/* 进度填充 */}
             <div 
-              className="h-full flex items-center justify-center text-xs transition-all duration-300"
+              className={`absolute inset-y-0 left-0 transition-all duration-500 ease-out ${progressAnimated ? 'animate-pulse' : ''}`}
               style={{ 
                 width: `${Math.min(100, (dailyProgress.completed / dailyProgress.goal) * 100)}%`,
                 background: dailyProgress.completed >= dailyProgress.goal 
-                  ? 'linear-gradient(90deg, #ffd700, #ff6b9d)' 
-                  : 'linear-gradient(90deg, #00ff88, #00d4ff)',
+                  ? 'linear-gradient(90deg, rgba(255,215,0,0.4), rgba(255,107,157,0.3))' 
+                  : 'linear-gradient(90deg, rgba(0,255,136,0.25), rgba(0,212,255,0.2))',
+                boxShadow: progressAnimated ? '0 0 20px rgba(0,255,136,0.5)' : 'none',
               }}
-            >
-              <span className={`font-medium ${progressAnimated ? 'scale-110' : ''} transition-transform`} style={{ color: '#fff', textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>
+            />
+            {/* 增长时的光效 */}
+            {progressAnimated && (
+              <div 
+                className="absolute inset-y-0 animate-shimmer"
+                style={{
+                  left: `${Math.min(100, (dailyProgress.completed / dailyProgress.goal) * 100) - 10}%`,
+                  width: '20%',
+                  background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent)',
+                }}
+              />
+            )}
+            {/* 居中文字 */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span 
+                className="text-[9px] font-medium tracking-wide"
+                style={{ color: dailyProgress.completed >= dailyProgress.goal ? 'rgba(255,215,0,0.7)' : 'rgba(255,255,255,0.5)' }}
+              >
                 今日 {dailyProgress.completed}/{dailyProgress.goal}
                 {dailyProgress.completed >= dailyProgress.goal && ' ✓'}
               </span>
@@ -691,7 +712,7 @@ export default function PracticePage() {
       <div 
         className="sticky z-10 px-4 py-3"
         style={{ 
-          top: dailyProgress ? '77px' : '57px',
+          top: dailyProgress ? '64px' : '57px',
           background: 'rgba(18, 18, 30, 0.95)', 
           backdropFilter: 'blur(12px)' 
         }}
