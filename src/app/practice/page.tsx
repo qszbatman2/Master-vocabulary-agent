@@ -494,9 +494,9 @@ export default function PracticePage() {
                     <SelectValue placeholder="选择词库" />
                   </SelectTrigger>
                   <SelectContent style={{ background: '#1e1e2e', border: 'none' }}>
-                    <SelectItem value="all">全部词库</SelectItem>
+                    <SelectItem value="all" className="text-white hover:bg-white/10 focus:bg-white/10">全部词库</SelectItem>
                     {categories.map((category) => (
-                      <SelectItem key={category.id} value={category.id.toString()}>{category.name}</SelectItem>
+                      <SelectItem key={category.id} value={category.id.toString()} className="text-white hover:bg-white/10 focus:bg-white/10">{category.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -509,8 +509,8 @@ export default function PracticePage() {
                     <SelectValue placeholder="选择模式" />
                   </SelectTrigger>
                   <SelectContent style={{ background: '#1e1e2e', border: 'none' }}>
-                    <SelectItem value="all">普通模式</SelectItem>
-                    <SelectItem value="wrong_words">错题集（最近7天）</SelectItem>
+                    <SelectItem value="all" className="text-white hover:bg-white/10 focus:bg-white/10">普通模式</SelectItem>
+                    <SelectItem value="wrong_words" className="text-white hover:bg-white/10 focus:bg-white/10">错题集（最近7天）</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
