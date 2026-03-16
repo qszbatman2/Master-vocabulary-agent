@@ -71,6 +71,20 @@ export default function PracticePage() {
   const [dailyProgress, setDailyProgress] = useState<{ completed: number; goal: number } | null>(null);
   const [progressAnimated, setProgressAnimated] = useState(false);
 
+  // 高亮例句中的收录词
+  const highlightWordInSentence = (sentence: string, word: string) => {
+    if (!sentence || !word) return sentence;
+    // 创建正则表达式，匹配单词（不区分大小写，单词边界）
+    const regex = new RegExp(`(\\b${word}\\b)`, 'gi');
+    const parts = sentence.split(regex);
+    return parts.map((part, index) => {
+      if (part.toLowerCase() === word.toLowerCase()) {
+        return <strong key={index} className="font-bold text-white">{part}</strong>;
+      }
+      return part;
+    });
+  };
+
   const roundCorrectWordsRef = useRef(roundCorrectWords);
   const questionsRef = useRef(questions);
   const currentIndexRef = useRef(currentIndex);
@@ -839,7 +853,12 @@ export default function PracticePage() {
                             </span>
                           </div>
                         )}
-                        <p className="text-base text-white">{currentQuestion.example_sentence}</p>
+                        <p className="text-base text-white">
+                          {currentQuestion.has_user_context 
+                            ? highlightWordInSentence(currentQuestion.example_sentence, currentQuestion.word)
+                            : currentQuestion.example_sentence
+                          }
+                        </p>
                         {/* 主动收录词隐藏中文翻译 */}
                         {!currentQuestion.has_user_context && currentQuestion.example_sentence_cn && (
                           <p className="text-sm mt-2" style={{ color: '#a0a0b0' }}>{currentQuestion.example_sentence_cn}</p>
