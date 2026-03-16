@@ -160,6 +160,14 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    // 查询用户主动收录的单词（有上下文记录的）
+    const { data: userCollectedWords } = await client
+      .from('user_word_contexts')
+      .select('word_id')
+      .eq('user_id', userId);
+    
+    const userCollectedWordIds = new Set(userCollectedWords?.map(c => c.word_id) || []);
+
     // 优先选择需要复习的错题（优先词列表）
     let selectedWords;
     if (priorityWordIds.length > 0) {
@@ -182,9 +190,20 @@ export async function GET(request: NextRequest) {
       // 合并，优先词在前
       selectedWords = [...shuffledPriority, ...shuffledOther].slice(0, limit);
     } else {
-      // 使用 Fisher-Yates 洗牌选择指定数量的单词
-      const shuffled = shuffleArray(availableWords);
-      selectedWords = shuffled.slice(0, Math.min(limit, shuffled.length));
+      // 将用户主动收录的词放在前面
+      const userCollectedAvailable = availableWords.filter(w => userCollectedWordIds.has(w.id));
+      const otherAvailable = availableWords.filter(w => !userCollectedWordIds.has(w.id));
+      
+      // 洗牌
+      const shuffledCollected = shuffleArray(userCollectedAvailable);
+      const shuffledOther = shuffleArray(otherAvailable);
+      
+      // 前5题为用户主动收录的词（如果有的话），其余随机
+      const collectedCount = Math.min(5, shuffledCollected.length);
+      const collectedWords = shuffledCollected.slice(0, collectedCount);
+      const remainingWords = shuffledOther.slice(0, limit - collectedCount);
+      
+      selectedWords = [...collectedWords, ...remainingWords];
     }
 
     // 获取选中单词的用户上下文例句
