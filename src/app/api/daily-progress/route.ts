@@ -12,9 +12,12 @@ function getUserIdFromToken(token: string): number | null {
   }
 }
 
-// 获取今天的日期字符串 (YYYY-MM-DD)
+// 获取今天的日期字符串 (YYYY-MM-DD) - 使用上海时区
 function getTodayDateString(): string {
-  return new Date().toISOString().split('T')[0];
+  const now = new Date();
+  // 使用上海时区 (UTC+8)
+  const shanghaiTime = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+  return shanghaiTime.toISOString().split('T')[0];
 }
 
 // GET: 获取今日学习进度

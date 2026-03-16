@@ -27,10 +27,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: '无效的token' }, { status: 401 });
     }
 
-    // 获取今天的日期范围（UTC）
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const todayStart = today.toISOString();
+    // 获取今天的日期字符串（上海时区）
+    const now = new Date();
+    const shanghaiTime = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+    const today = shanghaiTime.toISOString().split('T')[0];
+    const todayStart = `${today}T00:00:00`;
 
     // 获取用户所有单词状态
     const { data: userStatus, error: statusError } = await client
