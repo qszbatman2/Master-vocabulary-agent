@@ -79,9 +79,11 @@ export default function PracticePage() {
     const parts = sentence.split(regex);
     return parts.map((part, index) => {
       if (part.toLowerCase() === word.toLowerCase()) {
+        // 收录词：白色加粗
         return <strong key={index} className="font-bold text-white">{part}</strong>;
       }
-      return part;
+      // 其他文字：灰色
+      return <span key={index} style={{ color: '#a0a0b0' }}>{part}</span>;
     });
   };
 
@@ -853,10 +855,10 @@ export default function PracticePage() {
                             </span>
                           </div>
                         )}
-                        <p className="text-base text-white">
+                        <p className="text-base">
                           {currentQuestion.has_user_context 
                             ? highlightWordInSentence(currentQuestion.example_sentence, currentQuestion.word)
-                            : currentQuestion.example_sentence
+                            : <span className="text-white">{currentQuestion.example_sentence}</span>
                           }
                         </p>
                         {/* 主动收录词隐藏中文翻译 */}
