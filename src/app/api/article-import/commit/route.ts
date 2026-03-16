@@ -13,11 +13,16 @@ function getUserIdFromToken(token: string): number | null {
   }
 }
 
+// 常量限制
+const MAX_CONTENT_LENGTH = 20000; // 最大文章长度
+const MAX_SELECTED_WORDS = 200;   // 最大选择单词数
+
 interface SelectedWord {
   text: string;          // 原词形式
   lemma: string;         // 词根
   context: string;       // 上下文句子
   tokenIndex: number;    // token 索引
+  setPrimary?: boolean;  // 是否设为主例句
 }
 
 export async function POST(request: NextRequest) {
@@ -37,8 +42,22 @@ export async function POST(request: NextRequest) {
       selectedWords: SelectedWord[];
     };
 
+    // 参数校验
     if (!content || !selectedWords || selectedWords.length === 0) {
       return NextResponse.json({ error: 'Content and selectedWords are required' }, { status: 400 });
+    }
+
+    // 长度限制
+    if (content.length > MAX_CONTENT_LENGTH) {
+      return NextResponse.json({ 
+        error: `Content too long. Maximum ${MAX_CONTENT_LENGTH} characters allowed.` 
+      }, { status: 413 });
+    }
+
+    if (selectedWords.length > MAX_SELECTED_WORDS) {
+      return NextResponse.json({ 
+        error: `Too many words selected. Maximum ${MAX_SELECTED_WORDS} words allowed.` 
+      }, { status: 413 });
     }
 
     const client = getSupabaseClient();
@@ -70,7 +89,7 @@ export async function POST(request: NextRequest) {
     }> = [];
 
     for (const selected of selectedWords) {
-      const { text, lemma, context } = selected;
+      const { text, lemma, context, setPrimary } = selected;
       
       // 再次词形还原（防止前端传来的数据不准确）
       const finalLemma = lemmatizeLocal(lemma || text);
@@ -143,15 +162,13 @@ export async function POST(request: NextRequest) {
 
       // 2.3 创建上下文例句记录
       // 检查是否已有该词的上下文记录
-      const { data: existingContext } = await client
+      const { data: existingContexts } = await client
         .from('user_word_contexts')
-        .select('id, is_primary')
+        .select('id, is_primary, context_text')
         .eq('user_id', userId)
-        .eq('word_id', wordId)
-        .limit(1)
-        .single();
+        .eq('word_id', wordId);
 
-      const isPrimary = !existingContext;  // 第一个设为主例句
+      const hasExistingPrimary = existingContexts?.some(c => c.is_primary);
 
       // 插入新的上下文记录
       await client
@@ -163,15 +180,38 @@ export async function POST(request: NextRequest) {
           surface_form: text,
           lemma: finalLemma,
           context_text: context,
-          is_primary: isPrimary,
+          is_primary: false, // 先插入为 false
         });
 
-      // 如果已有记录但没有主例句，更新为 true
-      if (existingContext && !existingContext.is_primary) {
-        await client
+      // 处理主例句逻辑
+      if (setPrimary !== false) {
+        // 默认行为或 setPrimary=true: 将新例句设为主例句
+        if (hasExistingPrimary) {
+          // 先将所有其他例句的 is_primary 设为 false
+          await client
+            .from('user_word_contexts')
+            .update({ is_primary: false })
+            .eq('user_id', userId)
+            .eq('word_id', wordId);
+        }
+        
+        // 将最新插入的例句设为主例句
+        const { data: latestContext } = await client
           .from('user_word_contexts')
-          .update({ is_primary: true })
-          .eq('id', existingContext.id);
+          .select('id')
+          .eq('user_id', userId)
+          .eq('word_id', wordId)
+          .eq('context_text', context)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+
+        if (latestContext) {
+          await client
+            .from('user_word_contexts')
+            .update({ is_primary: true })
+            .eq('id', latestContext.id);
+        }
       }
     }
 

@@ -13,6 +13,9 @@ function getUserIdFromToken(token: string): number | null {
   }
 }
 
+// 常量限制
+const MAX_CONTENT_LENGTH = 20000; // 最大文章长度
+
 interface TokenInfo {
   text: string;
   index: number;
@@ -37,6 +40,13 @@ export async function POST(request: NextRequest) {
 
     if (!content || typeof content !== 'string') {
       return NextResponse.json({ error: 'Content is required' }, { status: 400 });
+    }
+
+    // 长度限制
+    if (content.length > MAX_CONTENT_LENGTH) {
+      return NextResponse.json({ 
+        error: `Content too long. Maximum ${MAX_CONTENT_LENGTH} characters allowed.` 
+      }, { status: 413 });
     }
 
     // 1. 分词：使用正则表达式

@@ -38,7 +38,12 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ user });
+    return NextResponse.json({ 
+      id: user.id,
+      email: user.email,
+      nickname: user.nickname,
+      user 
+    });
   } catch (error) {
     console.error('获取用户信息错误:', error);
     return NextResponse.json(
