@@ -30,6 +30,7 @@ interface Question {
   meaning: string;
   example_sentence: string;
   example_sentence_cn?: string;
+  has_user_context?: boolean;
   question: string;
   options: string[];
   correctAnswer: string;
@@ -820,6 +821,13 @@ export default function PracticePage() {
                     )}
                     {currentQuestion.example_sentence && (
                       <div className="mt-3 p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)' }}>
+                        {currentQuestion.has_user_context && (
+                          <div className="flex items-center gap-1.5 mb-2">
+                            <span className="px-2 py-0.5 rounded text-[10px] font-medium" style={{ background: 'rgba(255, 107, 157, 0.15)', color: '#ff6b9d' }}>
+                              主动收录
+                            </span>
+                          </div>
+                        )}
                         <p className="text-base text-white">{currentQuestion.example_sentence}</p>
                         {currentQuestion.example_sentence_cn && (
                           <p className="text-sm mt-2" style={{ color: '#a0a0b0' }}>{currentQuestion.example_sentence_cn}</p>

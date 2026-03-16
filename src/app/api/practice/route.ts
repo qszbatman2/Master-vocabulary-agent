@@ -187,6 +187,22 @@ export async function GET(request: NextRequest) {
       selectedWords = shuffled.slice(0, Math.min(limit, shuffled.length));
     }
 
+    // 获取选中单词的用户上下文例句
+    const selectedWordIds = selectedWords.map(w => w.id);
+    const { data: userContexts } = await client
+      .from('user_word_contexts')
+      .select('word_id, context_text, surface_form, is_primary')
+      .eq('user_id', userId)
+      .in('word_id', selectedWordIds);
+
+    // 构建 word_id -> 上下文例句的映射
+    const contextMap = new Map<number, { context: string; surface: string }>();
+    userContexts?.forEach(ctx => {
+      if (!contextMap.has(ctx.word_id) || ctx.is_primary) {
+        contextMap.set(ctx.word_id, { context: ctx.context_text, surface: ctx.surface_form });
+      }
+    });
+
     // 为每个单词生成选项，并随机选择模式
     const questions = selectedWords.map((word) => {
       // 获取其他单词作为干扰项（从所有单词中选，不只是未掌握的）
@@ -242,13 +258,17 @@ export async function GET(request: NextRequest) {
       // 打乱选项顺序
       const shuffledFinal = shuffleArray(uniqueOptions);
 
+      // 获取用户上下文例句（如果有）
+      const userContext = contextMap.get(word.id);
+
       return {
         id: word.id,
         word: word.word,
         phonetic: word.phonetic,
         meaning: word.meaning,
-        example_sentence: word.example_sentence,
+        example_sentence: userContext?.context || word.example_sentence,
         example_sentence_cn: word.example_sentence_cn,
+        has_user_context: !!userContext,
         question,
         options: shuffledFinal,
         correctAnswer,

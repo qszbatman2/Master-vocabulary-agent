@@ -134,6 +134,9 @@ importers:
       input-otp:
         specifier: ^1.4.2
         version: 1.4.2(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      lemmatizer:
+        specifier: ^0.0.1
+        version: 0.0.1
       lucide-react:
         specifier: ^0.468.0
         version: 0.468.0(react@19.2.3)
@@ -3187,6 +3190,15 @@ packages:
   emoji-regex@9.2.2:
     resolution: {integrity: sha512-L18DaJsXSUk2+42pv8mLs5jJT2hqFkFE4j21wOmgbUqsZ2hL72NsUU785g9RXgo3s0ZNgVl42TiHp3ZtOv/Vyg==}
 
+  en-inflectors@1.0.12:
+    resolution: {integrity: sha512-G9wwJMx9DQQzwom8J8e8ErVpI6h/Z5BpYusJCE2Q/2NfgBNYCesyNaCOOskZAhOrw2nmR4D8nYAv4Xv/INIbzw==}
+
+  en-lexicon@1.0.11:
+    resolution: {integrity: sha512-eanOw9551H6jMRpRK023+Nlss5qnuAi99drXcSUzQySsMrB43teDNbin/AbpOfnemQiTtuZChXYm2kEIR1Mhmg==}
+
+  en-stemmer@1.0.3:
+    resolution: {integrity: sha512-sBeYsHLqZWACn/mTRLAMdYb/A53s55r4/nCB2UjKK96EBuRQ4t4GKl4V1pW/0hvzdncfYlZRT+JSIRxCtoYqbA==}
+
   encodeurl@2.0.0:
     resolution: {integrity: sha512-Q0n9HRi4m6JuGIV1eFlmvJB7ZEVxu93IrMyiMsGC0lrMJMWzRgx6WGquyfQgZVb31vhGgXnfmPNNXmxnOkRBrg==}
     engines: {node: '>= 0.8'}
@@ -4098,6 +4110,9 @@ packages:
   language-tags@1.0.9:
     resolution: {integrity: sha512-MbjN408fEndfiQXbFQ1vnd+1NoLDsnQW41410oQBXiyXDMYH5z505juWa4KUE1LqxRC7DgOgZDbKLxHIwm27hA==}
     engines: {node: '>=0.10'}
+
+  lemmatizer@0.0.1:
+    resolution: {integrity: sha512-OhVYdbBYeCHE0Jea6L8jzbyKzZyZVjq/Aexd7Tv/kQa4TSiXR9HQ7+SgsD/VRzNNEB2sfO5HCx4Czg1fWgibDw==}
 
   levn@0.4.1:
     resolution: {integrity: sha512-+bT2uH4E5LGE7h/n3evcS/sQlJXCpIp6ym8OWJ5eV6+67Dsql/LaaT7qJBAt2rzfoa/5QBGBhxDix1dMt2kQKQ==}
@@ -8834,6 +8849,16 @@ snapshots:
 
   emoji-regex@9.2.2: {}
 
+  en-inflectors@1.0.12:
+    dependencies:
+      en-stemmer: 1.0.3
+
+  en-lexicon@1.0.11:
+    dependencies:
+      en-inflectors: 1.0.12
+
+  en-stemmer@1.0.3: {}
+
   encodeurl@2.0.0: {}
 
   enhanced-resolve@5.18.4:
@@ -9904,6 +9929,12 @@ snapshots:
   language-tags@1.0.9:
     dependencies:
       language-subtag-registry: 0.3.23
+
+  lemmatizer@0.0.1:
+    dependencies:
+      en-inflectors: 1.0.12
+      en-lexicon: 1.0.11
+      en-stemmer: 1.0.3
 
   levn@0.4.1:
     dependencies:
