@@ -752,7 +752,7 @@ export default function PracticePage() {
       {/* 中间区域 - 为底部fixed留出空间 */}
       <div className="flex-1" style={{ paddingBottom: '320px' }}></div>
 
-      {/* 底部答题区 - 固定在底部，支持滚动 */}
+      {/* 底部答题区 - 固定在底部 */}
       <div 
         className="fixed bottom-0 left-0 right-0 z-20"
         style={{ 
@@ -762,12 +762,9 @@ export default function PracticePage() {
           borderTop: '1px solid rgba(255,255,255,0.05)'
         }}
       >
-        <div 
-          className="max-w-md mx-auto px-4 py-3 pb-6 space-y-2 overflow-y-auto"
-          style={{ maxHeight: '60vh' }}
-        >
+        <div className="max-w-md mx-auto px-4 py-3 pb-6">
             {!showResult ? (
-              <>
+              <div className="space-y-2">
                 {/* 标记掌握按钮 */}
                 <button
                   onClick={() => handleMarkAsMastered(true)}
@@ -803,18 +800,22 @@ export default function PracticePage() {
                     <span className="flex-1 text-left text-base line-clamp-2 text-white">{option}</span>
                   </button>
                 ))}
-              </>
+              </div>
             ) : (
               <>
-                {/* 答案结果 */}
+                {/* 答案结果 - 支持滚动 */}
                 <div 
-                  className="p-4 rounded-2xl"
-                  style={{ 
-                    background: selectedAnswer === currentQuestion.correctAnswer ? 'rgba(0, 255, 136, 0.1)' : 'rgba(255, 107, 157, 0.1)',
-                    border: `1px solid ${selectedAnswer === currentQuestion.correctAnswer ? 'rgba(0, 255, 136, 0.2)' : 'rgba(255, 107, 157, 0.2)'}`
-                  }}
+                  className="overflow-y-auto mb-3"
+                  style={{ maxHeight: 'calc(60vh - 120px)' }}
                 >
-                  <div className="flex items-center gap-2 mb-3">
+                  <div 
+                    className="p-4 rounded-2xl"
+                    style={{ 
+                      background: selectedAnswer === currentQuestion.correctAnswer ? 'rgba(0, 255, 136, 0.1)' : 'rgba(255, 107, 157, 0.1)',
+                      border: `1px solid ${selectedAnswer === currentQuestion.correctAnswer ? 'rgba(0, 255, 136, 0.2)' : 'rgba(255, 107, 157, 0.2)'}`
+                    }}
+                  >
+                    <div className="flex items-center gap-2 mb-3">
                     {selectedAnswer === currentQuestion.correctAnswer ? (
                       <CheckCircle className="w-5 h-5" style={{ color: '#00ff88' }} />
                     ) : (
@@ -846,37 +847,41 @@ export default function PracticePage() {
                       </div>
                     )}
                   </div>
+                  </div>
                 </div>
 
-                {/* 标记掌握按钮 */}
-                <button
-                  onClick={() => handleMarkAsMastered(false)}
-                  disabled={masteredThisRound.has(currentQuestion.id)}
-                  className={cn(
-                    "w-full h-12 rounded-xl flex items-center gap-3 px-4 transition-all duration-200",
-                    masteredThisRound.has(currentQuestion.id) ? '' : 'hover:scale-[1.01] active:scale-95'
-                  )}
-                  style={{ 
-                    background: masteredThisRound.has(currentQuestion.id) ? 'rgba(0, 255, 136, 0.15)' : 'rgba(0, 255, 136, 0.08)',
-                    border: '1px solid rgba(0, 255, 136, 0.2)'
-                  }}
-                >
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(0, 255, 136, 0.2)' }}>
-                    <BookmarkCheck className="w-4 h-4" style={{ color: '#00ff88' }} />
-                  </div>
-                  <span className="flex-1 text-left text-sm font-medium" style={{ color: '#00ff88' }}>
-                    {masteredThisRound.has(currentQuestion.id) ? '已标记掌握' : '标记掌握'}
-                  </span>
-                </button>
+                {/* 底部按钮组 - 固定 */}
+                <div className="space-y-2">
+                  {/* 标记掌握按钮 */}
+                  <button
+                    onClick={() => handleMarkAsMastered(false)}
+                    disabled={masteredThisRound.has(currentQuestion.id)}
+                    className={cn(
+                      "w-full h-12 rounded-xl flex items-center gap-3 px-4 transition-all duration-200",
+                      masteredThisRound.has(currentQuestion.id) ? '' : 'hover:scale-[1.01] active:scale-95'
+                    )}
+                    style={{ 
+                      background: masteredThisRound.has(currentQuestion.id) ? 'rgba(0, 255, 136, 0.15)' : 'rgba(0, 255, 136, 0.08)',
+                      border: '1px solid rgba(0, 255, 136, 0.2)'
+                    }}
+                  >
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(0, 255, 136, 0.2)' }}>
+                      <BookmarkCheck className="w-4 h-4" style={{ color: '#00ff88' }} />
+                    </div>
+                    <span className="flex-1 text-left text-sm font-medium" style={{ color: '#00ff88' }}>
+                      {masteredThisRound.has(currentQuestion.id) ? '已标记掌握' : '标记掌握'}
+                    </span>
+                  </button>
 
-                {/* 下一题按钮 */}
-                <button 
-                  onClick={nextQuestion} 
-                  className="w-full h-12 rounded-xl text-white font-medium transition-all duration-200 hover:scale-[1.01] active:scale-95"
-                  style={{ background: 'linear-gradient(135deg, #ff6b9d, #c44cff, #4cc9ff)' }}
-                >
-                  下一题
-                </button>
+                  {/* 下一题按钮 */}
+                  <button 
+                    onClick={nextQuestion} 
+                    className="w-full h-12 rounded-xl text-white font-medium transition-all duration-200 hover:scale-[1.01] active:scale-95"
+                    style={{ background: 'linear-gradient(135deg, #ff6b9d, #c44cff, #4cc9ff)' }}
+                  >
+                    下一题
+                  </button>
+                </div>
               </>
             )}
         </div>
