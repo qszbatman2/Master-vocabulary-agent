@@ -67,6 +67,8 @@ export default function PracticePage() {
   const [masteredThisRound, setMasteredThisRound] = useState<Set<number>>(new Set());
   const [startTime, setStartTime] = useState<number>(0);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [dailyProgress, setDailyProgress] = useState<{ completed: number; goal: number } | null>(null);
+  const [progressAnimated, setProgressAnimated] = useState(false);
 
   const roundCorrectWordsRef = useRef(roundCorrectWords);
   const questionsRef = useRef(questions);
@@ -121,6 +123,21 @@ export default function PracticePage() {
       setCategories(data.categories || []);
     } catch (error) {
       console.error('Failed to fetch categories:', error);
+    }
+  };
+
+  const fetchDailyProgress = async () => {
+    if (!token) return;
+    try {
+      const response = await fetch('/api/daily-progress', {
+        headers: { authorization: `Bearer ${token}` },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setDailyProgress({ completed: data.completed, goal: data.dailyGoal });
+      }
+    } catch (error) {
+      console.error('Failed to fetch daily progress:', error);
     }
   };
 
@@ -183,6 +200,9 @@ export default function PracticePage() {
     setMasteredThisRound(new Set());
     setIsStarted(true);
     setStartTime(Date.now());
+    
+    // 获取今日进度
+    fetchDailyProgress();
     
     setIsLoading(true);
     try {
@@ -254,7 +274,14 @@ export default function PracticePage() {
     const wasWrongBefore = wrongWordsMap.has(wordId);
     const alreadyCounted = roundCorrectWordsRef.current.has(wordId);
 
-    await submitResult(wordId, isCorrect, false, wasWrongBefore);
+    const result = await submitResult(wordId, isCorrect, false, wasWrongBefore);
+    
+    // 更新今日进度条
+    if (result?.validCorrectRecorded) {
+      setDailyProgress(prev => prev ? { ...prev, completed: prev.completed + 1 } : prev);
+      setProgressAnimated(true);
+      setTimeout(() => setProgressAnimated(false), 500);
+    }
     
     if (isCorrect) {
       if (wasWrongBefore) {
@@ -607,7 +634,7 @@ export default function PracticePage() {
       )}
       
       {/* 头部 */}
-      <div className="sticky top-0 z-20 border-b backdrop-blur-xl" style={{ background: 'rgba(30, 30, 46, 0.9)', borderColor: 'rgba(255,255,255,0.05)' }}>
+      <div className="sticky top-0 z-20 backdrop-blur-xl" style={{ background: 'rgba(30, 30, 46, 0.9)' }}>
         <div className="container mx-auto px-4 py-3 max-w-2xl">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -638,12 +665,36 @@ export default function PracticePage() {
             </div>
           </div>
         </div>
+        
+        {/* 今日进度条 */}
+        {dailyProgress && (
+          <div className="w-full" style={{ height: '20px', background: 'rgba(255,255,255,0.03)' }}>
+            <div 
+              className="h-full flex items-center justify-center text-xs transition-all duration-300"
+              style={{ 
+                width: `${Math.min(100, (dailyProgress.completed / dailyProgress.goal) * 100)}%`,
+                background: dailyProgress.completed >= dailyProgress.goal 
+                  ? 'linear-gradient(90deg, #ffd700, #ff6b9d)' 
+                  : 'linear-gradient(90deg, #00ff88, #00d4ff)',
+              }}
+            >
+              <span className={`font-medium ${progressAnimated ? 'scale-110' : ''} transition-transform`} style={{ color: '#fff', textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>
+                今日 {dailyProgress.completed}/{dailyProgress.goal}
+                {dailyProgress.completed >= dailyProgress.goal && ' ✓'}
+              </span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 题目卡片 - 置顶吸附 */}
       <div 
-        className="sticky top-[57px] z-10 px-4 py-3"
-        style={{ background: 'rgba(18, 18, 30, 0.95)', backdropFilter: 'blur(12px)' }}
+        className="sticky z-10 px-4 py-3"
+        style={{ 
+          top: dailyProgress ? '77px' : '57px',
+          background: 'rgba(18, 18, 30, 0.95)', 
+          backdropFilter: 'blur(12px)' 
+        }}
       >
         <div 
           className="max-w-md mx-auto rounded-2xl p-5"
