@@ -160,13 +160,33 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // 查询用户主动收录的单词（有上下文记录的）
-    const { data: userCollectedWords } = await client
+    // 查询用户主动收录的单词（有上下文记录的，且未掌握且今天未答对）
+    const { data: userCollectedData } = await client
       .from('user_word_contexts')
-      .select('word_id')
+      .select(`
+        word_id,
+        words!inner(id, word, phonetic, meaning, example_sentence, example_sentence_cn, category_id)
+      `)
       .eq('user_id', userId);
     
-    const userCollectedWordIds = new Set(userCollectedWords?.map(c => c.word_id) || []);
+    // 构建用户收录词的映射（word -> word数据）
+    const userCollectedMap = new Map<string, typeof allWords[0]>();
+    userCollectedData?.forEach((item: any) => {
+      if (item.words) {
+        const wordData = item.words;
+        // 检查是否在当前词库范围内
+        if (categoryId && categoryId !== 'all') {
+          if (wordData.category_id !== parseInt(categoryId)) {
+            return; // 跳过不在当前词库的词
+          }
+        }
+        // 检查是否已掌握或今天已答对
+        if (isWordMastered(wordData.word) || isWordCorrectToday(wordData.word)) {
+          return; // 跳过已掌握或今天已答对的词
+        }
+        userCollectedMap.set(wordData.word, wordData);
+      }
+    });
 
     // 优先选择需要复习的错题（优先词列表）
     let selectedWords;
@@ -191,8 +211,8 @@ export async function GET(request: NextRequest) {
       selectedWords = [...shuffledPriority, ...shuffledOther].slice(0, limit);
     } else {
       // 将用户主动收录的词放在前面
-      const userCollectedAvailable = availableWords.filter(w => userCollectedWordIds.has(w.id));
-      const otherAvailable = availableWords.filter(w => !userCollectedWordIds.has(w.id));
+      const userCollectedAvailable = Array.from(userCollectedMap.values());
+      const otherAvailable = availableWords.filter(w => !userCollectedMap.has(w.word));
       
       // 洗牌
       const shuffledCollected = shuffleArray(userCollectedAvailable);

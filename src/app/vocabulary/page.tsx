@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, ArrowLeft, Volume2, ChevronLeft, ChevronRight, Check, X, User, LogIn, XCircle, BookOpen } from 'lucide-react';
+import { Search, ArrowLeft, Volume2, ChevronLeft, ChevronRight, Check, X, User, LogIn, XCircle, BookOpen, FileText } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
@@ -42,6 +42,10 @@ interface Word {
     lastWrongAt: string | null;
     dailyCorrectCount: number;
   } | null;
+  userContexts?: {
+    context: string;
+    surface: string;
+  }[];
 }
 
 interface Stats {
@@ -98,8 +102,8 @@ export default function VocabularyPage() {
       if (masteredStatus !== 'all') {
         params.append('mastered', masteredStatus);
       }
-      if (filter === 'wrong_words') {
-        params.append('filter', 'wrong_words');
+      if (filter === 'wrong_words' || filter === 'collected') {
+        params.append('filter', filter);
       }
       params.append('page', page.toString());
       params.append('pageSize', pageSize.toString());
@@ -287,6 +291,7 @@ export default function VocabularyPage() {
                   >
                     <SelectItem value="all" className="text-white hover:bg-white/10 focus:bg-white/10">全部</SelectItem>
                     <SelectItem value="wrong_words" className="text-white hover:bg-white/10 focus:bg-white/10">错题集</SelectItem>
+                    <SelectItem value="collected" className="text-white hover:bg-white/10 focus:bg-white/10">主动收录</SelectItem>
                   </SelectContent>
                 </Select>
                 <Select value={masteredStatus} onValueChange={setMasteredStatus}>
@@ -556,6 +561,37 @@ export default function VocabularyPage() {
                   {selectedWord.example_sentence_cn && (
                     <p className="text-sm mt-2" style={{ color: '#a0a0b0' }}>{selectedWord.example_sentence_cn}</p>
                   )}
+                </div>
+              </div>
+            )}
+
+            {/* 用户收录的例句 */}
+            {selectedWord.userContexts && selectedWord.userContexts.length > 0 && (
+              <div className="mb-5">
+                <div className="flex items-center gap-2 mb-2">
+                  <p className="text-xs" style={{ color: '#a0a0b0' }}>我收录的例句</p>
+                  <span 
+                    className="px-2 py-0.5 rounded text-[10px]"
+                    style={{ background: 'rgba(255, 107, 157, 0.15)', color: '#ff6b9d' }}
+                  >
+                    {selectedWord.userContexts.length} 条
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  {selectedWord.userContexts.map((ctx, idx) => (
+                    <div 
+                      key={idx}
+                      className="p-3 rounded-xl"
+                      style={{ background: 'rgba(255, 107, 157, 0.08)', border: '1px solid rgba(255, 107, 157, 0.15)' }}
+                    >
+                      <p className="text-sm text-white leading-relaxed">
+                        {ctx.context}
+                      </p>
+                      <p className="text-xs mt-1.5" style={{ color: '#ff6b9d' }}>
+                        原词：{ctx.surface}
+                      </p>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
