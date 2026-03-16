@@ -136,21 +136,19 @@ body {
   @apply font-sans;
 }
 
-/* 进度条闪光动画 */
-@keyframes shimmer {
+/* 进度条闪烁动画 - 先亮后暗 1s */
+@keyframes progress-flash {
   0% {
-    opacity: 0;
-    transform: translateX(-100%);
+    filter: brightness(1);
   }
-  50% {
-    opacity: 1;
+  20% {
+    filter: brightness(2);
   }
   100% {
-    opacity: 0;
-    transform: translateX(500%);
+    filter: brightness(1);
   }
 }
 
-.animate-shimmer {
-  animation: shimmer 0.6s ease-out forwards;
+.animate-progress-flash {
+  animation: progress-flash 1s ease-out forwards;
 }

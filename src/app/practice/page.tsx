@@ -670,34 +670,22 @@ export default function PracticePage() {
         {dailyProgress && (
           <div 
             className="relative w-full overflow-hidden"
-            style={{ height: '7px', background: 'rgba(255,255,255,0.03)' }}
+            style={{ height: '10px', background: 'rgba(255,255,255,0.03)' }}
           >
             {/* 进度填充 */}
             <div 
-              className={`absolute inset-y-0 left-0 transition-all duration-500 ease-out ${progressAnimated ? 'animate-pulse' : ''}`}
+              className={`absolute inset-y-0 left-0 transition-all duration-500 ease-out ${progressAnimated ? 'animate-progress-flash' : ''}`}
               style={{ 
                 width: `${Math.min(100, (dailyProgress.completed / dailyProgress.goal) * 100)}%`,
                 background: dailyProgress.completed >= dailyProgress.goal 
                   ? 'linear-gradient(90deg, rgba(255,215,0,0.4), rgba(255,107,157,0.3))' 
                   : 'linear-gradient(90deg, rgba(0,255,136,0.25), rgba(0,212,255,0.2))',
-                boxShadow: progressAnimated ? '0 0 20px rgba(0,255,136,0.5)' : 'none',
               }}
             />
-            {/* 增长时的光效 */}
-            {progressAnimated && (
-              <div 
-                className="absolute inset-y-0 animate-shimmer"
-                style={{
-                  left: `${Math.min(100, (dailyProgress.completed / dailyProgress.goal) * 100) - 10}%`,
-                  width: '20%',
-                  background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent)',
-                }}
-              />
-            )}
             {/* 居中文字 */}
             <div className="absolute inset-0 flex items-center justify-center">
               <span 
-                className="text-[9px] font-medium tracking-wide"
+                className="text-[10px] font-medium tracking-wide"
                 style={{ color: dailyProgress.completed >= dailyProgress.goal ? 'rgba(255,215,0,0.7)' : 'rgba(255,255,255,0.5)' }}
               >
                 今日 {dailyProgress.completed}/{dailyProgress.goal}
@@ -712,7 +700,7 @@ export default function PracticePage() {
       <div 
         className="sticky z-10 px-4 py-3"
         style={{ 
-          top: dailyProgress ? '64px' : '57px',
+          top: dailyProgress ? '67px' : '57px',
           background: 'rgba(18, 18, 30, 0.95)', 
           backdropFilter: 'blur(12px)' 
         }}
