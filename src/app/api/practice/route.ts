@@ -127,6 +127,21 @@ export async function GET(request: NextRequest) {
           availableWords.push(w);
         }
       });
+    } else if (filter === 'collected') {
+      // 主动收录模式：查询用户有上下文记录的单词
+      const { data: collectedWords } = await client
+        .from('user_word_contexts')
+        .select('word_id')
+        .eq('user_id', userId);
+      
+      const collectedWordIds = new Set(collectedWords?.map(c => c.word_id) || []);
+      
+      uniqueWords.forEach((w, word) => {
+        // 只选择用户收录的、未掌握且今天未答对的单词
+        if (collectedWordIds.has(w.id) && !isWordMastered(word) && !isWordCorrectToday(word)) {
+          availableWords.push(w);
+        }
+      });
     } else {
       // 普通模式：排除已掌握的单词和今天已答对的单词
       uniqueWords.forEach((w, word) => {
@@ -150,13 +165,17 @@ export async function GET(request: NextRequest) {
     }
 
     if (availableWords.length === 0) {
+      let message = '恭喜！你已经掌握了所有单词！';
+      if (filter === 'wrong_words') {
+        message = '恭喜！错题集已清空！';
+      } else if (filter === 'collected') {
+        message = '恭喜！主动收录的单词已全部掌握！';
+      }
       return NextResponse.json({ 
         questions: [], 
         total: 0,
         remainingWords: 0,
-        message: filter === 'wrong_words' 
-          ? '恭喜！错题集已清空！' 
-          : '恭喜！你已经掌握了所有单词！' 
+        message,
       });
     }
 

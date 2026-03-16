@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ArrowLeft, CheckCircle, XCircle, Volume2, BookmarkCheck, Sparkles, LogOut, RefreshCw, AlertCircle, GraduationCap, Play } from 'lucide-react';
+import { ArrowLeft, CheckCircle, XCircle, Volume2, BookmarkCheck, Sparkles, LogOut, RefreshCw, AlertCircle, GraduationCap, Play, FileText } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -48,7 +48,7 @@ export default function PracticePage() {
   const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedFilter, setSelectedFilter] = useState<'all' | 'wrong_words'>('all');
+  const [selectedFilter, setSelectedFilter] = useState<'all' | 'wrong_words' | 'collected'>('all');
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
@@ -505,13 +505,14 @@ export default function PracticePage() {
 
               <div>
                 <label className="text-sm mb-2 block" style={{ color: '#a0a0b0' }}>练习模式</label>
-                <Select value={selectedFilter} onValueChange={(v) => setSelectedFilter(v as 'all' | 'wrong_words')}>
+                <Select value={selectedFilter} onValueChange={(v) => setSelectedFilter(v as 'all' | 'wrong_words' | 'collected')}>
                   <SelectTrigger className="h-11 rounded-xl border-0" style={{ background: 'rgba(255,255,255,0.05)', color: 'white' }}>
                     <SelectValue placeholder="选择模式" />
                   </SelectTrigger>
                   <SelectContent style={{ background: '#1e1e2e', border: 'none' }}>
                     <SelectItem value="all" className="text-white hover:bg-white/10 focus:bg-white/10">普通模式</SelectItem>
                     <SelectItem value="wrong_words" className="text-white hover:bg-white/10 focus:bg-white/10">错题集（最近7天）</SelectItem>
+                    <SelectItem value="collected" className="text-white hover:bg-white/10 focus:bg-white/10">主动收录</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -699,10 +700,10 @@ export default function PracticePage() {
 
       {/* 题目卡片 - 置顶吸附 */}
       <div 
-        className="sticky z-10 px-4 py-3"
+        className="sticky z-30 px-4 py-3"
         style={{ 
           top: dailyProgress ? '67px' : '57px',
-          background: 'rgba(18, 18, 30, 0.95)', 
+          background: 'rgba(18, 18, 30, 0.98)', 
           backdropFilter: 'blur(12px)' 
         }}
       >
@@ -731,23 +732,29 @@ export default function PracticePage() {
           {currentQuestion.mode === 'en-to-zh' && currentQuestion.phonetic && (
             <p className="text-sm" style={{ color: '#a0a0b0' }}>{currentQuestion.phonetic}</p>
           )}
-          {isWrongWord && (
-            <div className="mt-3">
+          <div className="mt-3 flex flex-wrap gap-2">
+            {currentQuestion.has_user_context && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium" style={{ background: 'rgba(255, 107, 157, 0.15)', color: '#ff6b9d' }}>
+                <FileText className="w-3.5 h-3.5" />
+                主动收录
+              </span>
+            )}
+            {isWrongWord && (
               <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium" style={{ background: 'rgba(255, 165, 0, 0.1)', color: '#ffa500' }}>
                 <AlertCircle className="w-3.5 h-3.5" />
                 本轮错题 · 需连续对 {3 - (wrongStatus?.consecutiveCorrect || 0)} 次
               </span>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
 
       {/* 中间区域 - 为底部fixed留出空间 */}
       <div className="flex-1" style={{ paddingBottom: '320px' }}></div>
 
-      {/* 底部答题区 - 固定在底部 */}
+      {/* 底部答题区 - 固定在底部，支持滚动 */}
       <div 
-        className="fixed bottom-0 left-0 right-0 z-20 px-4 py-3 pb-6"
+        className="fixed bottom-0 left-0 right-0 z-20"
         style={{ 
           background: 'rgba(18, 18, 30, 0.98)',
           backdropFilter: 'blur(12px)',
@@ -755,7 +762,10 @@ export default function PracticePage() {
           borderTop: '1px solid rgba(255,255,255,0.05)'
         }}
       >
-          <div className="max-w-md mx-auto space-y-2">
+        <div 
+          className="max-w-md mx-auto px-4 py-3 pb-6 space-y-2 overflow-y-auto"
+          style={{ maxHeight: '60vh' }}
+        >
             {!showResult ? (
               <>
                 {/* 标记掌握按钮 */}
@@ -829,7 +839,8 @@ export default function PracticePage() {
                           </div>
                         )}
                         <p className="text-base text-white">{currentQuestion.example_sentence}</p>
-                        {currentQuestion.example_sentence_cn && (
+                        {/* 主动收录词隐藏中文翻译 */}
+                        {!currentQuestion.has_user_context && currentQuestion.example_sentence_cn && (
                           <p className="text-sm mt-2" style={{ color: '#a0a0b0' }}>{currentQuestion.example_sentence_cn}</p>
                         )}
                       </div>
@@ -868,7 +879,7 @@ export default function PracticePage() {
                 </button>
               </>
             )}
-          </div>
+        </div>
       </div>
     </div>
   );
