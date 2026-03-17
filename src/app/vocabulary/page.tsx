@@ -143,7 +143,13 @@ export default function VocabularyPage() {
   const totalPages = Math.ceil((data?.total || 0) / pageSize);
 
   return (
-    <div className="min-h-screen flex flex-col overflow-hidden" style={{ background: '#12121e' }}>
+    <div className="min-h-screen flex flex-col" style={{ background: '#12121e' }}>
+      {/* 防止滚动条出现导致布局偏移 */}
+      <style jsx global>{`
+        html {
+          overflow-y: scroll;
+        }
+      `}</style>
       {/* 背景网格纹理 */}
       <div 
         className="fixed inset-0 pointer-events-none opacity-[0.03]"
@@ -245,7 +251,7 @@ export default function VocabularyPage() {
                 placeholder="搜索单词..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-10 pl-10 text-sm rounded-xl border-0 transition-all duration-200"
+                className="h-10 pl-10 text-sm rounded-xl border-0 transition-colors duration-200 focus:ring-0 focus:outline-none"
                 style={{ 
                   background: 'rgba(255,255,255,0.05)',
                   color: 'white'
@@ -254,7 +260,7 @@ export default function VocabularyPage() {
             </div>
             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
               <SelectTrigger 
-                className="w-28 h-10 text-xs rounded-xl border-0"
+                className="w-28 h-10 text-xs rounded-xl border-0 focus:ring-0 focus:outline-none"
                 style={{ background: 'rgba(255,255,255,0.05)', color: '#a0a0b0' }}
               >
                 <SelectValue placeholder="词库" />
@@ -280,7 +286,7 @@ export default function VocabularyPage() {
               <>
                 <Select value={filter} onValueChange={setFilter}>
                   <SelectTrigger 
-                    className="w-24 h-10 text-xs rounded-xl border-0"
+                    className="w-24 h-10 text-xs rounded-xl border-0 focus:ring-0 focus:outline-none"
                     style={{ background: 'rgba(255,255,255,0.05)', color: '#a0a0b0' }}
                   >
                     <SelectValue placeholder="类型" />
@@ -296,7 +302,7 @@ export default function VocabularyPage() {
                 </Select>
                 <Select value={masteredStatus} onValueChange={setMasteredStatus}>
                   <SelectTrigger 
-                    className="w-24 h-10 text-xs rounded-xl border-0"
+                    className="w-24 h-10 text-xs rounded-xl border-0 focus:ring-0 focus:ring-offset-0 data-[state=open]:ring-0 data-[state=open]:ring-offset-0"
                     style={{ background: 'rgba(255,255,255,0.05)', color: '#a0a0b0' }}
                   >
                     <SelectValue placeholder="状态" />
