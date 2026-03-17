@@ -652,7 +652,7 @@ export default function PracticePage() {
       )}
       
       {/* 头部 */}
-      <div className="sticky top-0 z-20 backdrop-blur-xl flex-shrink-0" style={{ background: 'rgba(30, 30, 46, 0.9)' }}>
+      <div className="sticky top-0 z-20 backdrop-blur-xl" style={{ background: 'rgba(30, 30, 46, 0.9)' }}>
         <div className="container mx-auto px-4 py-3 max-w-2xl">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -687,8 +687,8 @@ export default function PracticePage() {
         {/* 今日进度条 */}
         {dailyProgress && (
           <div 
-            className="relative w-full overflow-hidden flex-shrink-0"
-            style={{ height: '10px', minHeight: '10px', background: 'rgba(255,255,255,0.03)' }}
+            className="relative w-full overflow-hidden"
+            style={{ height: '10px', background: 'rgba(255,255,255,0.03)' }}
           >
             {/* 进度填充 */}
             <div 
