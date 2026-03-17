@@ -146,8 +146,10 @@ export default function VocabularyPage() {
     <div className="min-h-screen flex flex-col" style={{ background: '#12121e' }}>
       {/* 防止滚动条出现导致布局偏移 */}
       <style jsx global>{`
-        html {
+        html, body {
           overflow-y: scroll;
+          overflow-x: hidden;
+          max-width: 100vw;
         }
       `}</style>
       {/* 背景网格纹理 */}
