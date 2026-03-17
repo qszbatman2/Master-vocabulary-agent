@@ -11,14 +11,32 @@ export async function POST(request: NextRequest) {
 
     const client = getSupabaseClient();
 
-    // 1. 获取所有单词
-    const { data: allWords, error: fetchError } = await client
-      .from('words')
-      .select('id, word')
-      .order('id');
+    // 1. 分批获取所有单词（Supabase 默认限制 1000 行）
+    const allWords: Array<{ id: number; word: string }> = [];
+    let page = 0;
+    const PAGE_SIZE = 1000;
+    
+    while (true) {
+      const { data, error: fetchError } = await client
+        .from('words')
+        .select('id, word')
+        .order('id')
+        .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
 
-    if (fetchError) {
-      return NextResponse.json({ error: fetchError.message }, { status: 500 });
+      if (fetchError) {
+        return NextResponse.json({ error: fetchError.message }, { status: 500 });
+      }
+
+      if (!data || data.length === 0) {
+        break;
+      }
+
+      allWords.push(...data);
+      
+      if (data.length < PAGE_SIZE) {
+        break;
+      }
+      page++;
     }
 
     // 2. 找出重复的词，保留最小 ID
@@ -46,34 +64,48 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 3. 先删除关联的 user_word_status 记录
-    const { error: statusError } = await client
-      .from('user_word_status')
-      .delete()
-      .in('word_id', idsToDelete);
-
-    if (statusError) {
-      console.error('Delete user_word_status error:', statusError);
+    // 3. 分批删除关联的 user_word_status 记录
+    const BATCH_SIZE = 500;
+    let statusDeleted = 0;
+    for (let i = 0; i < idsToDelete.length; i += BATCH_SIZE) {
+      const batch = idsToDelete.slice(i, i + BATCH_SIZE);
+      const { error: statusError, count } = await client
+        .from('user_word_status')
+        .delete()
+        .in('word_id', batch);
+      if (statusError) {
+        console.error('Delete user_word_status error:', statusError);
+      }
+      statusDeleted += count || 0;
     }
 
-    // 4. 删除关联的 user_word_contexts 记录
-    const { error: contextError } = await client
-      .from('user_word_contexts')
-      .delete()
-      .in('word_id', idsToDelete);
-
-    if (contextError) {
-      console.error('Delete user_word_contexts error:', contextError);
+    // 4. 分批删除关联的 user_word_contexts 记录
+    let contextDeleted = 0;
+    for (let i = 0; i < idsToDelete.length; i += BATCH_SIZE) {
+      const batch = idsToDelete.slice(i, i + BATCH_SIZE);
+      const { error: contextError, count } = await client
+        .from('user_word_contexts')
+        .delete()
+        .in('word_id', batch);
+      if (contextError) {
+        console.error('Delete user_word_contexts error:', contextError);
+      }
+      contextDeleted += count || 0;
     }
 
-    // 5. 删除重复的单词
-    const { error: deleteError } = await client
-      .from('words')
-      .delete()
-      .in('id', idsToDelete);
-
-    if (deleteError) {
-      return NextResponse.json({ error: deleteError.message }, { status: 500 });
+    // 5. 分批删除重复的单词
+    let wordsDeleted = 0;
+    for (let i = 0; i < idsToDelete.length; i += BATCH_SIZE) {
+      const batch = idsToDelete.slice(i, i + BATCH_SIZE);
+      const { error: deleteError, count } = await client
+        .from('words')
+        .delete()
+        .in('id', batch);
+      if (deleteError) {
+        console.error('Delete words error:', deleteError);
+        return NextResponse.json({ error: deleteError.message }, { status: 500 });
+      }
+      wordsDeleted += count || 0;
     }
 
     // 6. 获取删除后的数量
@@ -83,10 +115,12 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: `成功删除 ${idsToDelete.length} 个重复单词`,
+      message: `成功删除 ${wordsDeleted} 个重复单词`,
       beforeCount: allWords?.length || 0,
       afterCount: afterCount || 0,
-      deletedCount: idsToDelete.length,
+      deletedCount: wordsDeleted,
+      statusDeleted,
+      contextDeleted,
       deletedIds: idsToDelete.slice(0, 100), // 只返回前100个
     });
 
@@ -109,11 +143,33 @@ export async function GET(request: NextRequest) {
 
     const client = getSupabaseClient();
 
-    // 获取所有单词
-    const { data: allWords, count: totalCount } = await client
-      .from('words')
-      .select('id, word', { count: 'exact' })
-      .order('id');
+    // 分批获取所有单词
+    const allWords: Array<{ id: number; word: string }> = [];
+    let page = 0;
+    const PAGE_SIZE = 1000;
+    
+    while (true) {
+      const { data, error: fetchError } = await client
+        .from('words')
+        .select('id, word')
+        .order('id')
+        .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+
+      if (fetchError) {
+        return NextResponse.json({ error: fetchError.message }, { status: 500 });
+      }
+
+      if (!data || data.length === 0) {
+        break;
+      }
+
+      allWords.push(...data);
+      
+      if (data.length < PAGE_SIZE) {
+        break;
+      }
+      page++;
+    }
 
     // 找出重复的词
     const wordToKeep: Map<string, number> = new Map();
@@ -143,7 +199,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       summary: {
-        totalWords: totalCount,
+        totalWords: allWords.length,
         uniqueWords: wordToKeep.size,
         willDelete: idsToDelete.length,
         afterDelete: wordToKeep.size,
