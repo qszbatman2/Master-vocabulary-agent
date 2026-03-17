@@ -652,7 +652,7 @@ export default function PracticePage() {
       )}
       
       {/* 头部 */}
-      <div className="sticky top-0 z-20 backdrop-blur-xl" style={{ background: 'rgba(30, 30, 46, 0.9)' }}>
+      <div className="sticky top-0 z-40 backdrop-blur-xl" style={{ background: 'rgba(30, 30, 46, 0.9)' }}>
         <div className="container mx-auto px-4 py-3 max-w-2xl">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
