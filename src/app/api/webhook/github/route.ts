@@ -8,6 +8,9 @@ const execAsync = promisify(exec);
 // Webhook 密钥（从环境变量读取）
 const WEBHOOK_SECRET = process.env.GITHUB_WEBHOOK_SECRET || 'coze-webhook-2024';
 
+// Webhook 版本标识（用于测试）
+const WEBHOOK_VERSION = '1.0.1';
+
 // 验证 GitHub Webhook 签名
 function verifySignature(payload: string, signature: string): boolean {
   if (!signature.startsWith('sha256=')) {
