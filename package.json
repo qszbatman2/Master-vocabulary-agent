@@ -91,6 +91,7 @@
     "eslint-config-next": "16.1.1",
     "jsdom": "^26.0.0",
     "only-allow": "^1.2.2",
+    "playwright": "^1.58.2",
     "react-dev-inspector": "^2.0.1",
     "shadcn": "latest",
     "tailwindcss": "^4",

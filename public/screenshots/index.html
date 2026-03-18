@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>英语单词学习平台 - 页面截图展示</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f0f1a;
+      color: #fff;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 2.5rem;
+      background: linear-gradient(135deg, #ff6b9d, #c44cff, #4cc9ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .subtitle {
+      text-align: center;
+      color: #888;
+      margin-bottom: 50px;
+      font-size: 1.1rem;
+    }
+    .screenshots {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 30px;
+    }
+    .screenshot-card {
+      background: #1a1a2e;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .screenshot-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 50px rgba(0,0,0,0.4);
+    }
+    .screenshot-card img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    .screenshot-info {
+      padding: 20px;
+    }
+    .screenshot-info h3 {
+      font-size: 1.3rem;
+      margin-bottom: 10px;
+      color: #fff;
+    }
+    .screenshot-info p {
+      color: #888;
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+    .tag {
+      display: inline-block;
+      background: linear-gradient(135deg, #ff6b9d, #c44cff);
+      color: white;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      margin-top: 12px;
+    }
+    .features {
+      margin-top: 15px;
+      padding-left: 20px;
+    }
+    .features li {
+      color: #a0a0b0;
+      font-size: 0.9rem;
+      margin-bottom: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📸 英语单词学习平台</h1>
+    <p class="subtitle">页面效果截图展示</p>
+    
+    <div class="screenshots">
+      <!-- 首页 -->
+      <div class="screenshot-card">
+        <img src="screenshots/home.png" alt="首页">
+        <div class="screenshot-info">
+          <h3>🏠 首页</h3>
+          <p>用户入口页面，展示学习统计和功能导航</p>
+          <span class="tag">核心页面</span>
+          <ul class="features">
+            <li>• 今日学习进度和目标设置</li>
+            <li>• 学习统计数据展示</li>
+            <li>• 快捷功能入口</li>
+            <li>• 动态渐变背景光晕</li>
+          </ul>
+        </div>
+      </div>
+      
+      <!-- 登录页 -->
+      <div class="screenshot-card">
+        <img src="screenshots/login.png" alt="登录页">
+        <div class="screenshot-info">
+          <h3>🔐 登录页</h3>
+          <p>用户认证页面，支持登录和注册</p>
+          <span class="tag">用户系统</span>
+          <ul class="features">
+            <li>• 登录/注册 Tab 切换</li>
+            <li>• 记住我功能</li>
+            <li>• 表单验证</li>
+            <li>• 渐变按钮设计</li>
+          </ul>
+        </div>
+      </div>
+      
+      <!-- 词库页 -->
+      <div class="screenshot-card">
+        <img src="screenshots/vocabulary.png" alt="词库页">
+        <div class="screenshot-info">
+          <h3>📚 词库页</h3>
+          <p>单词库浏览和管理页面</p>
+          <span class="tag">核心功能</span>
+          <ul class="features">
+            <li>• 16+ 词库分类筛选</li>
+            <li>• 单词搜索功能</li>
+            <li>• 掌握状态标记</li>
+            <li>• 分页加载</li>
+          </ul>
+        </div>
+      </div>
+      
+      <!-- 练习页 -->
+      <div class="screenshot-card">
+        <img src="screenshots/practice.png" alt="练习页">
+        <div class="screenshot-info">
+          <h3>✏️ 练习页</h3>
+          <p>背单词练习主界面</p>
+          <span class="tag">核心功能</span>
+          <ul class="features">
+            <li>• 英译中/中译英模式</li>
+            <li>• 无尽模式出题</li>
+            <li>• 错题集复习</li>
+            <li>• 今日进度条</li>
+            <li>• 发音功能</li>
+          </ul>
+        </div>
+      </div>
+      
+      <!-- 文章导入页 -->
+      <div class="screenshot-card">
+        <img src="screenshots/article-import.png" alt="文章导入页">
+        <div class="screenshot-info">
+          <h3>📄 文章导入页</h3>
+          <p>从文章中提取生词</p>
+          <span class="tag">扩展功能</span>
+          <ul class="features">
+            <li>• 粘贴文章内容</li>
+            <li>• 智能提取生词</li>
+            <li>• 批量添加到词库</li>
+            <li>• Chrome 扩展支持</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
