@@ -70,6 +70,16 @@ export default function PracticePage() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [dailyProgress, setDailyProgress] = useState<{ completed: number; goal: number } | null>(null);
   const [progressAnimated, setProgressAnimated] = useState(false);
+  
+  // 今日累计进度（从数据库读取）
+  const [todayStats, setTodayStats] = useState<{
+    totalPracticed: number;
+    correctCount: number;
+    wrongCount: number;
+    masteredCount: number;
+    wrongWordIds: number[];
+    durationSeconds: number;
+  } | null>(null);
 
   // 高亮例句中的收录词
   const highlightWordInSentence = (sentence: string, word: string) => {
@@ -158,6 +168,31 @@ export default function PracticePage() {
     }
   };
 
+  // 获取今日累计进度
+  const fetchTodayStats = async () => {
+    if (!token) return;
+    try {
+      const response = await fetch('/api/daily-practice', {
+        headers: { authorization: `Bearer ${token}` },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.today) {
+          setTodayStats({
+            totalPracticed: data.today.totalPracticed,
+            correctCount: data.today.correctCount,
+            wrongCount: data.today.wrongCount,
+            masteredCount: data.today.masteredCount,
+            wrongWordIds: data.today.wrongWordIds || [],
+            durationSeconds: data.today.durationSeconds,
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch today stats:', error);
+    }
+  };
+
   const fetchMoreQuestions = useCallback(async (excludeIds: number[] = [], priorityIds: number[] = []) => {
     if (!token || isLoading) return;
     
@@ -220,6 +255,9 @@ export default function PracticePage() {
     
     // 获取今日进度
     fetchDailyProgress();
+    
+    // 获取今日累计进度
+    fetchTodayStats();
     
     setIsLoading(true);
     try {
@@ -425,21 +463,9 @@ export default function PracticePage() {
   };
 
   const exitPractice = () => {
-    const duration = startTimeRef.current > 0 ? Math.floor((Date.now() - startTimeRef.current) / 1000) : 0;
-    const totalPracticed = questionNumberRef.current;
-    const masteredCount = roundSuccessCountRef.current;
-    const wrongCount = roundWrongCountRef.current;
-    
-    const summary = {
-      totalPracticed,
-      masteredCount,
-      wrongCount,
-      correctCount: totalPracticed - wrongCount,
-      duration,
-    };
-    
-    sessionStorage.setItem('practice_summary', JSON.stringify(summary));
-    router.push('/practice/summary');
+    // 直接返回首页，进度已在每次答题时自动保存到数据库
+    // 今日累计进度会在凌晨12点自动结算
+    router.push('/');
   };
 
   const playAudio = (word: string) => {
@@ -682,6 +708,21 @@ export default function PracticePage() {
               )}
             </div>
           </div>
+          {/* 今日累计进度 */}
+          {todayStats && todayStats.totalPracticed > 0 && (
+            <div className="mt-2 pt-2 border-t border-white/5">
+              <div className="flex items-center justify-between text-xs">
+                <span style={{ color: '#a0a0b0' }}>今日累计</span>
+                <div className="flex items-center gap-3">
+                  <span style={{ color: '#00f0ff' }}>已练 {todayStats.totalPracticed}</span>
+                  <span style={{ color: '#00ff88' }}>掌握 {todayStats.masteredCount}</span>
+                  {todayStats.wrongWordIds.length > 0 && (
+                    <span style={{ color: '#ff6b9d' }}>错词 {todayStats.wrongWordIds.length}</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
         
         {/* 今日进度条 */}

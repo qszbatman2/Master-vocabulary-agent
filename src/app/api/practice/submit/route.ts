@@ -210,6 +210,63 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // ========== 更新每日练习统计 ==========
+    
+    // 获取或创建今日统计记录
+    let { data: todayStats } = await client
+      .from('daily_practice_stats')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('date', today)
+      .single();
+
+    if (!todayStats) {
+      const { data: newStats } = await client
+        .from('daily_practice_stats')
+        .insert({
+          user_id: userId,
+          date: today,
+          total_practiced: 0,
+          correct_count: 0,
+          wrong_count: 0,
+          mastered_count: 0,
+          wrong_word_ids: '',
+          duration_seconds: 0,
+          is_settled: false,
+        })
+        .select()
+        .single();
+      todayStats = newStats;
+    }
+
+    // 更新每日统计
+    const dailyUpdateData: Record<string, unknown> = { updated_at: now };
+    dailyUpdateData.total_practiced = (todayStats?.total_practiced || 0) + 1;
+
+    // 如果是首次答错，加入错词列表
+    if (!isCorrect) {
+      const currentWrongIds = todayStats?.wrong_word_ids
+        ? todayStats.wrong_word_ids.split(',').filter((id: string) => id)
+        : [];
+      if (!currentWrongIds.includes(String(wordId))) {
+        currentWrongIds.push(String(wordId));
+        dailyUpdateData.wrong_word_ids = currentWrongIds.join(',');
+        dailyUpdateData.wrong_count = (todayStats?.wrong_count || 0) + 1;
+      }
+    } else {
+      dailyUpdateData.correct_count = (todayStats?.correct_count || 0) + 1;
+    }
+
+    // 如果掌握，更新掌握数
+    if (newIsMastered && !existingStatus?.is_mastered) {
+      dailyUpdateData.mastered_count = (todayStats?.mastered_count || 0) + 1;
+    }
+
+    await client
+      .from('daily_practice_stats')
+      .update(dailyUpdateData)
+      .eq('id', todayStats?.id);
+
     // 返回结果
     const responseData: any = {
       success: true,
