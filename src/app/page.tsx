@@ -415,47 +415,45 @@ export default function Home() {
         </div>
 
         {/* 文章导入入口 - 入场动画 */}
-        {user && (
-          <div 
-            className="transition-all duration-700 mt-6"
-            style={{ 
-              opacity: isLoaded ? 1 : 0,
-              transform: isLoaded ? 'translateY(0)' : 'translateY(30px)',
-              transitionDelay: '550ms'
-            }}
-          >
-            <Link href="/article-import" className="block">
+        <div 
+          className="transition-all duration-700 mt-6"
+          style={{ 
+            opacity: isLoaded ? 1 : 0,
+            transform: isLoaded ? 'translateY(0)' : 'translateY(30px)',
+            transitionDelay: '550ms'
+          }}
+        >
+          <Link href="/article-import" className="block">
+            <div 
+              className="group relative rounded-2xl p-5 cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:scale-[1.01] overflow-hidden"
+              style={{ 
+                background: '#1e1e2e',
+                boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)'
+              }}
+            >
+              {/* 边缘发光效果 */}
               <div 
-                className="group relative rounded-2xl p-5 cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:scale-[1.01] overflow-hidden"
-                style={{ 
-                  background: '#1e1e2e',
-                  boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)'
+                className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                style={{
+                  boxShadow: '0 0 20px rgba(124, 77, 255, 0.2), inset 0 0 20px rgba(124, 77, 255, 0.03)'
                 }}
-              >
-                {/* 边缘发光效果 */}
+              />
+              <div className="relative flex items-center gap-4">
                 <div 
-                  className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                  style={{
-                    boxShadow: '0 0 20px rgba(124, 77, 255, 0.2), inset 0 0 20px rgba(124, 77, 255, 0.03)'
-                  }}
-                />
-                <div className="relative flex items-center gap-4">
-                  <div 
-                    className="p-3 rounded-xl transition-transform duration-300 group-hover:scale-110"
-                    style={{ background: 'linear-gradient(135deg, #7c4dff, #ff6b9d)' }}
-                  >
-                    <FileText className="w-5 h-5 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-base font-medium text-white">从文章添加生词</h3>
-                    <p className="text-xs mt-0.5" style={{ color: '#a0a0b0' }}>粘贴英文文章，点选生词加入复习</p>
-                  </div>
-                  <div className="text-white/30 group-hover:text-white/50 transition-colors">→</div>
+                  className="p-3 rounded-xl transition-transform duration-300 group-hover:scale-110"
+                  style={{ background: 'linear-gradient(135deg, #7c4dff, #ff6b9d)' }}
+                >
+                  <FileText className="w-5 h-5 text-white" />
                 </div>
+                <div className="flex-1">
+                  <h3 className="text-base font-medium text-white">从文章添加生词</h3>
+                  <p className="text-xs mt-0.5" style={{ color: '#a0a0b0' }}>粘贴英文文章，点选生词加入复习</p>
+                </div>
+                <div className="text-white/30 group-hover:text-white/50 transition-colors">→</div>
               </div>
-            </Link>
-          </div>
-        )}
+            </div>
+          </Link>
+        </div>
 
         {/* 目标设置弹窗 */}
         <Dialog open={showGoalDialog} onOpenChange={setShowGoalDialog}>
