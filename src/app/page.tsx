@@ -180,40 +180,6 @@ export default function Home() {
 
         {/* 功能卡片 - 入场动画 */}
         <div className="grid grid-cols-2 gap-5 mb-10">
-          {/* 单词库卡片 */}
-          <Link href="/vocabulary" className="block">
-            <div 
-              className="group relative rounded-3xl p-6 cursor-pointer transition-all duration-300 hover:-translate-y-2 hover:scale-[1.02] h-full overflow-hidden"
-              style={{ 
-                background: '#1e1e2e',
-                boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)',
-                opacity: isLoaded ? 1 : 0,
-                transform: isLoaded ? 'translateY(0)' : 'translateY(30px)',
-                transitionDelay: '200ms'
-              }}
-            >
-              {/* 边缘发光效果 */}
-              <div 
-                className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                style={{
-                  boxShadow: '0 0 30px rgba(255, 107, 157, 0.3), inset 0 0 30px rgba(255, 107, 157, 0.05)'
-                }}
-              />
-              <div className="relative flex flex-col items-center text-center gap-4">
-                <div 
-                  className="p-4 rounded-2xl transition-transform duration-300 group-hover:scale-110"
-                  style={{ background: 'linear-gradient(135deg, #ff6b9d, #c44cff)' }}
-                >
-                  <BookOpen className="w-7 h-7 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-white">单词库</h3>
-                  <p className="text-sm mt-1" style={{ color: '#a0a0b0' }}>浏览全部词汇</p>
-                </div>
-              </div>
-            </div>
-          </Link>
-
           {/* 背单词卡片 */}
           <Link href={user ? "/practice" : "/login"} className="block">
             <div 
@@ -223,7 +189,7 @@ export default function Home() {
                 boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)',
                 opacity: isLoaded ? 1 : 0,
                 transform: isLoaded ? 'translateY(0)' : 'translateY(30px)',
-                transitionDelay: '300ms'
+                transitionDelay: '200ms'
               }}
             >
               {/* 边缘发光效果 */}
@@ -261,6 +227,40 @@ export default function Home() {
                     今日 {dailyProgress.completed}/{dailyProgress.dailyGoal}
                   </button>
                 )}
+              </div>
+            </div>
+          </Link>
+
+          {/* 单词库卡片 */}
+          <Link href="/vocabulary" className="block">
+            <div 
+              className="group relative rounded-3xl p-6 cursor-pointer transition-all duration-300 hover:-translate-y-2 hover:scale-[1.02] h-full overflow-hidden"
+              style={{ 
+                background: '#1e1e2e',
+                boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)',
+                opacity: isLoaded ? 1 : 0,
+                transform: isLoaded ? 'translateY(0)' : 'translateY(30px)',
+                transitionDelay: '300ms'
+              }}
+            >
+              {/* 边缘发光效果 */}
+              <div 
+                className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                style={{
+                  boxShadow: '0 0 30px rgba(255, 107, 157, 0.3), inset 0 0 30px rgba(255, 107, 157, 0.05)'
+                }}
+              />
+              <div className="relative flex flex-col items-center text-center gap-4">
+                <div 
+                  className="p-4 rounded-2xl transition-transform duration-300 group-hover:scale-110"
+                  style={{ background: 'linear-gradient(135deg, #ff6b9d, #c44cff)' }}
+                >
+                  <BookOpen className="w-7 h-7 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-white">单词库</h3>
+                  <p className="text-sm mt-1" style={{ color: '#a0a0b0' }}>浏览全部词汇</p>
+                </div>
               </div>
             </div>
           </Link>
