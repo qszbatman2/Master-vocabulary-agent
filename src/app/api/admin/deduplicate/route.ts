@@ -5,7 +5,8 @@ import { getSupabaseClient } from '@/storage/database/supabase-client';
 export async function POST(request: NextRequest) {
   try {
     const adminKey = request.headers.get('x-admin-key');
-    if (adminKey !== 'coze-admin-2026') {
+    const expectedKey = process.env.ADMIN_KEY || 'vocabulary-admin-2024';
+    if (adminKey !== expectedKey) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

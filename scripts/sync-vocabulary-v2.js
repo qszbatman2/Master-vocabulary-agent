@@ -10,7 +10,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const ADMIN_TOKEN = 'vocabulary-admin-2024';
+const ADMIN_TOKEN = process.env.ADMIN_KEY || 'vocabulary-admin-2024';
 const OUTPUT_DIR = path.join(__dirname, '../exports');
 const BATCH_SIZE = 500; // 每批处理的单词数
 

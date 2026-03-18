@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
 
-// 管理员授权码
-const ADMIN_TOKEN = 'vocabulary-admin-2024';
+// 管理员授权码（优先从环境变量读取）
+const ADMIN_TOKEN = process.env.ADMIN_KEY || 'vocabulary-admin-2024';
 
 // 获取上海时区的日期字符串
 function getShanghaiDateString(date: Date): string {

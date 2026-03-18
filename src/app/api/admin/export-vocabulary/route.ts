@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
 
-const ADMIN_TOKEN = 'vocabulary-admin-2024';
+const ADMIN_TOKEN = process.env.ADMIN_KEY || 'vocabulary-admin-2024';
 
 export async function GET(request: NextRequest) {
   try {

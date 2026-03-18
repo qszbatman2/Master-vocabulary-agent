@@ -6,7 +6,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const ADMIN_TOKEN = 'vocabulary-admin-2024';
+const ADMIN_TOKEN = process.env.ADMIN_KEY || 'vocabulary-admin-2024';
 const BATCH_SIZE = 500;
 const TARGET_ENV = 'http://localhost:5000';
 

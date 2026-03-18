@@ -6,7 +6,7 @@
 import { getSupabaseClient } from '../src/storage/database/supabase-client';
 
 const PRODUCTION_API = 'https://8qcfzhhw7t.coze.site';
-const ADMIN_KEY = 'vocabulary-admin-2024';
+const ADMIN_KEY = process.env.ADMIN_KEY || 'vocabulary-admin-2024';
 const BATCH_SIZE = 200;
 
 async function exportAndImport() {

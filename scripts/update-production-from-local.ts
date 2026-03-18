@@ -7,7 +7,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 const PRODUCTION_API = 'https://8qcfzhhw7t.coze.site';
-const ADMIN_KEY = 'vocabulary-admin-2024';
+const ADMIN_KEY = process.env.ADMIN_KEY || 'vocabulary-admin-2024';
 const BATCH_SIZE = 100; // 每批处理100个单词
 
 interface WordData {
