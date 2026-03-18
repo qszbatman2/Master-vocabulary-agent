@@ -1,13 +1,12 @@
 'use client';
 
 import { useEffect, useState, useRef, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { Button } from '@/components/ui/button';
+import { useRouter } from 'next/navigation';
 import { ArrowLeft, Trophy, Target, CheckCircle, RotateCcw, Home, Clock, TrendingUp, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 
-interface RoundSummary {
+interface RoundStats {
   totalPracticed: number;
   masteredCount: number;
   wrongCount: number;
@@ -15,11 +14,19 @@ interface RoundSummary {
   duration: number;
 }
 
+interface TodayStats {
+  totalPracticed: number;
+  correctCount: number;
+  wrongCount: number;
+  masteredCount: number;
+  durationSeconds: number;
+}
+
 function SummaryContent() {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const [summary, setSummary] = useState<RoundSummary | null>(null);
+  const [roundStats, setRoundStats] = useState<RoundStats | null>(null);
+  const [todayStats, setTodayStats] = useState<TodayStats | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const initializedRef = useRef(false);
   const dataLoadedRef = useRef(false);
@@ -40,36 +47,59 @@ function SummaryContent() {
     if (initializedRef.current) return;
     initializedRef.current = true;
 
-    const saved = sessionStorage.getItem('practice_summary');
-    if (saved) {
-      try {
-        const data = JSON.parse(saved);
-        setSummary(data);
-        dataLoadedRef.current = true;
-        setTimeout(() => {
-          sessionStorage.removeItem('practice_summary');
-        }, 100);
-        return;
-      } catch (e) {
-        console.error('解析 sessionStorage 数据失败:', e);
+    const loadData = async () => {
+      // 从 sessionStorage 获取本轮数据
+      const saved = sessionStorage.getItem('practice_round_stats');
+      let roundData: RoundStats = {
+        totalPracticed: 0,
+        masteredCount: 0,
+        wrongCount: 0,
+        correctCount: 0,
+        duration: 0,
+      };
+      
+      if (saved) {
+        try {
+          roundData = JSON.parse(saved);
+          setRoundStats(roundData);
+          setTimeout(() => {
+            sessionStorage.removeItem('practice_round_stats');
+          }, 100);
+        } catch (e) {
+          console.error('解析 sessionStorage 数据失败:', e);
+        }
       }
-    }
 
-    const totalPracticed = parseInt(searchParams.get('total') || '0');
-    const masteredCount = parseInt(searchParams.get('mastered') || '0');
-    const wrongCount = parseInt(searchParams.get('wrong') || '0');
-    const correctCount = parseInt(searchParams.get('correct') || '0');
-    const duration = parseInt(searchParams.get('duration') || '0');
+      // 从 API 获取今日累计数据
+      if (token) {
+        try {
+          const response = await fetch('/api/daily-practice', {
+            headers: { authorization: `Bearer ${token}` },
+          });
+          if (response.ok) {
+            const data = await response.json();
+            if (data.success && data.today) {
+              setTodayStats({
+                totalPracticed: data.today.totalPracticed || 0,
+                correctCount: data.today.correctCount || 0,
+                wrongCount: data.today.wrongCount || 0,
+                masteredCount: data.today.masteredCount || 0,
+                durationSeconds: data.today.durationSeconds || 0,
+              });
+            }
+          }
+        } catch (e) {
+          console.error('获取今日数据失败:', e);
+        }
+      }
 
-    if (totalPracticed > 0 || masteredCount > 0 || wrongCount > 0) {
-      setSummary({ totalPracticed, masteredCount, wrongCount, correctCount, duration });
       dataLoadedRef.current = true;
-    } else {
-      router.push('/');
-    }
-  }, [user, router]);
+    };
 
-  if (!user || !summary) {
+    loadData();
+  }, [user, token, router]);
+
+  if (!user || !todayStats) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#12121e' }}>
         <div className="text-center">
@@ -87,8 +117,8 @@ function SummaryContent() {
     return `${mins}分${secs}秒`;
   };
 
-  const accuracy = summary.totalPracticed > 0 
-    ? Math.round((summary.correctCount / summary.totalPracticed) * 100) 
+  const todayAccuracy = todayStats.totalPracticed > 0 
+    ? Math.round((todayStats.correctCount / todayStats.totalPracticed) * 100) 
     : 0;
 
   return (
@@ -121,15 +151,15 @@ function SummaryContent() {
             >
               <Trophy className="w-8 h-8" />
             </div>
-            <p className="text-sm opacity-90">学习完成</p>
+            <p className="text-sm opacity-90">今日学习完成</p>
           </div>
         </div>
 
         {/* 内容区域 */}
         <div className="p-6">
-          <h2 className="text-xl font-bold text-white text-center mb-5">本轮成绩</h2>
+          <h2 className="text-xl font-bold text-white text-center mb-5">今日累计</h2>
           
-          {/* 主要统计 */}
+          {/* 主要统计 - 今日累计 */}
           <div 
             className="grid grid-cols-2 gap-3 mb-5 transition-all duration-700 delay-100"
             style={{ 
@@ -142,7 +172,7 @@ function SummaryContent() {
               style={{ background: 'rgba(0, 240, 255, 0.08)' }}
             >
               <Target className="w-6 h-6 mx-auto mb-2" style={{ color: '#00f0ff' }} />
-              <div className="text-3xl font-bold" style={{ color: '#00f0ff' }}>{summary.totalPracticed}</div>
+              <div className="text-3xl font-bold" style={{ color: '#00f0ff' }}>{todayStats.totalPracticed}</div>
               <div className="text-xs mt-1" style={{ color: '#a0a0b0' }}>已背单词</div>
             </div>
             <div 
@@ -150,12 +180,12 @@ function SummaryContent() {
               style={{ background: 'rgba(0, 255, 136, 0.08)' }}
             >
               <CheckCircle className="w-6 h-6 mx-auto mb-2" style={{ color: '#00ff88' }} />
-              <div className="text-3xl font-bold" style={{ color: '#00ff88' }}>{summary.masteredCount}</div>
-              <div className="text-xs mt-1" style={{ color: '#a0a0b0' }}>本轮掌握</div>
+              <div className="text-3xl font-bold" style={{ color: '#00ff88' }}>{todayStats.masteredCount}</div>
+              <div className="text-xs mt-1" style={{ color: '#a0a0b0' }}>今日掌握</div>
             </div>
           </div>
 
-          {/* 次要统计 */}
+          {/* 次要统计 - 今日累计 */}
           <div 
             className="grid grid-cols-3 gap-2 mb-5 text-center transition-all duration-700 delay-200"
             style={{ 
@@ -164,18 +194,33 @@ function SummaryContent() {
             }}
           >
             <div className="p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)' }}>
-              <div className="text-xl font-semibold text-white">{summary.correctCount}</div>
+              <div className="text-xl font-semibold text-white">{todayStats.correctCount}</div>
               <div className="text-xs" style={{ color: '#a0a0b0' }}>首次正确</div>
             </div>
             <div className="p-3 rounded-xl" style={{ background: 'rgba(255, 107, 157, 0.08)' }}>
-              <div className="text-xl font-semibold" style={{ color: '#ff6b9d' }}>{summary.wrongCount}</div>
+              <div className="text-xl font-semibold" style={{ color: '#ff6b9d' }}>{todayStats.wrongCount}</div>
               <div className="text-xs" style={{ color: '#a0a0b0' }}>首次错误</div>
             </div>
             <div className="p-3 rounded-xl" style={{ background: 'rgba(196, 76, 255, 0.08)' }}>
-              <div className="text-xl font-semibold" style={{ color: '#c44cff' }}>{accuracy}%</div>
+              <div className="text-xl font-semibold" style={{ color: '#c44cff' }}>{todayAccuracy}%</div>
               <div className="text-xs" style={{ color: '#a0a0b0' }}>正确率</div>
             </div>
           </div>
+
+          {/* 本轮数据（如果有） */}
+          {roundStats && roundStats.totalPracticed > 0 && (
+            <div 
+              className="mb-5 p-4 rounded-2xl transition-all duration-700 delay-200"
+              style={{ background: 'rgba(255,255,255,0.03)' }}
+            >
+              <div className="text-sm font-medium mb-2" style={{ color: '#a0a0b0' }}>本轮贡献</div>
+              <div className="flex justify-between text-sm">
+                <span style={{ color: '#00f0ff' }}>练习 {roundStats.totalPracticed} 词</span>
+                <span style={{ color: '#00ff88' }}>掌握 {roundStats.masteredCount} 词</span>
+                <span style={{ color: '#ff6b9d' }}>错误 {roundStats.wrongCount} 词</span>
+              </div>
+            </div>
+          )}
 
           {/* 学习时长 */}
           <div 
@@ -187,8 +232,8 @@ function SummaryContent() {
             }}
           >
             <Clock className="w-5 h-5 mx-auto mb-2" style={{ color: '#c44cff' }} />
-            <div className="text-sm" style={{ color: '#a0a0b0' }}>学习时长</div>
-            <div className="text-2xl font-bold mt-1" style={{ color: '#c44cff' }}>{formatDuration(summary.duration)}</div>
+            <div className="text-sm" style={{ color: '#a0a0b0' }}>今日学习时长</div>
+            <div className="text-2xl font-bold mt-1" style={{ color: '#c44cff' }}>{formatDuration(todayStats.durationSeconds)}</div>
           </div>
 
           {/* 激励语 */}
@@ -199,17 +244,17 @@ function SummaryContent() {
               transform: isLoaded ? 'translateY(0)' : 'translateY(20px)'
             }}
           >
-            {summary.masteredCount >= 10 ? (
+            {todayStats.masteredCount >= 20 ? (
               <div className="flex items-center justify-center gap-2">
                 <Sparkles className="w-5 h-5" style={{ color: '#00ff88' }} />
-                <p className="font-medium" style={{ color: '#00ff88' }}>太棒了！继续保持！</p>
+                <p className="font-medium" style={{ color: '#00ff88' }}>太棒了！今日收获满满！</p>
               </div>
-            ) : summary.masteredCount >= 5 ? (
+            ) : todayStats.masteredCount >= 10 ? (
               <div className="flex items-center justify-center gap-2">
                 <TrendingUp className="w-5 h-5" style={{ color: '#00f0ff' }} />
-                <p className="font-medium" style={{ color: '#00f0ff' }}>进步很大，加油！</p>
+                <p className="font-medium" style={{ color: '#00f0ff' }}>进步很大，继续保持！</p>
               </div>
-            ) : summary.totalPracticed > 0 ? (
+            ) : todayStats.totalPracticed > 0 ? (
               <div className="flex items-center justify-center gap-2">
                 <Target className="w-5 h-5" style={{ color: '#c44cff' }} />
                 <p className="font-medium" style={{ color: '#c44cff' }}>每一次练习都是进步！</p>
@@ -312,7 +357,7 @@ export default function SummaryPage() {
               <ArrowLeft className="w-5 h-5" />
             </button>
           </Link>
-          <h1 className="text-xl font-bold text-white">本轮结算</h1>
+          <h1 className="text-xl font-bold text-white">今日结算</h1>
         </div>
       </div>
 

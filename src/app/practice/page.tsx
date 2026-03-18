@@ -462,10 +462,41 @@ export default function PracticePage() {
     }
   };
 
-  const exitPractice = () => {
-    // 直接返回首页，进度已在每次答题时自动保存到数据库
-    // 今日累计进度会在凌晨12点自动结算
-    router.push('/');
+  const exitPractice = async () => {
+    // 计算本轮数据
+    const duration = startTimeRef.current > 0 ? Math.floor((Date.now() - startTimeRef.current) / 1000) : 0;
+    const roundStats = {
+      totalPracticed: questionNumberRef.current,
+      masteredCount: roundSuccessCountRef.current,
+      wrongCount: roundWrongCountRef.current,
+      correctCount: questionNumberRef.current - roundWrongCountRef.current,
+      duration,
+    };
+    
+    // 保存本轮数据到 sessionStorage
+    sessionStorage.setItem('practice_round_stats', JSON.stringify(roundStats));
+    
+    // 更新今日练习时长到数据库
+    if (token && duration > 0) {
+      try {
+        await fetch('/api/daily-practice', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            action: 'update_duration',
+            durationIncrement: duration,
+          }),
+        });
+      } catch (e) {
+        console.error('更新时长失败:', e);
+      }
+    }
+    
+    // 跳转到结算页面
+    router.push('/practice/summary');
   };
 
   const playAudio = (word: string) => {
@@ -697,9 +728,13 @@ export default function PracticePage() {
               </div>
             </div>
             <div className="flex items-center gap-3 text-sm">
-              <span className="font-semibold" style={{ color: '#00ff88' }}>成功 {roundSuccessCount}</span>
+              <span className="font-semibold" style={{ color: '#00ff88' }}>
+                今日成功 {(todayStats?.correctCount || 0) + roundSuccessCount}
+              </span>
               <span style={{ color: 'rgba(255,255,255,0.2)' }}>|</span>
-              <span className="font-semibold" style={{ color: '#ff6b9d' }}>错误 {roundWrongCount}</span>
+              <span className="font-semibold" style={{ color: '#ff6b9d' }}>
+                今日错误 {(todayStats?.wrongCount || 0) + roundWrongCount}
+              </span>
               {wrongWordsMap.size > 0 && (
                 <>
                   <span style={{ color: 'rgba(255,255,255,0.2)' }}>|</span>
