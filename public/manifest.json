@@ -1,0 +1,20 @@
+{
+  "name": "英语单词学习平台",
+  "short_name": "背单词",
+  "description": "收录雅思、托福、GRE、日常等10000+词汇，支持英译中/中译英练习，智能追踪学习进度，助你高效记忆单词。",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#12121e",
+  "theme_color": "#c44cff",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["education", "productivity"],
+  "lang": "zh-CN"
+}

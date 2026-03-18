@@ -28,6 +28,16 @@ export const metadata: Metadata = {
     '英语词汇',
   ],
   authors: [{ name: '英语单词学习平台' }],
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/apple-touch-icon.png',
+  },
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: '背单词',
+  },
 };
 
 export default function RootLayout({
