@@ -727,37 +727,7 @@ export default function PracticePage() {
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-3 text-sm">
-              <span className="font-semibold" style={{ color: '#00ff88' }}>
-                今日成功 {(todayStats?.correctCount || 0) + roundSuccessCount}
-              </span>
-              <span style={{ color: 'rgba(255,255,255,0.2)' }}>|</span>
-              <span className="font-semibold" style={{ color: '#ff6b9d' }}>
-                今日错误 {(todayStats?.wrongCount || 0) + roundWrongCount}
-              </span>
-              {wrongWordsMap.size > 0 && (
-                <>
-                  <span style={{ color: 'rgba(255,255,255,0.2)' }}>|</span>
-                  <span style={{ color: '#ffa500' }}>待复习 {wrongWordsMap.size}</span>
-                </>
-              )}
-            </div>
           </div>
-          {/* 今日累计进度 */}
-          {todayStats && todayStats.totalPracticed > 0 && (
-            <div className="mt-2 pt-2 border-t border-white/5">
-              <div className="flex items-center justify-between text-xs">
-                <span style={{ color: '#a0a0b0' }}>今日累计</span>
-                <div className="flex items-center gap-3">
-                  <span style={{ color: '#00f0ff' }}>已练 {todayStats.totalPracticed}</span>
-                  <span style={{ color: '#00ff88' }}>掌握 {todayStats.masteredCount}</span>
-                  {todayStats.wrongWordIds.length > 0 && (
-                    <span style={{ color: '#ff6b9d' }}>错词 {todayStats.wrongWordIds.length}</span>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
         </div>
         
         {/* 今日进度条 */}
@@ -804,22 +774,22 @@ export default function PracticePage() {
           style={{ background: '#1e1e2e', boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)' }}
         >
           <div className="flex items-center justify-between mb-2">
-            <h2 className="text-2xl font-bold text-white">
+            <h2 className="text-2xl font-bold text-white truncate flex-1 mr-2">
               {currentQuestion.mode === 'en-to-zh' ? (
-                <div className="flex items-center gap-3">
-                  {currentQuestion.question}
-                  <button
-                    onClick={() => playAudio(currentQuestion.question)}
-                    className="p-2 rounded-xl transition-all duration-200 hover:scale-110 active:scale-95"
-                    style={{ background: 'rgba(0, 240, 255, 0.1)' }}
-                  >
-                    <Volume2 className="w-5 h-5" style={{ color: '#00f0ff' }} />
-                  </button>
-                </div>
+                <span className="truncate">{currentQuestion.question}</span>
               ) : (
-                currentQuestion.question
+                <span className="truncate">{currentQuestion.question}</span>
               )}
             </h2>
+            {currentQuestion.mode === 'en-to-zh' && (
+              <button
+                onClick={() => playAudio(currentQuestion.question)}
+                className="p-2 rounded-xl transition-all duration-200 hover:scale-110 active:scale-95 flex-shrink-0"
+                style={{ background: 'rgba(0, 240, 255, 0.1)' }}
+              >
+                <Volume2 className="w-5 h-5" style={{ color: '#00f0ff' }} />
+              </button>
+            )}
           </div>
           {currentQuestion.mode === 'en-to-zh' && currentQuestion.phonetic && (
             <p className="text-sm" style={{ color: '#a0a0b0' }}>{currentQuestion.phonetic}</p>
@@ -854,7 +824,7 @@ export default function PracticePage() {
           borderTop: '1px solid rgba(255,255,255,0.05)'
         }}
       >
-        <div className="max-w-md mx-auto px-4 py-3 pb-6">
+        <div className="max-w-md mx-auto px-4 py-3" style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}>
             {!showResult ? (
               <div className="space-y-2">
                 {/* 标记掌握按钮 */}
