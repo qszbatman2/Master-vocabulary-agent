@@ -340,7 +340,7 @@ export default function SummaryPage() {
 
       {/* 头部 */}
       <div 
-        className="sticky top-0 z-20 border-b backdrop-blur-xl transition-all duration-700"
+        className="sticky top-0 z-20 border-b backdrop-blur-xl transition-all duration-700 safe-area-top"
         style={{ 
           background: 'rgba(30, 30, 46, 0.9)',
           borderColor: 'rgba(255,255,255,0.05)',

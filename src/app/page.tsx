@@ -77,7 +77,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col overflow-hidden" style={{ background: '#12121e' }}>
+    <div className="min-h-screen flex flex-col overflow-hidden safe-area-top" style={{ background: '#12121e' }}>
       {/* 背景网格纹理 */}
       <div 
         className="fixed inset-0 pointer-events-none opacity-[0.03]"

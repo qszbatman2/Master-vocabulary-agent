@@ -97,7 +97,7 @@ export default function LoginPage() {
       </div>
 
       {/* 页面顶部返回按钮 */}
-      <Link href="/" className="fixed top-6 left-6 z-50">
+      <Link href="/" className="fixed z-50 safe-area-top" style={{ top: 0, left: 0, paddingLeft: '1.5rem', paddingTop: '1.5rem' }}>
         <button 
           className="w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95"
           style={{ background: 'rgba(30, 30, 46, 0.8)', color: '#a0a0b0', backdropFilter: 'blur(8px)' }}

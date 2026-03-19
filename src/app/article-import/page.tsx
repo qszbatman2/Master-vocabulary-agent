@@ -180,7 +180,7 @@ export default function ArticleImportPage() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: '#12121e' }}>
+    <div className="min-h-screen flex flex-col safe-area-top" style={{ background: '#12121e' }}>
       {/* 背景光晕 */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div 

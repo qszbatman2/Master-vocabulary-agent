@@ -534,7 +534,7 @@ export default function PracticePage() {
 
         {/* 头部 */}
         <div 
-          className="sticky top-0 z-20 border-b backdrop-blur-xl transition-all duration-700"
+          className="sticky top-0 z-20 border-b backdrop-blur-xl transition-all duration-700 safe-area-top"
           style={{ background: 'rgba(30, 30, 46, 0.9)', borderColor: 'rgba(255,255,255,0.05)', opacity: isLoaded ? 1 : 0, transform: isLoaded ? 'translateY(0)' : 'translateY(-20px)' }}
         >
           <div className="container mx-auto px-4 py-4 max-w-2xl flex items-center gap-3">
@@ -629,7 +629,7 @@ export default function PracticePage() {
           <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[400px] h-[400px] rounded-full blur-[100px] animate-pulse" style={{ background: 'linear-gradient(135deg, #00ff88, #00d4ff)', opacity: 0.2, animationDuration: '4s' }} />
         </div>
 
-        <div className="sticky top-0 z-20 border-b backdrop-blur-xl" style={{ background: 'rgba(30, 30, 46, 0.9)', borderColor: 'rgba(255,255,255,0.05)' }}>
+        <div className="sticky top-0 z-20 border-b backdrop-blur-xl safe-area-top" style={{ background: 'rgba(30, 30, 46, 0.9)', borderColor: 'rgba(255,255,255,0.05)' }}>
           <div className="container mx-auto px-4 py-4 max-w-2xl flex items-center gap-3">
             <Link href="/">
               <button className="w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95" style={{ background: 'rgba(255,255,255,0.05)', color: '#a0a0b0' }}>
@@ -709,7 +709,7 @@ export default function PracticePage() {
       )}
       
       {/* 头部 */}
-      <div className="sticky top-0 z-40 backdrop-blur-xl" style={{ background: 'rgba(30, 30, 46, 0.9)', paddingTop: 'max(0.75rem, env(safe-area-inset-top))' }}>
+      <div className="sticky top-0 z-40 backdrop-blur-xl safe-area-top" style={{ background: 'rgba(30, 30, 46, 0.9)' }}>
         <div className="container mx-auto px-4 py-3 max-w-2xl">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
