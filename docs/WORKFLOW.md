@@ -26,17 +26,19 @@ git push origin main
 
 ### 提交信息规范
 
-遵循 Conventional Commits 格式：
+**所有来自 Coze Coding 的提交必须添加 `[Coze]` 前缀！**
+
+格式：`[Coze]type: description`
 
 | 类型 | 说明 | 示例 |
 |------|------|------|
-| `feat` | 新功能 | `feat: 添加用户登录功能` |
-| `fix` | 修复bug | `fix: 修复登录验证问题` |
-| `refactor` | 重构代码 | `refactor: 优化数据库查询` |
-| `docs` | 文档更新 | `docs: 更新API文档` |
-| `style` | 代码格式 | `style: 格式化代码` |
-| `chore` | 构建/工具 | `chore: 更新依赖版本` |
-| `test` | 测试相关 | `test: 添加单元测试` |
+| `feat` | 新功能 | `[Coze]feat: 添加用户登录功能` |
+| `fix` | 修复bug | `[Coze]fix: 修复登录验证问题` |
+| `refactor` | 重构代码 | `[Coze]refactor: 优化数据库查询` |
+| `docs` | 文档更新 | `[Coze]docs: 更新API文档` |
+| `style` | 代码格式 | `[Coze]style: 格式化代码` |
+| `chore` | 构建/工具 | `[Coze]chore: 更新依赖版本` |
+| `test` | 测试相关 | `[Coze]test: 添加单元测试` |
 
 ### 提交时机
 

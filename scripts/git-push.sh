@@ -1,11 +1,17 @@
 #!/bin/bash
 # Git自动提交脚本
 # 用法: ./scripts/git-push.sh "commit message"
+# 提交信息格式: [Coze]type: description
 
 set -e
 
 # 获取提交信息
 COMMIT_MSG="${1:-chore: auto commit}"
+
+# 添加 [Coze] 前缀（如果还没有）
+if [[ ! "$COMMIT_MSG" =~ ^\[Coze\] ]]; then
+    COMMIT_MSG="[Coze]$COMMIT_MSG"
+fi
 
 # 进入项目目录
 cd "${COZE_WORKSPACE_PATH:-/workspace/projects}"
