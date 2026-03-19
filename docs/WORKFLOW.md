@@ -8,20 +8,18 @@
 
 ### 提交方式
 
-#### 方式一：使用脚本（推荐）
+#### 方式一：静默脚本（推荐，省token）
 
 ```bash
-./scripts/git-push.sh "feat: 新功能描述"
-./scripts/git-push.sh "fix: 修复问题描述"
-./scripts/git-push.sh "refactor: 重构描述"
+./scripts/git-sync.sh "feat: 新功能"
+# 输出仅一行: ✓ 已提交: abc123 [Coze]feat: 新功能
 ```
 
-#### 方式二：手动提交
+#### 方式二：详细脚本（调试用）
 
 ```bash
-git add -A
-git commit -m "feat: 新功能描述"
-git push origin main
+./scripts/git-push.sh "feat: 新功能"
+# 输出变更文件列表等详情
 ```
 
 ### 提交信息规范
