@@ -19,10 +19,10 @@ if git diff --quiet 2>/dev/null && git diff --cached --quiet 2>/dev/null; then
     exit 0
 fi
 
-# 执行提交
+# 静默执行提交
 git add -A
-git commit -m "$MSG"
-git push origin main
+git commit -m "$MSG" >/dev/null 2>&1
+git push origin main >/dev/null 2>&1
 
 HASH=$(git rev-parse --short HEAD)
 echo "✓ $HASH $MSG"
