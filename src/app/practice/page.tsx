@@ -709,7 +709,7 @@ export default function PracticePage() {
       )}
       
       {/* 头部 */}
-      <div className="sticky top-0 z-40 backdrop-blur-xl" style={{ background: 'rgba(30, 30, 46, 0.9)' }}>
+      <div className="sticky top-0 z-40 backdrop-blur-xl" style={{ background: 'rgba(30, 30, 46, 0.9)', paddingTop: 'max(0.75rem, env(safe-area-inset-top))' }}>
         <div className="container mx-auto px-4 py-3 max-w-2xl">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -726,6 +726,21 @@ export default function PracticePage() {
                   {currentQuestion.mode === 'en-to-zh' ? '英译中' : '中译英'}
                 </div>
               </div>
+            </div>
+            <div className="flex items-center gap-2 text-sm">
+              <span className="font-semibold" style={{ color: '#00ff88' }}>
+                成功 {(todayStats?.correctCount || 0) + roundSuccessCount}
+              </span>
+              <span style={{ color: 'rgba(255,255,255,0.2)' }}>|</span>
+              <span className="font-semibold" style={{ color: '#ff6b9d' }}>
+                错误 {(todayStats?.wrongCount || 0) + roundWrongCount}
+              </span>
+              {wrongWordsMap.size > 0 && (
+                <>
+                  <span style={{ color: 'rgba(255,255,255,0.2)' }}>|</span>
+                  <span style={{ color: '#ffa500' }}>待复习 {wrongWordsMap.size}</span>
+                </>
+              )}
             </div>
           </div>
         </div>
