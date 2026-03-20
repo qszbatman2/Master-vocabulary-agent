@@ -788,18 +788,14 @@ export default function PracticePage() {
           className="max-w-md mx-auto rounded-2xl p-5"
           style={{ background: '#1e1e2e', boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)' }}
         >
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-2xl font-bold text-white truncate flex-1 mr-2">
-              {currentQuestion.mode === 'en-to-zh' ? (
-                <span className="truncate">{currentQuestion.question}</span>
-              ) : (
-                <span className="truncate">{currentQuestion.question}</span>
-              )}
+          <div className="flex items-start justify-between gap-2 mb-2">
+            <h2 className="text-2xl font-bold text-white break-words flex-1">
+              {currentQuestion.question}
             </h2>
             {currentQuestion.mode === 'en-to-zh' && (
               <button
                 onClick={() => playAudio(currentQuestion.question)}
-                className="p-2 rounded-xl transition-all duration-200 hover:scale-110 active:scale-95 flex-shrink-0"
+                className="p-2 rounded-xl transition-all duration-200 hover:scale-110 active:scale-95 flex-shrink-0 mt-1"
                 style={{ background: 'rgba(0, 240, 255, 0.1)' }}
               >
                 <Volume2 className="w-5 h-5" style={{ color: '#00f0ff' }} />
