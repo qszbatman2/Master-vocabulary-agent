@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { wordId, isCorrect, markAsMastered, isRoundWrongWord } = body;
+    const { wordId, isCorrect, markAsMastered, isRoundWrongWord, isReview } = body;
 
     if (!wordId) {
       return NextResponse.json({ error: '缺少单词ID' }, { status: 400 });
@@ -147,6 +147,12 @@ export async function POST(request: NextRequest) {
       newRoundConsecutiveCorrect = 0;
       newDailyCorrectCount = 0;
       newLastCorrectDate = null;
+      
+      // 复习词答错：重置为未掌握状态
+      if (isReview) {
+        newIsMastered = false;
+        debugInfo.reviewWordReset = true;
+      }
     }
 
     // 手动标记掌握

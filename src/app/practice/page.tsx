@@ -35,6 +35,7 @@ interface Question {
   options: string[];
   correctAnswer: string;
   mode: string;
+  is_review?: boolean;
 }
 
 interface WrongWordStatus {
@@ -290,7 +291,7 @@ export default function PracticePage() {
     }
   };
 
-  const submitResult = async (wordId: number, isCorrect: boolean, markAsMastered: boolean = false, isRoundWrongWord: boolean = false) => {
+  const submitResult = async (wordId: number, isCorrect: boolean, markAsMastered: boolean = false, isRoundWrongWord: boolean = false, isReview: boolean = false) => {
     if (!token) return;
     
     try {
@@ -300,7 +301,7 @@ export default function PracticePage() {
           'Content-Type': 'application/json',
           authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ wordId, isCorrect, markAsMastered, isRoundWrongWord }),
+        body: JSON.stringify({ wordId, isCorrect, markAsMastered, isRoundWrongWord, isReview }),
       });
       
       const data = await response.json();
@@ -329,7 +330,7 @@ export default function PracticePage() {
     const wasWrongBefore = wrongWordsMap.has(wordId);
     const alreadyCounted = roundCorrectWordsRef.current.has(wordId);
 
-    const result = await submitResult(wordId, isCorrect, false, wasWrongBefore);
+    const result = await submitResult(wordId, isCorrect, false, wasWrongBefore, currentQuestion.is_review);
     
     // 更新今日进度条
     if (result?.validCorrectRecorded) {
@@ -390,7 +391,7 @@ export default function PracticePage() {
 
   const handleMarkAsMastered = async (autoNext: boolean = false) => {
     const currentQuestion = questions[currentIndex];
-    await submitResult(currentQuestion.id, true, true);
+    await submitResult(currentQuestion.id, true, true, false, currentQuestion.is_review);
     
     const alreadyCounted = roundCorrectWordsRef.current.has(currentQuestion.id);
     

@@ -149,47 +149,6 @@ export async function GET(request: NextRequest) {
           availableWords.push(w);
         }
       });
-      
-      // 额外：已掌握的主动收录词低频率复习（掌握4天以上的，随机选1-2个）
-      const { data: masteredCollected } = await client
-        .from('user_word_contexts')
-        .select('word_id')
-        .eq('user_id', userId);
-      
-      if (masteredCollected && masteredCollected.length > 0) {
-        const collectedWordIds = new Set(masteredCollected.map(c => c.word_id));
-        const reviewCandidates: typeof allWords = [];
-        
-        // 计算4天前的日期
-        const fourDaysAgo = new Date();
-        fourDaysAgo.setDate(fourDaysAgo.getDate() - 4);
-        
-        uniqueWords.forEach((w, word) => {
-          if (!collectedWordIds.has(w.id)) return;
-          if (!isWordMastered(word)) return;
-          if (isWordCorrectToday(word)) return;
-          
-          // 检查掌握时间是否超过4天
-          const ids = wordToIds.get(word) || [];
-          const lastCorrectDate = ids
-            .map(id => statusMap.get(id)?.last_correct_date)
-            .filter(Boolean)
-            .sort()
-            .pop();
-          
-          if (lastCorrectDate && new Date(lastCorrectDate) < fourDaysAgo) {
-            reviewCandidates.push(w);
-          }
-        });
-        
-        // 随机选1-2个复习词
-        if (reviewCandidates.length > 0) {
-          const shuffledReview = shuffleArray(reviewCandidates);
-          const reviewCount = Math.min(2, shuffledReview.length, Math.ceil(availableWords.length * 0.1));
-          const reviewWords = shuffledReview.slice(0, reviewCount);
-          availableWords.push(...reviewWords);
-        }
-      }
     }
 
     // 排除本轮已成功的单词（通过 id 转换为 word 字段来排除）
@@ -218,6 +177,43 @@ export async function GET(request: NextRequest) {
         remainingWords: 0,
         message,
       });
+    }
+
+    // ========== 复习词逻辑（已掌握的主动收录词低频率复习）==========
+    const reviewWords: (typeof allWords[0] & { is_review: boolean })[] = [];
+    
+    // 只在普通模式下加入复习词
+    if (filter !== 'wrong_words' && filter !== 'collected') {
+      const { data: masteredCollected } = await client
+        .from('user_word_contexts')
+        .select('word_id')
+        .eq('user_id', userId);
+      
+      if (masteredCollected && masteredCollected.length > 0) {
+        const collectedWordIds = new Set(masteredCollected.map(c => c.word_id));
+        
+        // 计算4天前的日期
+        const fourDaysAgo = new Date();
+        fourDaysAgo.setDate(fourDaysAgo.getDate() - 4);
+        
+        uniqueWords.forEach((w, word) => {
+          if (!collectedWordIds.has(w.id)) return;
+          if (!isWordMastered(word)) return;
+          if (isWordCorrectToday(word)) return;
+          
+          // 检查掌握时间是否超过4天
+          const ids = wordToIds.get(word) || [];
+          const lastCorrectDate = ids
+            .map(id => statusMap.get(id)?.last_correct_date)
+            .filter(Boolean)
+            .sort()
+            .pop();
+          
+          if (lastCorrectDate && new Date(lastCorrectDate) < fourDaysAgo) {
+            reviewWords.push({ ...w, is_review: true });
+          }
+        });
+      }
     }
 
     // 查询用户主动收录的单词（有上下文记录的，且未掌握且今天未答对）
@@ -284,6 +280,28 @@ export async function GET(request: NextRequest) {
       const remainingWords = shuffledOther.slice(0, limit - collectedCount);
       
       selectedWords = [...collectedWords, ...remainingWords];
+    }
+
+    // ========== 插入复习词（分散在整个题目中）==========
+    if (reviewWords.length > 0 && selectedWords.length > 0) {
+      const shuffledReview = shuffleArray(reviewWords);
+      // 最多5个复习词，不超过总题数的5%
+      const maxReviewCount = Math.min(5, shuffledReview.length, Math.ceil(selectedWords.length * 0.05));
+      const reviewToInsert = shuffledReview.slice(0, maxReviewCount);
+      
+      // 计算插入间隔：总题数 / (复习词数 + 1)，确保分散
+      if (reviewToInsert.length > 0) {
+        const interval = Math.floor(selectedWords.length / (reviewToInsert.length + 1));
+        const newSelectedWords = [...selectedWords];
+        
+        reviewToInsert.forEach((reviewWord, index) => {
+          // 从第 interval 题开始插入，避免集中在开头
+          const insertPos = Math.min(interval * (index + 1), newSelectedWords.length);
+          newSelectedWords.splice(insertPos, 0, reviewWord as any);
+        });
+        
+        selectedWords = newSelectedWords;
+      }
     }
 
     // 获取选中单词的用户上下文例句
@@ -372,6 +390,7 @@ export async function GET(request: NextRequest) {
         options: shuffledFinal,
         correctAnswer,
         mode,
+        is_review: !!(word as any).is_review, // 标记是否为复习词
       };
     });
 
