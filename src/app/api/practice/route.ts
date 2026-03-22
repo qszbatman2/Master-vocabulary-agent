@@ -149,6 +149,47 @@ export async function GET(request: NextRequest) {
           availableWords.push(w);
         }
       });
+      
+      // 额外：已掌握的主动收录词低频率复习（掌握4天以上的，随机选1-2个）
+      const { data: masteredCollected } = await client
+        .from('user_word_contexts')
+        .select('word_id')
+        .eq('user_id', userId);
+      
+      if (masteredCollected && masteredCollected.length > 0) {
+        const collectedWordIds = new Set(masteredCollected.map(c => c.word_id));
+        const reviewCandidates: typeof allWords = [];
+        
+        // 计算4天前的日期
+        const fourDaysAgo = new Date();
+        fourDaysAgo.setDate(fourDaysAgo.getDate() - 4);
+        
+        uniqueWords.forEach((w, word) => {
+          if (!collectedWordIds.has(w.id)) return;
+          if (!isWordMastered(word)) return;
+          if (isWordCorrectToday(word)) return;
+          
+          // 检查掌握时间是否超过4天
+          const ids = wordToIds.get(word) || [];
+          const lastCorrectDate = ids
+            .map(id => statusMap.get(id)?.last_correct_date)
+            .filter(Boolean)
+            .sort()
+            .pop();
+          
+          if (lastCorrectDate && new Date(lastCorrectDate) < fourDaysAgo) {
+            reviewCandidates.push(w);
+          }
+        });
+        
+        // 随机选1-2个复习词
+        if (reviewCandidates.length > 0) {
+          const shuffledReview = shuffleArray(reviewCandidates);
+          const reviewCount = Math.min(2, shuffledReview.length, Math.ceil(availableWords.length * 0.1));
+          const reviewWords = shuffledReview.slice(0, reviewCount);
+          availableWords.push(...reviewWords);
+        }
+      }
     }
 
     // 排除本轮已成功的单词（通过 id 转换为 word 字段来排除）
