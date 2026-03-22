@@ -143,8 +143,10 @@ export async function POST(request: NextRequest) {
         newIsMastered = true;
       }
     } else {
-      // 答错：重置本轮连续计数
+      // 答错：重置所有正确计数，需要重新累计4天
       newRoundConsecutiveCorrect = 0;
+      newDailyCorrectCount = 0;
+      newLastCorrectDate = null;
     }
 
     // 手动标记掌握
