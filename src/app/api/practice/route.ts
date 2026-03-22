@@ -291,8 +291,11 @@ export async function GET(request: NextRequest) {
       
       // 计算插入间隔：总题数 / (复习词数 + 1)，确保分散
       if (reviewToInsert.length > 0) {
-        const interval = Math.floor(selectedWords.length / (reviewToInsert.length + 1));
-        const newSelectedWords = [...selectedWords];
+        // 先截断原列表，预留空间给复习词，保持总题数 = limit
+        const reservedSpace = reviewToInsert.length;
+        const baseWords = selectedWords.slice(0, limit - reservedSpace);
+        const interval = Math.floor(baseWords.length / (reviewToInsert.length + 1));
+        const newSelectedWords = [...baseWords];
         
         reviewToInsert.forEach((reviewWord, index) => {
           // 从第 interval 题开始插入，避免集中在开头
