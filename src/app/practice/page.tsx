@@ -149,6 +149,12 @@ export default function PracticePage() {
       const response = await fetch('/api/categories');
       const data = await response.json();
       setCategories(data.categories || []);
+      
+      // 读取上次选择的词库
+      const lastCategory = localStorage.getItem('practice_selected_category');
+      if (lastCategory) {
+        setSelectedCategory(lastCategory);
+      }
     } catch (error) {
       console.error('Failed to fetch categories:', error);
     }
@@ -564,7 +570,10 @@ export default function PracticePage() {
             <div className="space-y-5">
               <div>
                 <label className="text-sm mb-2 block" style={{ color: '#a0a0b0' }}>选择词库</label>
-                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <Select value={selectedCategory} onValueChange={(value) => {
+                  setSelectedCategory(value);
+                  localStorage.setItem('practice_selected_category', value);
+                }}>
                   <SelectTrigger className="h-11 rounded-xl border-0" style={{ background: 'rgba(255,255,255,0.05)', color: 'white' }}>
                     <SelectValue placeholder="选择词库" />
                   </SelectTrigger>
