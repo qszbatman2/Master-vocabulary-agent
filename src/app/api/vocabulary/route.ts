@@ -28,13 +28,25 @@ export async function GET(request: NextRequest) {
     const userId = token ? getUserIdFromToken(token) : null;
 
     // 获取词库分类
-    const { data: categories, error: categoriesError } = await client
+    const { data: allCategories, error: categoriesError } = await client
       .from('vocabulary_categories')
       .select('*')
       .order('created_at', { ascending: true });
 
     if (categoriesError) {
       return NextResponse.json({ error: categoriesError.message }, { status: 500 });
+    }
+
+    // 过滤掉没有词汇的分类
+    const categories: typeof allCategories = [];
+    for (const category of allCategories || []) {
+      const { count } = await client
+        .from('words')
+        .select('*', { count: 'exact', head: true })
+        .eq('category_id', category.id);
+      if (count && count > 0) {
+        categories.push(category);
+      }
     }
 
     let words: any[] = [];
