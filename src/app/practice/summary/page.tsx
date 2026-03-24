@@ -1,16 +1,17 @@
 'use client';
 
 import { useEffect, useState, useRef, Suspense } from 'react';
-import { useRouter } from 'next/navigation';
-import { ArrowLeft, Trophy, Target, CheckCircle, RotateCcw, Home, Clock, TrendingUp, Sparkles } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { ArrowLeft, Trophy, Target, CheckCircle, RotateCcw, Home, Clock, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface RoundStats {
   totalPracticed: number;
-  masteredCount: number;
-  wrongCount: number;
   correctCount: number;
+  wrongCount: number;
+  manuallyMasteredCount: number;
+  systemMasteredCount: number;
   duration: number;
 }
 
@@ -22,11 +23,18 @@ interface TodayStats {
   durationSeconds: number;
 }
 
+interface DailyProgress {
+  dailyGoal: number;
+  completed: number;
+}
+
 function SummaryContent() {
   const { user, token } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [roundStats, setRoundStats] = useState<RoundStats | null>(null);
   const [todayStats, setTodayStats] = useState<TodayStats | null>(null);
+  const [dailyProgress, setDailyProgress] = useState<DailyProgress | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const initializedRef = useRef(false);
   const dataLoadedRef = useRef(false);
@@ -52,9 +60,10 @@ function SummaryContent() {
       const saved = sessionStorage.getItem('practice_round_stats');
       let roundData: RoundStats = {
         totalPracticed: 0,
-        masteredCount: 0,
-        wrongCount: 0,
         correctCount: 0,
+        wrongCount: 0,
+        manuallyMasteredCount: 0,
+        systemMasteredCount: 0,
         duration: 0,
       };
       
@@ -73,11 +82,12 @@ function SummaryContent() {
       // 从 API 获取今日累计数据
       if (token) {
         try {
-          const response = await fetch('/api/daily-practice', {
+          // 获取今日统计
+          const todayResponse = await fetch('/api/daily-practice', {
             headers: { authorization: `Bearer ${token}` },
           });
-          if (response.ok) {
-            const data = await response.json();
+          if (todayResponse.ok) {
+            const data = await todayResponse.json();
             if (data.success && data.today) {
               setTodayStats({
                 totalPracticed: data.today.totalPracticed || 0,
@@ -87,6 +97,18 @@ function SummaryContent() {
                 durationSeconds: data.today.durationSeconds || 0,
               });
             }
+          }
+
+          // 获取今日进度
+          const progressResponse = await fetch('/api/daily-progress', {
+            headers: { authorization: `Bearer ${token}` },
+          });
+          if (progressResponse.ok) {
+            const progressData = await progressResponse.json();
+            setDailyProgress({
+              dailyGoal: progressData.dailyGoal || 20,
+              completed: progressData.completed || 0,
+            });
           }
         } catch (e) {
           console.error('获取今日数据失败:', e);
@@ -99,7 +121,7 @@ function SummaryContent() {
     loadData();
   }, [user, token, router]);
 
-  if (!user || !todayStats) {
+  if (!user || !todayStats || !dailyProgress) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#12121e' }}>
         <div className="text-center">
@@ -110,168 +132,211 @@ function SummaryContent() {
     );
   }
 
+  // 格式化时长
   const formatDuration = (seconds: number) => {
+    if (seconds < 60) return `${seconds}秒`;
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    if (mins === 0) return `${secs}秒`;
-    return `${mins}分${secs}秒`;
+    return secs > 0 ? `${mins}分${secs}秒` : `${mins}分钟`;
   };
 
-  const todayAccuracy = todayStats.totalPracticed > 0 
-    ? Math.round((todayStats.correctCount / todayStats.totalPracticed) * 100) 
-    : 0;
+  // 计算本轮进度条数据
+  const totalMastered = (roundStats?.manuallyMasteredCount || 0) + (roundStats?.systemMasteredCount || 0);
+  const correctNotMastered = Math.max(0, (roundStats?.correctCount || 0) - totalMastered);
+  const correctMastered = totalMastered;
+  const wrongCount = roundStats?.wrongCount || 0;
+  const totalPracticed = roundStats?.totalPracticed || 0;
+
+  // 正确率
+  const accuracy = totalPracticed > 0 ? Math.round(((roundStats?.correctCount || 0) / totalPracticed) * 100) : 0;
+
+  // 今日进度
+  const todayCompleted = dailyProgress.completed;
+  const todayGoal = dailyProgress.dailyGoal;
+  const isGoalCompleted = todayCompleted >= todayGoal;
 
   return (
     <div className="flex-1 container mx-auto px-4 py-6 flex flex-col items-center justify-center max-w-md">
-      {/* 主卡片 */}
+      {/* 本轮完成卡片 */}
+      {roundStats && roundStats.totalPracticed > 0 && (
+        <div 
+          className="w-full rounded-3xl overflow-hidden mb-4 transition-all duration-700"
+          style={{ 
+            background: '#1e1e2e',
+            boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)',
+            opacity: isLoaded ? 1 : 0,
+            transform: isLoaded ? 'translateY(0)' : 'translateY(30px)'
+          }}
+        >
+          {/* 标题区域 */}
+          <div className="px-6 pt-6 pb-4">
+            <div className="flex items-center justify-center gap-2 mb-5">
+              <Trophy className="w-5 h-5" style={{ color: '#ffd700' }} />
+              <h2 className="text-lg font-bold text-white">本轮完成</h2>
+            </div>
+
+            {/* 三项数据并排 */}
+            <div className="grid grid-cols-3 gap-2 mb-5">
+              <div className="text-center">
+                <div className="text-3xl font-bold" style={{ color: '#00f0ff' }}>{roundStats.correctCount}</div>
+                <div className="text-xs mt-1" style={{ color: '#a0a0b0' }}>正确</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold" style={{ color: '#00ff88' }}>{totalMastered}</div>
+                <div className="text-xs mt-1" style={{ color: '#a0a0b0' }}>已掌握</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold" style={{ color: '#c44cff' }}>{accuracy}%</div>
+                <div className="text-xs mt-1" style={{ color: '#a0a0b0' }}>正确率</div>
+              </div>
+            </div>
+
+            {/* 进度条 */}
+            <div className="mb-3">
+              <div 
+                className="relative w-full overflow-hidden rounded-full"
+                style={{ height: '16px', background: 'rgba(255,255,255,0.05)' }}
+              >
+                {/* 正确未掌握 - 青色 */}
+                {correctNotMastered > 0 && (
+                  <div 
+                    className="absolute inset-y-0 left-0"
+                    style={{ 
+                      width: `${(correctNotMastered / totalPracticed) * 100}%`,
+                      background: 'linear-gradient(90deg, #00f0ff, #00d4ff)',
+                    }}
+                  />
+                )}
+                {/* 正确掌握 - 蓝绿色 */}
+                {correctMastered > 0 && (
+                  <div 
+                    className="absolute inset-y-0"
+                    style={{ 
+                      left: `${(correctNotMastered / totalPracticed) * 100}%`,
+                      width: `${(correctMastered / totalPracticed) * 100}%`,
+                      background: 'linear-gradient(90deg, #00d4aa, #00ff88)',
+                    }}
+                  />
+                )}
+                {/* 错误 - 粉色 */}
+                {wrongCount > 0 && (
+                  <div 
+                    className="absolute inset-y-0 right-0"
+                    style={{ 
+                      width: `${(wrongCount / totalPracticed) * 100}%`,
+                      background: 'linear-gradient(90deg, #ff6b9d, #ff4d6d)',
+                    }}
+                  />
+                )}
+              </div>
+            </div>
+
+            {/* 进度条图例 */}
+            <div className="flex items-center justify-center gap-4 text-xs">
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded-sm" style={{ background: 'linear-gradient(90deg, #00f0ff, #00d4ff)' }} />
+                <span style={{ color: '#a0a0b0' }}>正确未掌握 {correctNotMastered}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded-sm" style={{ background: 'linear-gradient(90deg, #00d4aa, #00ff88)' }} />
+                <span style={{ color: '#a0a0b0' }}>正确掌握 {correctMastered}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded-sm" style={{ background: 'linear-gradient(90deg, #ff6b9d, #ff4d6d)' }} />
+                <span style={{ color: '#a0a0b0' }}>错误 {wrongCount}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 今日累计卡片 */}
       <div 
-        className="w-full rounded-3xl overflow-hidden transition-all duration-700"
+        className="w-full rounded-3xl overflow-hidden mb-5 transition-all duration-700"
         style={{ 
           background: '#1e1e2e',
           boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)',
           opacity: isLoaded ? 1 : 0,
-          transform: isLoaded ? 'translateY(0)' : 'translateY(30px)'
+          transform: isLoaded ? 'translateY(0)' : 'translateY(30px)',
+          transitionDelay: roundStats && roundStats.totalPracticed > 0 ? '100ms' : '0ms'
         }}
       >
-        {/* 顶部渐变区域 */}
-        <div 
-          className="h-28 flex items-center justify-center relative"
-          style={{ background: 'linear-gradient(135deg, #c44cff, #7c4dff)' }}
-        >
-          <div 
-            className="absolute inset-0 opacity-50"
-            style={{
-              background: 'radial-gradient(circle at 30% 50%, rgba(255,255,255,0.2) 0%, transparent 50%)'
-            }}
-          />
-          <div className="text-center text-white relative">
-            <div 
-              className="w-16 h-16 rounded-2xl mx-auto mb-2 flex items-center justify-center transition-transform duration-300 hover:scale-110"
-              style={{ background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(10px)' }}
-            >
-              <Trophy className="w-8 h-8" />
-            </div>
-            <p className="text-sm opacity-90">今日学习完成</p>
+        <div className="px-6 py-5">
+          {/* 标题 */}
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <Target className="w-5 h-5" style={{ color: '#c44cff' }} />
+            <h2 className="text-lg font-bold text-white">今日累计</h2>
           </div>
-        </div>
 
-        {/* 内容区域 */}
-        <div className="p-6">
-          <h2 className="text-xl font-bold text-white text-center mb-5">今日累计</h2>
-          
-          {/* 主要统计 - 今日累计 */}
-          <div 
-            className="grid grid-cols-2 gap-3 mb-5 transition-all duration-700 delay-100"
-            style={{ 
-              opacity: isLoaded ? 1 : 0,
-              transform: isLoaded ? 'translateY(0)' : 'translateY(20px)'
-            }}
-          >
+          {/* 进度条 */}
+          <div className="mb-4">
             <div 
-              className="text-center p-4 rounded-2xl transition-transform duration-200 hover:scale-105"
-              style={{ background: 'rgba(0, 240, 255, 0.08)' }}
+              className="relative w-full overflow-hidden rounded-full"
+              style={{ height: '12px', background: 'rgba(255,255,255,0.05)' }}
             >
-              <Target className="w-6 h-6 mx-auto mb-2" style={{ color: '#00f0ff' }} />
-              <div className="text-3xl font-bold" style={{ color: '#00f0ff' }}>{todayStats.totalPracticed}</div>
-              <div className="text-xs mt-1" style={{ color: '#a0a0b0' }}>已背单词</div>
+              <div 
+                className="absolute inset-y-0 left-0 transition-all duration-500"
+                style={{ 
+                  width: `${Math.min(100, (todayCompleted / todayGoal) * 100)}%`,
+                  background: isGoalCompleted 
+                    ? 'linear-gradient(90deg, rgba(255,215,0,0.8), rgba(255,107,157,0.6))' 
+                    : 'linear-gradient(90deg, rgba(0,255,136,0.5), rgba(0,212,255,0.4))',
+                }}
+              />
             </div>
-            <div 
-              className="text-center p-4 rounded-2xl transition-transform duration-200 hover:scale-105"
-              style={{ background: 'rgba(0, 255, 136, 0.08)' }}
-            >
-              <CheckCircle className="w-6 h-6 mx-auto mb-2" style={{ color: '#00ff88' }} />
-              <div className="text-3xl font-bold" style={{ color: '#00ff88' }}>{todayStats.masteredCount}</div>
-              <div className="text-xs mt-1" style={{ color: '#a0a0b0' }}>今日掌握</div>
+            <div className="flex justify-between items-center mt-2">
+              <span className="text-xs" style={{ color: '#a0a0b0' }}>今日正确</span>
+              <span className="text-sm font-semibold" style={{ color: isGoalCompleted ? '#ffd700' : '#00f0ff' }}>
+                {todayCompleted}/{todayGoal}
+              </span>
             </div>
           </div>
 
-          {/* 次要统计 - 今日累计 */}
-          <div 
-            className="grid grid-cols-3 gap-2 mb-5 text-center transition-all duration-700 delay-200"
-            style={{ 
-              opacity: isLoaded ? 1 : 0,
-              transform: isLoaded ? 'translateY(0)' : 'translateY(20px)'
-            }}
-          >
-            <div className="p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)' }}>
-              <div className="text-xl font-semibold text-white">{todayStats.correctCount}</div>
-              <div className="text-xs" style={{ color: '#a0a0b0' }}>首次正确</div>
-            </div>
-            <div className="p-3 rounded-xl" style={{ background: 'rgba(255, 107, 157, 0.08)' }}>
-              <div className="text-xl font-semibold" style={{ color: '#ff6b9d' }}>{todayStats.wrongCount}</div>
-              <div className="text-xs" style={{ color: '#a0a0b0' }}>首次错误</div>
-            </div>
-            <div className="p-3 rounded-xl" style={{ background: 'rgba(196, 76, 255, 0.08)' }}>
-              <div className="text-xl font-semibold" style={{ color: '#c44cff' }}>{todayAccuracy}%</div>
-              <div className="text-xs" style={{ color: '#a0a0b0' }}>正确率</div>
-            </div>
-          </div>
-
-          {/* 本轮数据（如果有） */}
-          {roundStats && roundStats.totalPracticed > 0 && (
-            <div 
-              className="mb-5 p-4 rounded-2xl transition-all duration-700 delay-200"
-              style={{ background: 'rgba(255,255,255,0.03)' }}
-            >
-              <div className="text-sm font-medium mb-2" style={{ color: '#a0a0b0' }}>本轮贡献</div>
-              <div className="flex justify-between text-sm">
-                <span style={{ color: '#00f0ff' }}>练习 {roundStats.totalPracticed} 词</span>
-                <span style={{ color: '#00ff88' }}>掌握 {roundStats.masteredCount} 词</span>
-                <span style={{ color: '#ff6b9d' }}>错误 {roundStats.wrongCount} 词</span>
-              </div>
-            </div>
-          )}
-
-          {/* 学习时长 */}
-          <div 
-            className="text-center p-4 rounded-2xl mb-5 transition-all duration-700 delay-300"
-            style={{ 
-              background: 'rgba(196, 76, 255, 0.08)',
-              opacity: isLoaded ? 1 : 0,
-              transform: isLoaded ? 'translateY(0)' : 'translateY(20px)'
-            }}
-          >
-            <Clock className="w-5 h-5 mx-auto mb-2" style={{ color: '#c44cff' }} />
-            <div className="text-sm" style={{ color: '#a0a0b0' }}>今日学习时长</div>
-            <div className="text-2xl font-bold mt-1" style={{ color: '#c44cff' }}>{formatDuration(todayStats.durationSeconds)}</div>
-          </div>
-
-          {/* 激励语 */}
-          <div 
-            className="text-center py-3 mb-4 transition-all duration-700 delay-400"
-            style={{ 
-              opacity: isLoaded ? 1 : 0,
-              transform: isLoaded ? 'translateY(0)' : 'translateY(20px)'
-            }}
-          >
-            {todayStats.masteredCount >= 20 ? (
-              <div className="flex items-center justify-center gap-2">
-                <Sparkles className="w-5 h-5" style={{ color: '#00ff88' }} />
-                <p className="font-medium" style={{ color: '#00ff88' }}>太棒了！今日收获满满！</p>
-              </div>
-            ) : todayStats.masteredCount >= 10 ? (
-              <div className="flex items-center justify-center gap-2">
-                <TrendingUp className="w-5 h-5" style={{ color: '#00f0ff' }} />
-                <p className="font-medium" style={{ color: '#00f0ff' }}>进步很大，继续保持！</p>
-              </div>
-            ) : todayStats.totalPracticed > 0 ? (
-              <div className="flex items-center justify-center gap-2">
-                <Target className="w-5 h-5" style={{ color: '#c44cff' }} />
-                <p className="font-medium" style={{ color: '#c44cff' }}>每一次练习都是进步！</p>
-              </div>
-            ) : (
-              <p style={{ color: '#a0a0b0' }}>开始你的学习之旅吧！</p>
-            )}
+          {/* 今日用时 */}
+          <div className="flex items-center justify-center gap-2 py-3 rounded-xl" style={{ background: 'rgba(196, 76, 255, 0.08)' }}>
+            <Clock className="w-4 h-4" style={{ color: '#c44cff' }} />
+            <span className="text-sm" style={{ color: '#a0a0b0' }}>今日用时</span>
+            <span className="text-base font-semibold" style={{ color: '#c44cff' }}>{formatDuration(todayStats.durationSeconds)}</span>
           </div>
         </div>
       </div>
 
+      {/* 激励语 */}
+      {roundStats && roundStats.totalPracticed > 0 && (
+        <div 
+          className="w-full text-center mb-5 transition-all duration-700"
+          style={{ 
+            opacity: isLoaded ? 1 : 0,
+            transform: isLoaded ? 'translateY(0)' : 'translateY(20px)',
+            transitionDelay: '200ms'
+          }}
+        >
+          {totalMastered >= 10 ? (
+            <div className="flex items-center justify-center gap-2">
+              <Sparkles className="w-5 h-5" style={{ color: '#ffd700' }} />
+              <p className="font-medium" style={{ color: '#ffd700' }}>太棒了！收获满满！</p>
+            </div>
+          ) : totalMastered >= 5 ? (
+            <div className="flex items-center justify-center gap-2">
+              <CheckCircle className="w-5 h-5" style={{ color: '#00ff88' }} />
+              <p className="font-medium" style={{ color: '#00ff88' }}>进步很大，继续保持！</p>
+            </div>
+          ) : totalPracticed > 0 ? (
+            <div className="flex items-center justify-center gap-2">
+              <Target className="w-5 h-5" style={{ color: '#c44cff' }} />
+              <p className="font-medium" style={{ color: '#c44cff' }}>每一次练习都是进步！</p>
+            </div>
+          ) : null}
+        </div>
+      )}
+
       {/* 按钮区域 */}
       <div 
-        className="w-full space-y-3 mt-5 transition-all duration-700 delay-500"
+        className="w-full space-y-3 transition-all duration-700"
         style={{ 
           opacity: isLoaded ? 1 : 0,
-          transform: isLoaded ? 'translateY(0)' : 'translateY(20px)'
+          transform: isLoaded ? 'translateY(0)' : 'translateY(20px)',
+          transitionDelay: '300ms'
         }}
       >
         <Link href="/practice" className="block">
@@ -357,7 +422,7 @@ export default function SummaryPage() {
               <ArrowLeft className="w-5 h-5" />
             </button>
           </Link>
-          <h1 className="text-xl font-bold text-white">今日结算</h1>
+          <h1 className="text-xl font-bold text-white">练习结算</h1>
         </div>
       </div>
 

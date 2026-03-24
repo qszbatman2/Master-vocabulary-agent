@@ -67,6 +67,7 @@ export default function PracticePage() {
   const [isFinished, setIsFinished] = useState(false);
   const [finishMessage, setFinishMessage] = useState('');
   const [masteredThisRound, setMasteredThisRound] = useState<Set<number>>(new Set());
+  const [systemMasteredCount, setSystemMasteredCount] = useState(0);
   const [startTime, setStartTime] = useState<number>(0);
   const [isLoaded, setIsLoaded] = useState(false);
   const [dailyProgress, setDailyProgress] = useState<{ completed: number; goal: number } | null>(null);
@@ -106,6 +107,8 @@ export default function PracticePage() {
   const roundSuccessCountRef = useRef(roundSuccessCount);
   const roundWrongCountRef = useRef(roundWrongCount);
   const startTimeRef = useRef(startTime);
+  const masteredThisRoundRef = useRef(masteredThisRound);
+  const systemMasteredCountRef = useRef(systemMasteredCount);
 
   useEffect(() => {
     setIsLoaded(true);
@@ -135,6 +138,12 @@ export default function PracticePage() {
   useEffect(() => {
     startTimeRef.current = startTime;
   }, [startTime]);
+  useEffect(() => {
+    masteredThisRoundRef.current = masteredThisRound;
+  }, [masteredThisRound]);
+  useEffect(() => {
+    systemMasteredCountRef.current = systemMasteredCount;
+  }, [systemMasteredCount]);
 
   useEffect(() => {
     if (!user) {
@@ -257,6 +266,7 @@ export default function PracticePage() {
     setIsFinished(false);
     setFinishMessage('');
     setMasteredThisRound(new Set());
+    setSystemMasteredCount(0);
     setIsStarted(true);
     setStartTime(Date.now());
     
@@ -343,6 +353,11 @@ export default function PracticePage() {
       setDailyProgress(prev => prev ? { ...prev, completed: prev.completed + 1 } : prev);
       setProgressAnimated(true);
       setTimeout(() => setProgressAnimated(false), 500);
+    }
+    
+    // 系统判定掌握（连续4天答对）
+    if (result?.mastered) {
+      setSystemMasteredCount(prev => prev + 1);
     }
     
     if (isCorrect) {
@@ -474,9 +489,10 @@ export default function PracticePage() {
     const duration = startTimeRef.current > 0 ? Math.floor((Date.now() - startTimeRef.current) / 1000) : 0;
     const roundStats = {
       totalPracticed: questionNumberRef.current,
-      masteredCount: roundSuccessCountRef.current,
+      correctCount: roundSuccessCountRef.current,
       wrongCount: roundWrongCountRef.current,
-      correctCount: questionNumberRef.current - roundWrongCountRef.current,
+      manuallyMasteredCount: masteredThisRoundRef.current.size,
+      systemMasteredCount: systemMasteredCountRef.current,
       duration,
     };
     
