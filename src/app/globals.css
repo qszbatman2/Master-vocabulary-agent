@@ -169,35 +169,35 @@ body {
 
 /* ========== 流式背景动画 ========== */
 
-/* 浮动光点动画 */
+/* 浮动光点动画 - 更明显的移动 */
 @keyframes float-particle {
   0%, 100% {
     transform: translateY(0) translateX(0) scale(1);
-    opacity: 0.2;
   }
   25% {
-    transform: translateY(-15px) translateX(8px) scale(1.1);
-    opacity: 0.4;
+    transform: translateY(-30px) translateX(15px) scale(1.3);
   }
   50% {
-    transform: translateY(-25px) translateX(-5px) scale(1);
-    opacity: 0.3;
+    transform: translateY(-50px) translateX(-10px) scale(0.8);
   }
   75% {
-    transform: translateY(-10px) translateX(12px) scale(0.9);
-    opacity: 0.35;
+    transform: translateY(-20px) translateX(25px) scale(1.1);
   }
 }
 
-/* 波浪渐变动画 */
+/* 波浪渐变动画 - 更大范围移动 */
 @keyframes wave-gradient {
   0%, 100% {
     background-position: 0% 50%;
-    opacity: 0.15;
+  }
+  25% {
+    background-position: 50% 100%;
   }
   50% {
     background-position: 100% 50%;
-    opacity: 0.25;
+  }
+  75% {
+    background-position: 50% 0%;
   }
 }
 

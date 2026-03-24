@@ -18,27 +18,28 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 
 // 浮动光点组件
-function FloatingParticles({ count = 15 }: { count?: number }) {
+function FloatingParticles({ count = 25 }: { count?: number }) {
   const particles = useMemo(() => {
     return Array.from({ length: count }, (_, i) => ({
       id: i,
       left: Math.random() * 100,
       top: Math.random() * 100,
-      size: Math.random() * 4 + 2,
-      duration: Math.random() * 8 + 6,
+      size: Math.random() * 8 + 4, // 更大的粒子
+      duration: Math.random() * 10 + 8,
       delay: Math.random() * 5,
-      opacity: Math.random() * 0.3 + 0.1,
-      color: ['#00f0ff', '#7c4dff', '#ff6b9d', '#00ff88'][Math.floor(Math.random() * 4)],
+      opacity: Math.random() * 0.5 + 0.3, // 更高的透明度
+      color: ['#00f0ff', '#7c4dff', '#ff6b9d', '#00ff88', '#ffd700'][Math.floor(Math.random() * 5)],
     }));
   }, [count]);
 
   return (
-    <div className="fixed inset-0 pointer-events-none overflow-hidden">
+    <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
       {particles.map((p) => (
         <div
           key={p.id}
           className="particle"
           style={{
+            position: 'absolute',
             left: `${p.left}%`,
             top: `${p.top}%`,
             width: p.size,
@@ -46,6 +47,7 @@ function FloatingParticles({ count = 15 }: { count?: number }) {
             background: `radial-gradient(circle, ${p.color} 0%, transparent 70%)`,
             opacity: p.opacity,
             animation: `float-particle ${p.duration}s ease-in-out ${p.delay}s infinite`,
+            boxShadow: `0 0 ${p.size * 2}px ${p.color}`,
           }}
         />
       ))}
@@ -57,11 +59,11 @@ function FloatingParticles({ count = 15 }: { count?: number }) {
 function WaveGradient() {
   return (
     <div 
-      className="fixed inset-0 pointer-events-none"
+      className="fixed inset-0 pointer-events-none z-0"
       style={{
-        background: 'linear-gradient(135deg, rgba(0,240,255,0.1), rgba(124,77,255,0.1), rgba(255,107,157,0.1))',
+        background: 'linear-gradient(45deg, rgba(0,240,255,0.15), rgba(124,77,255,0.15), rgba(255,107,157,0.15), rgba(0,255,136,0.15))',
         backgroundSize: '400% 400%',
-        animation: 'wave-gradient 12s ease-in-out infinite',
+        animation: 'wave-gradient 15s ease-in-out infinite',
       }}
     />
   );
