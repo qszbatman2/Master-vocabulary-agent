@@ -186,7 +186,7 @@ function SummaryContent() {
                 <div className="text-xs mt-1" style={{ color: '#a0a0b0' }}>已掌握</div>
               </div>
               <div className="text-center">
-                <div className="text-3xl font-bold" style={{ color: '#c44cff' }}>{accuracy}%</div>
+                <div className="text-3xl font-bold" style={{ color: '#ffd700' }}>{accuracy}%</div>
                 <div className="text-xs mt-1" style={{ color: '#a0a0b0' }}>正确率</div>
               </div>
             </div>
@@ -264,7 +264,7 @@ function SummaryContent() {
         <div className="px-6 py-5">
           {/* 标题 */}
           <div className="flex items-center justify-center gap-2 mb-4">
-            <Target className="w-5 h-5" style={{ color: '#c44cff' }} />
+            <Target className="w-5 h-5" style={{ color: '#00f0ff' }} />
             <h2 className="text-lg font-bold text-white">今日累计</h2>
           </div>
 
@@ -293,10 +293,10 @@ function SummaryContent() {
           </div>
 
           {/* 今日用时 */}
-          <div className="flex items-center justify-center gap-2 py-3 rounded-xl" style={{ background: 'rgba(196, 76, 255, 0.08)' }}>
-            <Clock className="w-4 h-4" style={{ color: '#c44cff' }} />
+          <div className="flex items-center justify-center gap-2 py-3 rounded-xl" style={{ background: 'rgba(255, 215, 0, 0.08)' }}>
+            <Clock className="w-4 h-4" style={{ color: '#ffd700' }} />
             <span className="text-sm" style={{ color: '#a0a0b0' }}>今日用时</span>
-            <span className="text-base font-semibold" style={{ color: '#c44cff' }}>{formatDuration(todayStats.durationSeconds)}</span>
+            <span className="text-base font-semibold" style={{ color: '#ffd700' }}>{formatDuration(todayStats.durationSeconds)}</span>
           </div>
         </div>
       </div>
@@ -323,8 +323,8 @@ function SummaryContent() {
             </div>
           ) : totalPracticed > 0 ? (
             <div className="flex items-center justify-center gap-2">
-              <Target className="w-5 h-5" style={{ color: '#c44cff' }} />
-              <p className="font-medium" style={{ color: '#c44cff' }}>每一次练习都是进步！</p>
+              <Target className="w-5 h-5" style={{ color: '#00f0ff' }} />
+              <p className="font-medium" style={{ color: '#00f0ff' }}>每一次练习都是进步！</p>
             </div>
           ) : null}
         </div>
@@ -395,7 +395,7 @@ export default function SummaryPage() {
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div 
           className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[500px] h-[500px] rounded-full blur-[120px] animate-pulse"
-          style={{ background: 'linear-gradient(135deg, #c44cff, #7c4dff)', opacity: 0.2, animationDuration: '4s' }}
+          style={{ background: 'linear-gradient(135deg, #00f0ff, #00d4aa)', opacity: 0.2, animationDuration: '4s' }}
         />
         <div 
           className="absolute bottom-0 right-0 w-[400px] h-[400px] rounded-full blur-[100px] animate-pulse"

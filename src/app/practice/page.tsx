@@ -428,6 +428,9 @@ export default function PracticePage() {
       setRoundSuccessCount(prev => prev + 1);
     }
     
+    // 主动掌握也要计入练习数
+    setQuestionNumber(prev => prev + 1);
+    
     if (autoNext) {
       setTimeout(() => nextQuestion(), 300);
     }
