@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -16,6 +16,94 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
+
+// 浮动光点组件
+function FloatingParticles({ count = 15 }: { count?: number }) {
+  const particles = useMemo(() => {
+    return Array.from({ length: count }, (_, i) => ({
+      id: i,
+      left: Math.random() * 100,
+      top: Math.random() * 100,
+      size: Math.random() * 4 + 2,
+      duration: Math.random() * 8 + 6,
+      delay: Math.random() * 5,
+      opacity: Math.random() * 0.3 + 0.1,
+      color: ['#00f0ff', '#7c4dff', '#ff6b9d', '#00ff88'][Math.floor(Math.random() * 4)],
+    }));
+  }, [count]);
+
+  return (
+    <div className="fixed inset-0 pointer-events-none overflow-hidden">
+      {particles.map((p) => (
+        <div
+          key={p.id}
+          className="particle"
+          style={{
+            left: `${p.left}%`,
+            top: `${p.top}%`,
+            width: p.size,
+            height: p.size,
+            background: `radial-gradient(circle, ${p.color} 0%, transparent 70%)`,
+            opacity: p.opacity,
+            animation: `float-particle ${p.duration}s ease-in-out ${p.delay}s infinite`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+// 波浪渐变背景
+function WaveGradient() {
+  return (
+    <div 
+      className="fixed inset-0 pointer-events-none"
+      style={{
+        background: 'linear-gradient(135deg, rgba(0,240,255,0.1), rgba(124,77,255,0.1), rgba(255,107,157,0.1))',
+        backgroundSize: '400% 400%',
+        animation: 'wave-gradient 12s ease-in-out infinite',
+      }}
+    />
+  );
+}
+
+// 答题反馈波纹
+function FeedbackRipple({ type, trigger }: { type: 'correct' | 'wrong' | null; trigger: number }) {
+  const [ripples, setRipples] = useState<{ id: number; type: 'correct' | 'wrong' }[]>([]);
+
+  useEffect(() => {
+    if (type && trigger > 0) {
+      const id = Date.now();
+      setRipples(prev => [...prev, { id, type }]);
+      setTimeout(() => {
+        setRipples(prev => prev.filter(r => r.id !== id));
+      }, 600);
+    }
+  }, [type, trigger]);
+
+  return (
+    <div className="fixed inset-0 pointer-events-none overflow-hidden">
+      {ripples.map((ripple) => (
+        <div
+          key={ripple.id}
+          className="ripple"
+          style={{
+            left: '50%',
+            top: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: 100,
+            height: 100,
+            borderRadius: '50%',
+            background: ripple.type === 'correct' 
+              ? 'radial-gradient(circle, rgba(0,255,136,0.4) 0%, transparent 70%)'
+              : 'radial-gradient(circle, rgba(255,107,157,0.4) 0%, transparent 70%)',
+            animation: 'correct-ripple 0.6s ease-out forwards',
+          }}
+        />
+      ))}
+    </div>
+  );
+}
 
 interface Category {
   id: number;
@@ -55,6 +143,10 @@ export default function PracticePage() {
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [showResult, setShowResult] = useState(false);
   const [isStarted, setIsStarted] = useState(false);
+  
+  // 流式背景反馈
+  const [feedbackType, setFeedbackType] = useState<'correct' | 'wrong' | null>(null);
+  const [feedbackTrigger, setFeedbackTrigger] = useState(0);
   const [autoMasteredMessage, setAutoMasteredMessage] = useState('');
   const [remainingWords, setRemainingWords] = useState(0);
   
@@ -342,6 +434,10 @@ export default function PracticePage() {
     const currentQuestion = questions[currentIndex];
     const isCorrect = answer === currentQuestion.correctAnswer;
     const wordId = currentQuestion.id;
+
+    // 触发流式背景反馈
+    setFeedbackType(isCorrect ? 'correct' : 'wrong');
+    setFeedbackTrigger(prev => prev + 1);
 
     const wasWrongBefore = wrongWordsMap.has(wordId);
     const alreadyCounted = roundCorrectWordsRef.current.has(wordId);
@@ -726,6 +822,11 @@ export default function PracticePage() {
     <div className="min-h-screen flex flex-col" style={{ background: '#12121e' }}>
       {/* 背景网格 */}
       <div className="fixed inset-0 pointer-events-none opacity-[0.03]" style={{ backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`, backgroundSize: '40px 40px' }} />
+      
+      {/* 流式背景 */}
+      <FloatingParticles />
+      <WaveGradient />
+      <FeedbackRipple type={feedbackType} trigger={feedbackTrigger} />
 
       {/* 自动掌握提示 */}
       {autoMasteredMessage && (

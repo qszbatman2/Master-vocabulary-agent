@@ -166,3 +166,123 @@ body {
 .safe-area-bottom {
   padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
 }
+
+/* ========== 流式背景动画 ========== */
+
+/* 浮动光点动画 */
+@keyframes float-particle {
+  0%, 100% {
+    transform: translateY(0) translateX(0) scale(1);
+    opacity: 0.2;
+  }
+  25% {
+    transform: translateY(-15px) translateX(8px) scale(1.1);
+    opacity: 0.4;
+  }
+  50% {
+    transform: translateY(-25px) translateX(-5px) scale(1);
+    opacity: 0.3;
+  }
+  75% {
+    transform: translateY(-10px) translateX(12px) scale(0.9);
+    opacity: 0.35;
+  }
+}
+
+/* 波浪渐变动画 */
+@keyframes wave-gradient {
+  0%, 100% {
+    background-position: 0% 50%;
+    opacity: 0.15;
+  }
+  50% {
+    background-position: 100% 50%;
+    opacity: 0.25;
+  }
+}
+
+/* 答对波纹扩散 */
+@keyframes correct-ripple {
+  0% {
+    transform: scale(0);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(3);
+    opacity: 0;
+  }
+}
+
+/* 答错脉冲 */
+@keyframes wrong-pulse {
+  0% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 0.4;
+  }
+}
+
+/* 答错抖动 */
+@keyframes wrong-shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-6px);
+  }
+  40% {
+    transform: translateX(6px);
+  }
+  60% {
+    transform: translateX(-4px);
+  }
+  80% {
+    transform: translateX(4px);
+  }
+}
+
+/* 连击火焰效果 */
+@keyframes streak-glow {
+  0%, 100% {
+    filter: brightness(1);
+    box-shadow: 0 0 20px rgba(0, 240, 255, 0.3);
+  }
+  50% {
+    filter: brightness(1.2);
+    box-shadow: 0 0 40px rgba(0, 240, 255, 0.5);
+  }
+}
+
+/* 粒子类 */
+.particle {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+/* 波纹效果 */
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+/* 答对状态 */
+.bg-correct {
+  animation: correct-ripple 0.6s ease-out forwards;
+}
+
+/* 答错状态 */
+.bg-wrong {
+  animation: wrong-pulse 0.4s ease-in-out 2;
+}
+
+.shake {
+  animation: wrong-shake 0.4s ease-in-out;
+}
