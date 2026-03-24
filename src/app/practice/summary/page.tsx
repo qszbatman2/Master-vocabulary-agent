@@ -150,6 +150,15 @@ function SummaryContent() {
   // 正确率
   const accuracy = totalPracticed > 0 ? Math.round(((roundStats?.correctCount || 0) / totalPracticed) * 100) : 0;
 
+  // 根据正确率返回渐变色
+  const getAccuracyColor = (acc: number): string => {
+    if (acc <= 30) return 'linear-gradient(135deg, #ff4d6d, #ff6b9d)'; // 红色
+    if (acc <= 50) return 'linear-gradient(135deg, #ff6b9d, #e056fd)'; // 红紫
+    if (acc <= 70) return 'linear-gradient(135deg, #e056fd, #c44cff)'; // 紫色
+    if (acc <= 85) return 'linear-gradient(135deg, #c44cff, #7c4dff)'; // 紫蓝
+    return 'linear-gradient(135deg, #7c4dff, #4cc9ff)'; // 蓝色
+  };
+
   // 今日进度
   const todayCompleted = dailyProgress.completed;
   const todayGoal = dailyProgress.dailyGoal;
@@ -182,7 +191,17 @@ function SummaryContent() {
                 <div className="text-xs mt-1" style={{ color: '#a0a0b0' }}>正确</div>
               </div>
               <div className="text-center">
-                <div className="text-3xl font-bold" style={{ color: '#ffd700' }}>{accuracy}%</div>
+                <div 
+                  className="text-3xl font-bold"
+                  style={{ 
+                    background: getAccuracyColor(accuracy),
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                  }}
+                >
+                  {accuracy}%
+                </div>
                 <div className="text-xs mt-1" style={{ color: '#a0a0b0' }}>正确率</div>
               </div>
             </div>
