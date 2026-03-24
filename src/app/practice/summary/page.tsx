@@ -175,15 +175,11 @@ function SummaryContent() {
               <h2 className="text-lg font-bold text-white">本轮完成</h2>
             </div>
 
-            {/* 三项数据并排 */}
-            <div className="grid grid-cols-3 gap-2 mb-5">
+            {/* 两项数据并排 */}
+            <div className="grid grid-cols-2 gap-4 mb-5">
               <div className="text-center">
                 <div className="text-3xl font-bold" style={{ color: '#00f0ff' }}>{roundStats.correctCount}</div>
                 <div className="text-xs mt-1" style={{ color: '#a0a0b0' }}>正确</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold" style={{ color: '#00ff88' }}>{totalMastered}</div>
-                <div className="text-xs mt-1" style={{ color: '#a0a0b0' }}>已掌握</div>
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold" style={{ color: '#ffd700' }}>{accuracy}%</div>
@@ -197,7 +193,7 @@ function SummaryContent() {
                 className="relative w-full overflow-hidden rounded-full"
                 style={{ height: '16px', background: 'rgba(255,255,255,0.05)' }}
               >
-                {/* 正确未掌握 - 青色 */}
+                {/* 正确未掌握 - 浅青色 */}
                 {correctNotMastered > 0 && (
                   <div 
                     className="absolute inset-y-0 left-0"
@@ -207,14 +203,14 @@ function SummaryContent() {
                     }}
                   />
                 )}
-                {/* 正确掌握 - 蓝绿色 */}
+                {/* 正确掌握 - 深青色 */}
                 {correctMastered > 0 && (
                   <div 
                     className="absolute inset-y-0"
                     style={{ 
                       left: `${(correctNotMastered / totalPracticed) * 100}%`,
                       width: `${(correctMastered / totalPracticed) * 100}%`,
-                      background: 'linear-gradient(90deg, #00d4aa, #00ff88)',
+                      background: 'linear-gradient(90deg, #00a8cc, #0088aa)',
                     }}
                   />
                 )}
@@ -238,7 +234,7 @@ function SummaryContent() {
                 <span style={{ color: '#a0a0b0' }}>正确未掌握 {correctNotMastered}</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded-sm" style={{ background: 'linear-gradient(90deg, #00d4aa, #00ff88)' }} />
+                <div className="w-3 h-3 rounded-sm" style={{ background: 'linear-gradient(90deg, #00a8cc, #0088aa)' }} />
                 <span style={{ color: '#a0a0b0' }}>正确掌握 {correctMastered}</span>
               </div>
               <div className="flex items-center gap-1.5">
@@ -293,10 +289,10 @@ function SummaryContent() {
           </div>
 
           {/* 今日用时 */}
-          <div className="flex items-center justify-center gap-2 py-3 rounded-xl" style={{ background: 'rgba(255, 215, 0, 0.08)' }}>
-            <Clock className="w-4 h-4" style={{ color: '#ffd700' }} />
+          <div className="flex items-center justify-center gap-2 pt-3 border-t" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
+            <Clock className="w-4 h-4" style={{ color: '#00f0ff' }} />
             <span className="text-sm" style={{ color: '#a0a0b0' }}>今日用时</span>
-            <span className="text-base font-semibold" style={{ color: '#ffd700' }}>{formatDuration(todayStats.durationSeconds)}</span>
+            <span className="text-base font-semibold" style={{ color: '#00f0ff' }}>{formatDuration(todayStats.durationSeconds)}</span>
           </div>
         </div>
       </div>
@@ -351,7 +347,7 @@ function SummaryContent() {
         <Link href="/" className="block">
           <button 
             className="w-full h-12 rounded-xl font-medium flex items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] active:scale-95"
-            style={{ background: 'rgba(255,255,255,0.05)', color: '#a0a0b0' }}
+            style={{ background: 'rgba(255,255,255,0.1)', color: '#c0c0c8' }}
           >
             <Home className="w-5 h-5" />
             返回首页
