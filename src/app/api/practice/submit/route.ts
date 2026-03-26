@@ -124,17 +124,17 @@ export async function POST(request: NextRequest) {
           
           if (!isToday(newLastCorrectDate)) {
             newDailyCorrectCount += 1;
-            newLastCorrectDate = today;
-            validCorrectRecorded = true;
           }
-        }
-      } else {
-        // 普通答对：检查今天是否已经记录过有效答对
-        if (!isToday(newLastCorrectDate)) {
-          newDailyCorrectCount += 1;
           newLastCorrectDate = today;
           validCorrectRecorded = true;
         }
+      } else {
+        // 普通答对：每次都更新 last_correct_date
+        if (!isToday(newLastCorrectDate)) {
+          newDailyCorrectCount += 1;
+          validCorrectRecorded = true;
+        }
+        newLastCorrectDate = today;
         newRoundConsecutiveCorrect = 0;
       }
       
