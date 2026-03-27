@@ -138,6 +138,16 @@ export default function Home() {
                 <User className="w-4 h-4" />
                 <span>{user.nickname}</span>
               </div>
+              <Link href="/stats">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-white/50 hover:text-white hover:bg-white/10 border-0 transition-all duration-200 active:scale-95"
+                >
+                  <TrendingUp className="w-4 h-4 mr-1" />
+                  统计
+                </Button>
+              </Link>
               <Button 
                 variant="ghost" 
                 size="sm" 

@@ -686,6 +686,16 @@ export default function PracticePage() {
                 <Play className="w-5 h-5" />
                 开始练习
               </button>
+
+              <Link href="/practice/cloze">
+                <button 
+                  className="w-full h-12 rounded-xl text-white font-medium flex items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] active:scale-95"
+                  style={{ background: 'linear-gradient(135deg, rgba(0,240,255,0.25), rgba(124,77,255,0.25))', border: '1px solid rgba(255,255,255,0.08)' }}
+                >
+                  <FileText className="w-5 h-5" />
+                  例句挖空（四选一）
+                </button>
+              </Link>
             </div>
           </div>
         </div>
