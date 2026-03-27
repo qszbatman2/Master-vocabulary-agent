@@ -40,6 +40,14 @@ export async function GET(request: NextRequest) {
       return result;
     }
 
+    // 先获取用户主动收录的 word_id（用于后续扩展查询范围）
+    const { data: userCollectedWordIds } = await client
+      .from('user_word_contexts')
+      .select('word_id')
+      .eq('user_id', userId);
+
+    const collectedWordIdSet = new Set(userCollectedWordIds?.map(c => c.word_id) || []);
+
     // 获取指定词库的所有单词
     let query = client
       .from('words')
@@ -59,8 +67,25 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'No words found' }, { status: 404 });
     }
 
+    // 如果用户有主动收录的单词，且这些单词不在当前词库中，需要额外查询
+    let allWords = data || [];
+    if (collectedWordIdSet.size > 0 && categoryId && categoryId !== 'all') {
+      const currentWordIdSet = new Set(allWords.map(w => w.id));
+      const missingWordIds = Array.from(collectedWordIdSet).filter(id => !currentWordIdSet.has(id));
+
+      if (missingWordIds.length > 0) {
+        const { data: extraWords } = await client
+          .from('words')
+          .select('*')
+          .in('id', missingWordIds);
+        if (extraWords) {
+          allWords = [...allWords, ...extraWords];
+        }
+      }
+    }
+
     // 立即洗牌，避免数据库默认排序（通常按 id/字母顺序）导致集中
-    const allWords = shuffleArray(data || []);
+    allWords = shuffleArray(allWords);
 
     // 获取用户掌握状态 - 增加 last_correct_date 字段
     const { data: userStatusData } = await client
@@ -233,12 +258,7 @@ export async function GET(request: NextRequest) {
     userCollectedData?.forEach((item: any) => {
       if (item.words) {
         const wordData = item.words;
-        // 检查是否在当前词库范围内
-        if (categoryId && categoryId !== 'all') {
-          if (wordData.category_id !== parseInt(categoryId)) {
-            return; // 跳过不在当前词库的词
-          }
-        }
+        // 用户主动收录的单词应该在任何词库中都可见，不需要检查 category_id
 
         // 检查是否已掌握或今天已答对
         const isMastered = isWordMastered(wordData.word);
