@@ -472,7 +472,6 @@ export default function StatsPage() {
   const [mode, setMode] = useState<'practice' | 'duration'>('practice');
   const [loading, setLoading] = useState(false);
   const cloudRef = useRef<HTMLDivElement | null>(null);
-  const [cloudEl, setCloudEl] = useState<HTMLDivElement | null>(null);
   const [cloudSize, setCloudSize] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
 
   useEffect(() => {
@@ -577,27 +576,31 @@ export default function StatsPage() {
   }, [data, mode]);
 
   useEffect(() => {
-    const el = cloudEl;
+    const el = cloudRef.current;
     if (!el) return;
 
     const update = () => {
-      const rect = el.getBoundingClientRect();
-      const w = Math.max(0, Math.floor(rect.width));
-      const h = Math.max(0, Math.floor(rect.height));
+      const w = Math.max(0, Math.floor(el.offsetWidth || el.getBoundingClientRect().width));
+      const h = Math.max(0, Math.floor(el.offsetHeight || el.getBoundingClientRect().height));
       setCloudSize((prev) => (prev.w === w && prev.h === h ? prev : { w, h }));
     };
 
-    update();
-
+    const raf = requestAnimationFrame(update);
     const ro = new ResizeObserver(update);
     ro.observe(el);
-    return () => ro.disconnect();
-  }, [cloudEl]);
+    window.addEventListener('resize', update);
+    return () => {
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+      window.removeEventListener('resize', update);
+    };
+  }, []);
 
   const cloudLayout = useMemo(() => {
     const list = (data?.weakWords || []).slice(0, 30).sort((a, b) => (b.wrongCount || 0) - (a.wrongCount || 0));
     if (!data || list.length === 0) return null;
-    if (cloudSize.w <= 0 || cloudSize.h <= 0) return null;
+    const w = cloudSize.w > 0 ? cloudSize.w : 320;
+    const h = cloudSize.h > 0 ? cloudSize.h : 260;
 
     const max = Math.max(1, ...list.map((x) => x.wrongCount || 0));
     const min = Math.min(...list.map((x) => x.wrongCount || 0));
@@ -623,7 +626,7 @@ export default function StatsPage() {
       };
     });
 
-    return layoutWordCloud(items, cloudSize.w, cloudSize.h);
+    return layoutWordCloud(items, w, h);
   }, [cloudSize.h, cloudSize.w, data]);
 
   return (
@@ -1062,10 +1065,7 @@ export default function StatsPage() {
               return (
                 <div className="rounded-2xl p-4" style={{ background: 'rgba(255,255,255,0.04)', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.06)' }}>
                   <div
-                    ref={(el) => {
-                      cloudRef.current = el;
-                      setCloudEl(el);
-                    }}
+                    ref={cloudRef}
                     className="relative w-full rounded-2xl overflow-hidden"
                     style={{ height: 260, background: 'rgba(0,0,0,0.06)', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.03)' }}
                   >
