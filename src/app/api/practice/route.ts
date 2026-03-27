@@ -95,6 +95,11 @@ export async function GET(request: NextRequest) {
     // 立即洗牌，避免数据库默认排序（通常按 id/字母顺序）导致集中
     allWords = shuffleArray(allWords);
 
+    console.log('[API] allWords 统计:', {
+      totalWords: allWords.length,
+      sampleWords: allWords.slice(0, 5).map(w => ({ id: w.id, word: w.word, category_id: w.category_id }))
+    });
+
     // 获取用户掌握状态 - 增加 last_correct_date 字段
     const { data: userStatusData } = await client
       .from('user_word_status')
@@ -117,6 +122,11 @@ export async function GET(request: NextRequest) {
       const ids = wordToIds.get(w.word) || [];
       ids.push(w.id);
       wordToIds.set(w.word, ids);
+    });
+
+    console.log('[API] wordToIds 统计:', {
+      totalUniqueWords: wordToIds.size,
+      sampleWords: Array.from(wordToIds.entries()).slice(0, 5)
     });
 
     // 检查一个单词是否已被掌握（任意一个 id 被掌握即算掌握）
