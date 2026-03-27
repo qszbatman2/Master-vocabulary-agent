@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
     const userId = token ? getUserIdFromToken(token) : null;
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const client = getSupabaseClient(token);
+    const client = getSupabaseClient();
     const searchParams = request.nextUrl.searchParams;
     const limit = Math.max(1, Math.min(50, parseInt(searchParams.get('limit') || '10')));
     const excludeWordIds = searchParams
