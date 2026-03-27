@@ -69,11 +69,14 @@ export async function GET(request: NextRequest) {
       .eq('user_id', userId);
 
     const statusMap = new Map(userStatusData?.map(s => [s.word_id, s]) || []);
-    
+
     // 获取今天的日期（上海时区）
     const now = new Date();
     const shanghaiTime = new Date(now.getTime() + 8 * 60 * 60 * 1000);
     const today = shanghaiTime.toISOString().split('T')[0];
+
+    console.log('[API] 今天的日期:', today, '类型:', typeof today);
+    console.log('[API] 用户状态数据示例:', userStatusData?.slice(0, 3));
 
     // 构建单词到所有 id 的映射（同一个单词可能在多个分类中）
     const wordToIds = new Map<string, number[]>();
@@ -224,7 +227,7 @@ export async function GET(request: NextRequest) {
         words!inner(id, word, phonetic, meaning, example_sentence, example_sentence_cn, category_id)
       `)
       .eq('user_id', userId);
-    
+
     // 构建用户收录词的映射（word -> word数据）
     const userCollectedMap = new Map<string, typeof allWords[0]>();
     userCollectedData?.forEach((item: any) => {
@@ -236,20 +239,42 @@ export async function GET(request: NextRequest) {
             return; // 跳过不在当前词库的词
           }
         }
-        
+
         // 检查是否已掌握或今天已答对
         const isMastered = isWordMastered(wordData.word);
         const isCorrectToday = isWordCorrectToday(wordData.word);
-        
-        // 调试日志
+
+        // 调试日志：对所有主动收录词都输出详细信息
+        const wordIds = wordToIds.get(wordData.word) || [];
+        const lastCorrectDates = wordIds.map(id => {
+          const status = statusMap.get(id);
+          return status ? {
+            wordId: id,
+            lastCorrectDate: status.last_correct_date,
+            type: typeof status.last_correct_date
+          } : null;
+        }).filter(Boolean);
+
+        console.log(`[API] 主动收录词检查: ${wordData.word}`, {
+          wordIds,
+          isMastered,
+          isCorrectToday,
+          lastCorrectDates,
+          todayComparison: lastCorrectDates.map(lcd => ({
+            lastCorrectDate: lcd.lastCorrectDate,
+            today: today,
+            equals: lcd.lastCorrectDate === today
+          }))
+        });
+
         if (isCorrectToday) {
           console.log(`[API] 跳过今天已答对的主动收录词: ${wordData.word}`, {
             isMastered,
             isCorrectToday,
-            lastCorrectDate: wordToIds.get(wordData.word)?.map(id => statusMap.get(id)?.last_correct_date)
+            lastCorrectDates
           });
         }
-        
+
         if (isMastered || isCorrectToday) {
           return; // 跳过已掌握或今天已答对的词
         }
