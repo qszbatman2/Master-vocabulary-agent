@@ -73,12 +73,20 @@ export async function GET(request: NextRequest) {
       const currentWordIdSet = new Set(allWords.map(w => w.id));
       const missingWordIds = Array.from(collectedWordIdSet).filter(id => !currentWordIdSet.has(id));
 
+      console.log('[API] 扩展查询主动收录词:', {
+        collectedWordIdCount: collectedWordIdSet.size,
+        currentWordCount: currentWordIdSet.size,
+        missingWordIdCount: missingWordIds.length,
+        missingWordIds: missingWordIds.slice(0, 10)
+      });
+
       if (missingWordIds.length > 0) {
         const { data: extraWords } = await client
           .from('words')
           .select('*')
           .in('id', missingWordIds);
         if (extraWords) {
+          console.log('[API] 额外查询到的单词:', extraWords.map(w => ({ id: w.id, word: w.word, category_id: w.category_id })));
           allWords = [...allWords, ...extraWords];
         }
       }
@@ -281,9 +289,9 @@ export async function GET(request: NextRequest) {
           isCorrectToday,
           lastCorrectDates,
           todayComparison: lastCorrectDates.map(lcd => ({
-            lastCorrectDate: lcd.lastCorrectDate,
+            lastCorrectDate: lcd!.lastCorrectDate,
             today: today,
-            equals: lcd.lastCorrectDate === today
+            equals: lcd!.lastCorrectDate === today
           }))
         });
 
