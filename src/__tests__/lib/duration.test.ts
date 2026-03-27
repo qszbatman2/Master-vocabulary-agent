@@ -18,5 +18,6 @@ describe('duration', () => {
     expect(addClampedDurationSeconds(10, 5)).toBe(15);
     expect(addClampedDurationSeconds(10, MAX_INCREMENT_SECONDS + 100)).toBe(10 + MAX_INCREMENT_SECONDS);
     expect(addClampedDurationSeconds(MAX_DAILY_SECONDS - 10, 100)).toBe(MAX_DAILY_SECONDS);
+    expect(addClampedDurationSeconds('100', '20')).toBe(120);
   });
 });
