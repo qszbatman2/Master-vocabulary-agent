@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
-import { isVariantWord } from '@/lib/cloze-utils';
-import { buildNearFormIndex, queryNearFormIndex } from '@/lib/near-form';
 
 // 解析 token 获取用户 ID
 function getUserIdFromToken(token: string): number | null {
@@ -40,34 +38,6 @@ export async function GET(request: NextRequest) {
         [result[i], result[j]] = [result[j], result[i]];
       }
       return result;
-    }
-
-    function pickRandomDistinct<T>(
-      source: T[],
-      k: number,
-      keyOf: (v: T) => string,
-      excludeKeys: Set<string>
-    ): T[] {
-      const out: T[] = [];
-      const used = new Set<string>(excludeKeys);
-      const maxTries = Math.max(200, k * 120);
-      for (let tries = 0; tries < maxTries && out.length < k; tries++) {
-        const v = source[Math.floor(Math.random() * source.length)];
-        const key = keyOf(v);
-        if (!key || used.has(key)) continue;
-        used.add(key);
-        out.push(v);
-      }
-      if (out.length < k) {
-        for (const v of source) {
-          if (out.length >= k) break;
-          const key = keyOf(v);
-          if (!key || used.has(key)) continue;
-          used.add(key);
-          out.push(v);
-        }
-      }
-      return out;
     }
 
     // 先获取用户主动收录的 word_id（用于后续扩展查询范围）
@@ -186,10 +156,6 @@ export async function GET(request: NextRequest) {
         uniqueWords.set(w.word, w);
       }
     });
-    const uniqueWordRows = Array.from(uniqueWords.values());
-    const wordLowerToRow = new Map<string, typeof allWords[0]>();
-    uniqueWordRows.forEach((w) => wordLowerToRow.set(w.word.toLowerCase(), w));
-    const nearIndex = buildNearFormIndex(uniqueWordRows);
 
     // 根据筛选条件过滤
     let availableWords: typeof allWords = [];
@@ -386,59 +352,37 @@ export async function GET(request: NextRequest) {
 
     // 为每个单词生成选项，并随机选择模式
     const questions = selectedWords.map((word) => {
+      // 获取其他单词作为干扰项（从所有单词中选，不只是未掌握的）
+      // 按单词文本去重，避免同一单词的多个记录导致选项重复
+      const otherWordsMap = new Map<string, typeof allWords[0]>();
+      allWords.forEach((w) => {
+        if (w.word !== word.word && !otherWordsMap.has(w.word)) {
+          otherWordsMap.set(w.word, w);
+        }
+      });
+      const otherWords = Array.from(otherWordsMap.values());
+      const shuffledOptions = shuffleArray(otherWords).slice(0, 3);
+      
       // 随机选择模式：en-to-zh 或 zh-to-en
       const mode = Math.random() > 0.5 ? 'en-to-zh' : 'zh-to-en';
       
       let question: string;
       let options: string[];
       let correctAnswer: string;
-      const excludeWordsLower = new Set<string>([word.word.toLowerCase()]);
 
       if (mode === 'en-to-zh') {
         question = word.word;
         correctAnswer = word.meaning;
-        const distractorRows = pickRandomDistinct(
-          uniqueWordRows,
-          3,
-          (w) => w.word.toLowerCase(),
-          excludeWordsLower
-        );
         options = [
           word.meaning,
-          ...distractorRows.map((w) => w.meaning),
+          ...shuffledOptions.map((w) => w.meaning),
         ];
       } else {
         question = word.meaning;
         correctAnswer = word.word;
-        const excludeIds = new Set<number>([word.id]);
-        const nearCandidates = queryNearFormIndex(correctAnswer, nearIndex, {
-          topK: 120,
-          minScore: 0.74,
-          maxLenDiff: 2,
-          expandIfLessThan: 40,
-          excludeIds,
-          excludeWordsLower,
-        });
-        const distractorRows: typeof uniqueWordRows = [];
-        for (const e of nearCandidates) {
-          if (distractorRows.length >= 3) break;
-          if (isVariantWord(e.word, correctAnswer)) continue;
-          const row = wordLowerToRow.get(e.word.toLowerCase());
-          if (!row) continue;
-          distractorRows.push(row);
-        }
-        if (distractorRows.length < 3) {
-          const extra = pickRandomDistinct(
-            uniqueWordRows,
-            3 - distractorRows.length,
-            (w) => w.word.toLowerCase(),
-            new Set<string>([...excludeWordsLower, ...distractorRows.map((w) => w.word.toLowerCase())])
-          );
-          distractorRows.push(...extra);
-        }
         options = [
           word.word,
-          ...distractorRows.map((w) => w.word),
+          ...shuffledOptions.map((w) => w.word),
         ];
       }
 
@@ -448,7 +392,7 @@ export async function GET(request: NextRequest) {
       // 如果去重后选项不足4个，从 otherWords 中补充
       if (uniqueOptions.length < 4) {
         const usedValues = new Set(uniqueOptions);
-        for (const w of uniqueWordRows) {
+        for (const w of otherWords) {
           if (uniqueOptions.length >= 4) break;
           const value = mode === 'en-to-zh' ? w.meaning : w.word;
           if (!usedValues.has(value)) {

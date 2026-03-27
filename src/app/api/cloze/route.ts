@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
 import { findBlankableMatches, isVariantWord, parsePosTags, shuffleArray } from '@/lib/cloze-utils';
-import { buildNearFormIndex, queryNearFormIndex, type NearFormIndex } from '@/lib/near-form';
 
 function getUserIdFromToken(token: string): number | null {
   try {
@@ -24,7 +23,6 @@ type WordRow = {
 
 let cachedWords: WordRow[] | null = null;
 let cachedAt = 0;
-let cachedNearFormIndex: NearFormIndex | null = null;
 
 async function getWords(client: ReturnType<typeof getSupabaseClient>): Promise<WordRow[]> {
   const now = Date.now();
@@ -39,7 +37,6 @@ async function getWords(client: ReturnType<typeof getSupabaseClient>): Promise<W
 
   cachedWords = (data || []) as WordRow[];
   cachedAt = now;
-  cachedNearFormIndex = buildNearFormIndex(cachedWords);
   return cachedWords;
 }
 
@@ -62,9 +59,6 @@ export async function GET(request: NextRequest) {
     const excludeSet = new Set<number>(excludeWordIds);
     const allWords = await getWords(client);
     const pool = excludeSet.size ? allWords.filter((w) => !excludeSet.has(w.id)) : allWords;
-    const nearIndex = cachedNearFormIndex || buildNearFormIndex(allWords);
-    const idToRow = new Map<number, WordRow>();
-    for (const r of pool) idToRow.set(r.id, r);
 
     const questions: any[] = [];
     const attemptsLimit = Math.max(200, limit * 40);
@@ -100,47 +94,13 @@ export async function GET(request: NextRequest) {
       });
 
       const distractors: string[] = [];
-      const excludeIds = new Set<number>([...excludeSet, w.id]);
-      const nearCandidates = queryNearFormIndex(correctAnswer, nearIndex, {
-        topK: 150,
-        minScore: 0.7,
-        maxLenDiff: 2,
-        expandIfLessThan: 50,
-        excludeIds,
-      });
-
-      for (const e of nearCandidates) {
+      const shuffledCandidates = shuffleArray(candidates);
+      for (const d of shuffledCandidates) {
         if (distractors.length >= 3) break;
-        if (e.id == null) continue;
-        const d = idToRow.get(e.id);
-        if (!d) continue;
-        if (isVariantWord(d.word, w.word)) continue;
         const lw = d.word.toLowerCase();
         if (lw === correctAnswer.toLowerCase()) continue;
         if (distractors.some((x) => x.toLowerCase() === lw)) continue;
-        if (targetPos.size) {
-          const dPos = parsePosTags(d.meaning);
-          let ok = false;
-          for (const t of targetPos) {
-            if (dPos.has(t)) {
-              ok = true;
-              break;
-            }
-          }
-          if (!ok) continue;
-        }
         distractors.push(d.word);
-      }
-
-      if (distractors.length < 3) {
-        const shuffledCandidates = shuffleArray(candidates);
-        for (const d of shuffledCandidates) {
-          if (distractors.length >= 3) break;
-          const lw = d.word.toLowerCase();
-          if (lw === correctAnswer.toLowerCase()) continue;
-          if (distractors.some((x) => x.toLowerCase() === lw)) continue;
-          distractors.push(d.word);
-        }
       }
       if (distractors.length < 3) continue;
 
