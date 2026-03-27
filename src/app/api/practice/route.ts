@@ -100,6 +100,25 @@ export async function GET(request: NextRequest) {
       sampleWords: allWords.slice(0, 5).map(w => ({ id: w.id, word: w.word, category_id: w.category_id }))
     });
 
+    // 检查 allWords 中是否包含主动收录词
+    const allWordsSet = new Set(allWords.map(w => w.word));
+    const sampleCollectedWords = Array.from(collectedWordIdSet).slice(0, 5);
+    console.log('[API] 主动收录词ID样本:', sampleCollectedWords);
+
+    // 查询这些 word_id 对应的单词
+    if (sampleCollectedWords.length > 0) {
+      const { data: sampleWords } = await client
+        .from('words')
+        .select('id, word')
+        .in('id', sampleCollectedWords);
+      console.log('[API] 主动收录词文本样本:', sampleWords);
+      console.log('[API] 这些词是否在 allWords 中:', sampleWords?.map(w => ({
+        id: w.id,
+        word: w.word,
+        inAllWords: allWordsSet.has(w.word)
+      })));
+    }
+
     // 获取用户掌握状态 - 增加 last_correct_date 字段
     const { data: userStatusData } = await client
       .from('user_word_status')
@@ -270,6 +289,15 @@ export async function GET(request: NextRequest) {
         words!inner(id, word, phonetic, meaning, example_sentence, example_sentence_cn, category_id)
       `)
       .eq('user_id', userId);
+
+    console.log('[API] userCollectedData 查询结果:', {
+      total: userCollectedData?.length || 0,
+      sample: userCollectedData?.slice(0, 3).map((item: any) => ({
+        word_id: item.word_id,
+        word: item.words?.word,
+        category_id: item.words?.category_id
+      }))
+    });
 
     // 构建用户收录词的映射（word -> word数据）
     const userCollectedMap = new Map<string, typeof allWords[0]>();
