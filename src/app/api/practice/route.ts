@@ -236,12 +236,31 @@ export async function GET(request: NextRequest) {
             return; // 跳过不在当前词库的词
           }
         }
+        
         // 检查是否已掌握或今天已答对
-        if (isWordMastered(wordData.word) || isWordCorrectToday(wordData.word)) {
+        const isMastered = isWordMastered(wordData.word);
+        const isCorrectToday = isWordCorrectToday(wordData.word);
+        
+        // 调试日志
+        if (isCorrectToday) {
+          console.log(`[API] 跳过今天已答对的主动收录词: ${wordData.word}`, {
+            isMastered,
+            isCorrectToday,
+            lastCorrectDate: wordToIds.get(wordData.word)?.map(id => statusMap.get(id)?.last_correct_date)
+          });
+        }
+        
+        if (isMastered || isCorrectToday) {
           return; // 跳过已掌握或今天已答对的词
         }
         userCollectedMap.set(wordData.word, wordData);
       }
+    });
+
+    console.log(`[API] 主动收录词统计:`, {
+      totalCollected: userCollectedData?.length || 0,
+      todayCorrectFiltered: (userCollectedData?.length || 0) - userCollectedMap.size,
+      remainingToPractice: userCollectedMap.size
     });
 
     // 优先选择需要复习的错题（优先词列表）
@@ -270,6 +289,14 @@ export async function GET(request: NextRequest) {
       const userCollectedAvailable = Array.from(userCollectedMap.values());
       const otherAvailable = availableWords.filter(w => !userCollectedMap.has(w.word));
       
+      console.log(`[API] 词选择统计:`, {
+        totalAvailable: availableWords.length,
+        userCollectedAvailable: userCollectedAvailable.length,
+        otherAvailable: otherAvailable.length,
+        categoryId,
+        filter
+      });
+      
       // 洗牌
       const shuffledCollected = shuffleArray(userCollectedAvailable);
       const shuffledOther = shuffleArray(otherAvailable);
@@ -280,6 +307,12 @@ export async function GET(request: NextRequest) {
       const remainingWords = shuffledOther.slice(0, limit - collectedCount);
       
       selectedWords = [...collectedWords, ...remainingWords];
+      
+      console.log(`[API] 最终选中的词:`, {
+        collectedCount,
+        remainingCount: remainingWords.length,
+        collectedWords: collectedWords.map(w => w.word)
+      });
     }
 
     // ========== 插入复习词（分散在整个题目中）==========
