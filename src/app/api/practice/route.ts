@@ -69,16 +69,9 @@ export async function GET(request: NextRequest) {
 
     // 如果用户有主动收录的单词，且这些单词不在当前词库中，需要额外查询
     let allWords = data || [];
-    if (collectedWordIdSet.size > 0 && categoryId && categoryId !== 'all') {
+    if (collectedWordIdSet.size > 0) {
       const currentWordIdSet = new Set(allWords.map(w => w.id));
       const missingWordIds = Array.from(collectedWordIdSet).filter(id => !currentWordIdSet.has(id));
-
-      console.log('[API] 扩展查询主动收录词:', {
-        collectedWordIdCount: collectedWordIdSet.size,
-        currentWordCount: currentWordIdSet.size,
-        missingWordIdCount: missingWordIds.length,
-        missingWordIds: missingWordIds.slice(0, 10)
-      });
 
       if (missingWordIds.length > 0) {
         const { data: extraWords } = await client
@@ -86,7 +79,6 @@ export async function GET(request: NextRequest) {
           .select('*')
           .in('id', missingWordIds);
         if (extraWords) {
-          console.log('[API] 额外查询到的单词:', extraWords.map(w => ({ id: w.id, word: w.word, category_id: w.category_id })));
           allWords = [...allWords, ...extraWords];
         }
       }
@@ -94,30 +86,6 @@ export async function GET(request: NextRequest) {
 
     // 立即洗牌，避免数据库默认排序（通常按 id/字母顺序）导致集中
     allWords = shuffleArray(allWords);
-
-    console.log('[API] allWords 统计:', {
-      totalWords: allWords.length,
-      sampleWords: allWords.slice(0, 5).map(w => ({ id: w.id, word: w.word, category_id: w.category_id }))
-    });
-
-    // 检查 allWords 中是否包含主动收录词
-    const allWordsSet = new Set(allWords.map(w => w.word));
-    const sampleCollectedWords = Array.from(collectedWordIdSet).slice(0, 5);
-    console.log('[API] 主动收录词ID样本:', sampleCollectedWords);
-
-    // 查询这些 word_id 对应的单词
-    if (sampleCollectedWords.length > 0) {
-      const { data: sampleWords } = await client
-        .from('words')
-        .select('id, word')
-        .in('id', sampleCollectedWords);
-      console.log('[API] 主动收录词文本样本:', sampleWords);
-      console.log('[API] 这些词是否在 allWords 中:', sampleWords?.map(w => ({
-        id: w.id,
-        word: w.word,
-        inAllWords: allWordsSet.has(w.word)
-      })));
-    }
 
     // 获取用户掌握状态 - 增加 last_correct_date 字段
     const { data: userStatusData } = await client
@@ -132,20 +100,12 @@ export async function GET(request: NextRequest) {
     const shanghaiTime = new Date(now.getTime() + 8 * 60 * 60 * 1000);
     const today = shanghaiTime.toISOString().split('T')[0];
 
-    console.log('[API] 今天的日期:', today, '类型:', typeof today);
-    console.log('[API] 用户状态数据示例:', userStatusData?.slice(0, 3));
-
     // 构建单词到所有 id 的映射（同一个单词可能在多个分类中）
     const wordToIds = new Map<string, number[]>();
     allWords.forEach(w => {
       const ids = wordToIds.get(w.word) || [];
       ids.push(w.id);
       wordToIds.set(w.word, ids);
-    });
-
-    console.log('[API] wordToIds 统计:', {
-      totalUniqueWords: wordToIds.size,
-      sampleWords: Array.from(wordToIds.entries()).slice(0, 5)
     });
 
     // 检查一个单词是否已被掌握（任意一个 id 被掌握即算掌握）
@@ -290,68 +250,21 @@ export async function GET(request: NextRequest) {
       `)
       .eq('user_id', userId);
 
-    console.log('[API] userCollectedData 查询结果:', {
-      total: userCollectedData?.length || 0,
-      sample: userCollectedData?.slice(0, 3).map((item: any) => ({
-        word_id: item.word_id,
-        word: item.words?.word,
-        category_id: item.words?.category_id
-      }))
-    });
-
     // 构建用户收录词的映射（word -> word数据）
     const userCollectedMap = new Map<string, typeof allWords[0]>();
     userCollectedData?.forEach((item: any) => {
       if (item.words) {
         const wordData = item.words;
-        // 用户主动收录的单词应该在任何词库中都可见，不需要检查 category_id
 
         // 检查是否已掌握或今天已答对
         const isMastered = isWordMastered(wordData.word);
         const isCorrectToday = isWordCorrectToday(wordData.word);
-
-        // 调试日志：对所有主动收录词都输出详细信息
-        const wordIds = wordToIds.get(wordData.word) || [];
-        const lastCorrectDates = wordIds.map(id => {
-          const status = statusMap.get(id);
-          return status ? {
-            wordId: id,
-            lastCorrectDate: status.last_correct_date,
-            type: typeof status.last_correct_date
-          } : null;
-        }).filter(Boolean);
-
-        console.log(`[API] 主动收录词检查: ${wordData.word}`, {
-          wordIds,
-          isMastered,
-          isCorrectToday,
-          lastCorrectDates,
-          todayComparison: lastCorrectDates.map(lcd => ({
-            lastCorrectDate: lcd!.lastCorrectDate,
-            today: today,
-            equals: lcd!.lastCorrectDate === today
-          }))
-        });
-
-        if (isCorrectToday) {
-          console.log(`[API] 跳过今天已答对的主动收录词: ${wordData.word}`, {
-            isMastered,
-            isCorrectToday,
-            lastCorrectDates
-          });
-        }
 
         if (isMastered || isCorrectToday) {
           return; // 跳过已掌握或今天已答对的词
         }
         userCollectedMap.set(wordData.word, wordData);
       }
-    });
-
-    console.log(`[API] 主动收录词统计:`, {
-      totalCollected: userCollectedData?.length || 0,
-      todayCorrectFiltered: (userCollectedData?.length || 0) - userCollectedMap.size,
-      remainingToPractice: userCollectedMap.size
     });
 
     // 优先选择需要复习的错题（优先词列表）
@@ -379,31 +292,17 @@ export async function GET(request: NextRequest) {
       // 将用户主动收录的词放在前面
       const userCollectedAvailable = Array.from(userCollectedMap.values());
       const otherAvailable = availableWords.filter(w => !userCollectedMap.has(w.word));
-      
-      console.log(`[API] 词选择统计:`, {
-        totalAvailable: availableWords.length,
-        userCollectedAvailable: userCollectedAvailable.length,
-        otherAvailable: otherAvailable.length,
-        categoryId,
-        filter
-      });
-      
+
       // 洗牌
       const shuffledCollected = shuffleArray(userCollectedAvailable);
       const shuffledOther = shuffleArray(otherAvailable);
-      
+
       // 前5题为用户主动收录的词（如果有的话），其余随机
       const collectedCount = Math.min(5, shuffledCollected.length);
       const collectedWords = shuffledCollected.slice(0, collectedCount);
       const remainingWords = shuffledOther.slice(0, limit - collectedCount);
-      
+
       selectedWords = [...collectedWords, ...remainingWords];
-      
-      console.log(`[API] 最终选中的词:`, {
-        collectedCount,
-        remainingCount: remainingWords.length,
-        collectedWords: collectedWords.map(w => w.word)
-      });
     }
 
     // ========== 插入复习词（分散在整个题目中）==========
