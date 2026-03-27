@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { buildPracticeQuery } from '@/lib/practice-query';
+import { MAX_INCREMENT_SECONDS } from '@/lib/duration';
 
 interface Category {
   id: number;
@@ -110,6 +111,22 @@ export default function PracticePage() {
   const startTimeRef = useRef(startTime);
   const masteredThisRoundRef = useRef(masteredThisRound);
   const systemMasteredCountRef = useRef(systemMasteredCount);
+  const activeDurationMsRef = useRef(0);
+  const lastActiveAtRef = useRef(0);
+  const isExitingRef = useRef(false);
+
+  const pauseActiveTimer = useCallback((now: number = Date.now()) => {
+    if (lastActiveAtRef.current > 0) {
+      activeDurationMsRef.current += now - lastActiveAtRef.current;
+      lastActiveAtRef.current = 0;
+    }
+  }, []);
+
+  const resumeActiveTimer = useCallback((now: number = Date.now()) => {
+    if (lastActiveAtRef.current === 0) {
+      lastActiveAtRef.current = now;
+    }
+  }, []);
 
   useEffect(() => {
     setIsLoaded(true);
@@ -145,6 +162,36 @@ export default function PracticePage() {
   useEffect(() => {
     systemMasteredCountRef.current = systemMasteredCount;
   }, [systemMasteredCount]);
+
+  useEffect(() => {
+    if (!isStarted) return;
+    if (isFinished) {
+      pauseActiveTimer();
+      return;
+    }
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        resumeActiveTimer();
+      } else {
+        pauseActiveTimer();
+      }
+    };
+
+    const onFocus = () => resumeActiveTimer();
+    const onBlur = () => pauseActiveTimer();
+
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    window.addEventListener('focus', onFocus);
+    window.addEventListener('blur', onBlur);
+    onVisibilityChange();
+
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      window.removeEventListener('focus', onFocus);
+      window.removeEventListener('blur', onBlur);
+    };
+  }, [isStarted, isFinished, pauseActiveTimer, resumeActiveTimer]);
 
   useEffect(() => {
     if (!user) {
@@ -263,6 +310,9 @@ export default function PracticePage() {
     setSystemMasteredCount(0);
     setIsStarted(true);
     setStartTime(Date.now());
+    activeDurationMsRef.current = 0;
+    lastActiveAtRef.current = document.visibilityState === 'visible' ? Date.now() : 0;
+    isExitingRef.current = false;
     
     // 获取今日进度
     fetchDailyProgress();
@@ -479,8 +529,15 @@ export default function PracticePage() {
   };
 
   const exitPractice = async () => {
+    if (isExitingRef.current) return;
+    isExitingRef.current = true;
+    pauseActiveTimer();
+
     // 计算本轮数据
-    const duration = startTimeRef.current > 0 ? Math.floor((Date.now() - startTimeRef.current) / 1000) : 0;
+    const duration = Math.min(
+      Math.floor(activeDurationMsRef.current / 1000),
+      MAX_INCREMENT_SECONDS
+    );
     const roundStats = {
       totalPracticed: questionNumberRef.current,
       correctCount: roundSuccessCountRef.current,

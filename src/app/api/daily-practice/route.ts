@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
+import { addClampedDurationSeconds, MAX_DAILY_SECONDS } from '@/lib/duration';
 
 // 解析 token 获取用户 ID
 function getUserIdFromToken(token: string): number | null {
@@ -67,7 +68,7 @@ export async function GET(request: NextRequest) {
         wrongCount: todayStats?.wrong_count || 0,
         masteredCount: todayStats?.mastered_count || 0,
         wrongWordIds,
-        durationSeconds: todayStats?.duration_seconds || 0,
+        durationSeconds: Math.min(todayStats?.duration_seconds || 0, MAX_DAILY_SECONDS),
         isSettled: todayStats?.is_settled || false,
       },
       dailyGoal: user?.daily_goal || 200,
@@ -163,9 +164,10 @@ export async function POST(request: NextRequest) {
         }
         
         // 更新练习时长
-        if (durationIncrement > 0) {
-          updateData.duration_seconds = (todayStats.duration_seconds || 0) + durationIncrement;
-        }
+        updateData.duration_seconds = addClampedDurationSeconds(
+          todayStats.duration_seconds,
+          durationIncrement
+        );
         break;
 
       case 'mastered':
@@ -175,9 +177,10 @@ export async function POST(request: NextRequest) {
 
       case 'update_duration':
         // 仅更新时长
-        if (durationIncrement > 0) {
-          updateData.duration_seconds = (todayStats.duration_seconds || 0) + durationIncrement;
-        }
+        updateData.duration_seconds = addClampedDurationSeconds(
+          todayStats.duration_seconds,
+          durationIncrement
+        );
         break;
 
       default:
