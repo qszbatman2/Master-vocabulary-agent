@@ -70,13 +70,23 @@ export async function POST(request: NextRequest) {
     const today = getTodayDateString();
 
     // 获取用户对这些单词的当前状态
-    const { data: existingStatuses } = await client
+    const { data: existingStatuses, error: existingStatusesError } = await client
       .from('user_word_status')
       .select('*')
       .eq('user_id', userId)
-      .in('word_id', allWordIds);
+      .in('word_id', allWordIds)
+      .order('updated_at', { ascending: false, nullsFirst: false });
 
-    const existingStatusMap = new Map(existingStatuses?.map(s => [s.word_id, s]) || []);
+    if (existingStatusesError) {
+      return NextResponse.json({ error: existingStatusesError.message }, { status: 500 });
+    }
+
+    const existingStatusMap = new Map<number, any>();
+    (existingStatuses || []).forEach((s: any) => {
+      if (!existingStatusMap.has(s.word_id)) {
+        existingStatusMap.set(s.word_id, s);
+      }
+    });
     const existingStatus = existingStatusMap.get(wordId);
 
     // ========== 核心逻辑修复 ==========
@@ -165,7 +175,7 @@ export async function POST(request: NextRequest) {
 
     // 更新或创建状态
     if (existingStatus) {
-      await client
+      const { error: statusUpdateError } = await client
         .from('user_word_status')
         .update({
           is_mastered: newIsMastered,
@@ -181,8 +191,11 @@ export async function POST(request: NextRequest) {
           updated_at: now,
         })
         .eq('id', existingStatus.id);
+      if (statusUpdateError) {
+        return NextResponse.json({ error: statusUpdateError.message }, { status: 500 });
+      }
     } else {
-      await client
+      const { error: statusInsertError } = await client
         .from('user_word_status')
         .insert({
           user_id: userId,
@@ -198,6 +211,9 @@ export async function POST(request: NextRequest) {
           last_practiced_at: now,
           last_wrong_at: !isCorrect ? now : null,
         });
+      if (statusInsertError) {
+        return NextResponse.json({ error: statusInsertError.message }, { status: 500 });
+      }
     }
 
     // 同步更新同一单词在其他分类中的掌握状态
@@ -207,13 +223,16 @@ export async function POST(request: NextRequest) {
         
         const existingOther = existingStatusMap.get(wid);
         if (existingOther) {
-          await client
+          const { error: otherUpdateError } = await client
             .from('user_word_status')
             .update({
               is_mastered: true,
               updated_at: now,
             })
             .eq('id', existingOther.id);
+          if (otherUpdateError) {
+            return NextResponse.json({ error: otherUpdateError.message }, { status: 500 });
+          }
         }
       }
     }
@@ -229,7 +248,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (!todayStats) {
-      const { data: newStats } = await client
+      const { data: newStats, error: createStatsError } = await client
         .from('daily_practice_stats')
         .insert({
           user_id: userId,
@@ -244,6 +263,9 @@ export async function POST(request: NextRequest) {
         })
         .select()
         .single();
+      if (createStatsError) {
+        return NextResponse.json({ error: createStatsError.message }, { status: 500 });
+      }
       todayStats = newStats;
     }
 
@@ -270,10 +292,13 @@ export async function POST(request: NextRequest) {
       dailyUpdateData.mastered_count = (todayStats?.mastered_count || 0) + 1;
     }
 
-    await client
+    const { error: dailyStatsUpdateError } = await client
       .from('daily_practice_stats')
       .update(dailyUpdateData)
       .eq('id', todayStats?.id);
+    if (dailyStatsUpdateError) {
+      return NextResponse.json({ error: dailyStatsUpdateError.message }, { status: 500 });
+    }
 
     // 返回结果
     const responseData: any = {

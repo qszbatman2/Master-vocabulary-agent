@@ -16,6 +16,7 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
+import { buildPracticeQuery } from '@/lib/practice-query';
 
 interface Category {
   id: number;
@@ -214,22 +215,15 @@ export default function PracticePage() {
     
     setIsLoading(true);
     try {
-      const params = new URLSearchParams();
-      if (selectedCategory !== 'all') {
-        params.append('categoryId', selectedCategory);
-      }
-      if (selectedFilter === 'wrong_words') {
-        params.append('filter', 'wrong_words');
-      }
-      params.append('limit', '15');
-      if (excludeIds.length > 0) {
-        params.append('excludeWordIds', excludeIds.join(','));
-      }
-      if (priorityIds.length > 0) {
-        params.append('priorityWordIds', priorityIds.join(','));
-      }
+      const query = buildPracticeQuery({
+        categoryId: selectedCategory,
+        filter: selectedFilter,
+        limit: 15,
+        excludeWordIds: excludeIds,
+        priorityWordIds: priorityIds,
+      });
 
-      const response = await fetch(`/api/practice?${params.toString()}`, {
+      const response = await fetch(`/api/practice?${query}`, {
         headers: { authorization: `Bearer ${token}` },
       });
       const data = await response.json();
@@ -278,16 +272,13 @@ export default function PracticePage() {
     
     setIsLoading(true);
     try {
-      const params = new URLSearchParams();
-      if (selectedCategory !== 'all') {
-        params.append('categoryId', selectedCategory);
-      }
-      if (selectedFilter === 'wrong_words') {
-        params.append('filter', 'wrong_words');
-      }
-      params.append('limit', '15');
+      const query = buildPracticeQuery({
+        categoryId: selectedCategory,
+        filter: selectedFilter,
+        limit: 15,
+      });
 
-      const response = await fetch(`/api/practice?${params.toString()}`, {
+      const response = await fetch(`/api/practice?${query}`, {
         headers: { authorization: `Bearer ${token}` },
       });
       const data = await response.json();

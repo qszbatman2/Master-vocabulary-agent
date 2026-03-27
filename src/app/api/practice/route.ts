@@ -41,10 +41,14 @@ export async function GET(request: NextRequest) {
     }
 
     // 先获取用户主动收录的 word_id（用于后续扩展查询范围）
-    const { data: userCollectedWordIds } = await client
+    const { data: userCollectedWordIds, error: userCollectedError } = await client
       .from('user_word_contexts')
       .select('word_id')
       .eq('user_id', userId);
+
+    if (userCollectedError) {
+      return NextResponse.json({ error: userCollectedError.message }, { status: 500 });
+    }
 
     const collectedWordIdSet = new Set(userCollectedWordIds?.map(c => c.word_id) || []);
 
@@ -88,12 +92,22 @@ export async function GET(request: NextRequest) {
     allWords = shuffleArray(allWords);
 
     // 获取用户掌握状态 - 增加 last_correct_date 字段
-    const { data: userStatusData } = await client
+    const { data: userStatusData, error: userStatusError } = await client
       .from('user_word_status')
-      .select('word_id, is_mastered, last_wrong_at, last_correct_date')
-      .eq('user_id', userId);
+      .select('word_id, is_mastered, last_wrong_at, last_correct_date, updated_at')
+      .eq('user_id', userId)
+      .order('updated_at', { ascending: false });
 
-    const statusMap = new Map(userStatusData?.map(s => [s.word_id, s]) || []);
+    if (userStatusError) {
+      return NextResponse.json({ error: userStatusError.message }, { status: 500 });
+    }
+
+    const statusMap = new Map<number, any>();
+    (userStatusData || []).forEach((s: any) => {
+      if (!statusMap.has(s.word_id)) {
+        statusMap.set(s.word_id, s);
+      }
+    });
 
     // 获取今天的日期（上海时区）
     const now = new Date();
@@ -112,6 +126,11 @@ export async function GET(request: NextRequest) {
     const isWordMastered = (word: string): boolean => {
       const ids = wordToIds.get(word) || [];
       return ids.some(id => statusMap.get(id)?.is_mastered);
+    };
+
+    const isWordCollected = (word: string): boolean => {
+      const ids = wordToIds.get(word) || [];
+      return ids.some(id => collectedWordIdSet.has(id));
     };
 
     // 检查一个单词今天是否已答对（任意一个 id 今天答对即算已答对）
@@ -153,17 +172,9 @@ export async function GET(request: NextRequest) {
         }
       });
     } else if (filter === 'collected') {
-      // 主动收录模式：查询用户有上下文记录的单词
-      const { data: collectedWords } = await client
-        .from('user_word_contexts')
-        .select('word_id')
-        .eq('user_id', userId);
-      
-      const collectedWordIds = new Set(collectedWords?.map(c => c.word_id) || []);
-      
       uniqueWords.forEach((w, word) => {
         // 只选择用户收录的、未掌握且今天未答对的单词
-        if (collectedWordIds.has(w.id) && !isWordMastered(word) && !isWordCorrectToday(word)) {
+        if (isWordCollected(word) && !isWordMastered(word) && !isWordCorrectToday(word)) {
           availableWords.push(w);
         }
       });
@@ -209,20 +220,13 @@ export async function GET(request: NextRequest) {
     
     // 只在普通模式下加入复习词
     if (filter !== 'wrong_words' && filter !== 'collected') {
-      const { data: masteredCollected } = await client
-        .from('user_word_contexts')
-        .select('word_id')
-        .eq('user_id', userId);
-      
-      if (masteredCollected && masteredCollected.length > 0) {
-        const collectedWordIds = new Set(masteredCollected.map(c => c.word_id));
-        
+      if (collectedWordIdSet.size > 0) {
         // 计算4天前的日期
         const fourDaysAgo = new Date();
         fourDaysAgo.setDate(fourDaysAgo.getDate() - 4);
         
         uniqueWords.forEach((w, word) => {
-          if (!collectedWordIds.has(w.id)) return;
+          if (!isWordCollected(word)) return;
           if (!isWordMastered(word)) return;
           if (isWordCorrectToday(word)) return;
           
