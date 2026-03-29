@@ -110,7 +110,11 @@ export async function GET(request: NextRequest) {
 
     const ladderCounts = [0, 0, 0, 0, 0];
     for (const s of statusList) {
-      const step = Math.max(0, Math.min(4, s.daily_correct_count || 0));
+      if (s.is_mastered) {
+        ladderCounts[4] += 1;
+        continue;
+      }
+      const step = Math.max(0, Math.min(3, s.daily_correct_count || 0));
       ladderCounts[step] += 1;
     }
 

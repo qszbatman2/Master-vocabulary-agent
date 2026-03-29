@@ -152,6 +152,8 @@ type CloudItem = {
 };
 
 type CloudPlacedItem = CloudItem & {
+  cx: number;
+  cy: number;
   x: number;
   y: number;
   w: number;
@@ -167,7 +169,7 @@ function approxTextBox(word: string, fontSize: number, rotate: 0 | 90): { w: num
 
 function layoutWordCloud(items: CloudItem[], width: number, height: number): CloudPlacedItem[] {
   if (width <= 0 || height <= 0) return [];
-  const margin = 6;
+  const margin = 2;
   const cx = width / 2;
   const cy = height / 2;
   const cell = 32;
@@ -216,12 +218,12 @@ function layoutWordCloud(items: CloudItem[], width: number, height: number): Clo
 
   for (const it of sorted) {
     const box = approxTextBox(it.word, it.fontSize, it.rotate);
-    const maxSteps = 1800;
+    const maxSteps = 4200;
     let ok: CloudPlacedItem | null = null;
 
     for (let s = 0; s < maxSteps; s += 1) {
-      const a = 0.35 * s;
-      const r = 1.8 * a;
+      const a = 0.24 * s;
+      const r = 1.15 * a;
       const x = cx + Math.cos(a) * r;
       const y = cy + Math.sin(a) * r;
       const rect = { x: x - box.w / 2, y: y - box.h / 2, w: box.w, h: box.h };
@@ -229,14 +231,45 @@ function layoutWordCloud(items: CloudItem[], width: number, height: number): Clo
       if (rect.x < margin || rect.y < margin || rect.x + rect.w > width - margin || rect.y + rect.h > height - margin) continue;
       if (collides(rect)) continue;
 
-      ok = { ...it, x, y, w: box.w, h: box.h };
+      ok = { ...it, cx: x, cy: y, x: rect.x, y: rect.y, w: rect.w, h: rect.h };
       break;
     }
 
     if (!ok) continue;
     const idx = placed.length;
     placed.push(ok);
-    addToGrid({ x: ok.x - ok.w / 2, y: ok.y - ok.h / 2, w: ok.w, h: ok.h }, idx);
+    addToGrid({ x: ok.x, y: ok.y, w: ok.w, h: ok.h }, idx);
+  }
+
+  if (placed.length > 0) {
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+    for (const p of placed) {
+      minX = Math.min(minX, p.x);
+      minY = Math.min(minY, p.y);
+      maxX = Math.max(maxX, p.x + p.w);
+      maxY = Math.max(maxY, p.y + p.h);
+    }
+
+    const dxIdeal = (width - (maxX - minX)) / 2 - minX;
+    const dyIdeal = (height - (maxY - minY)) / 2 - minY;
+    const dxMin = margin - minX;
+    const dxMax = width - margin - maxX;
+    const dyMin = margin - minY;
+    const dyMax = height - margin - maxY;
+    const dx = Math.max(dxMin, Math.min(dxIdeal, dxMax));
+    const dy = Math.max(dyMin, Math.min(dyIdeal, dyMax));
+
+    if (dx !== 0 || dy !== 0) {
+      for (const p of placed) {
+        p.x += dx;
+        p.y += dy;
+        p.cx += dx;
+        p.cy += dy;
+      }
+    }
   }
 
   return placed;
@@ -469,30 +502,62 @@ function buildMockDashboard(dateString: string): DashboardResponse {
 export default function StatsPage() {
   const { token } = useAuth();
   const [data, setData] = useState<DashboardResponse | null>(null);
-  const [mode, setMode] = useState<'practice' | 'duration'>('practice');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const cloudRef = useRef<HTMLDivElement | null>(null);
   const [cloudSize, setCloudSize] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
 
+  if (!token) {
+    return (
+      <div className="min-h-screen flex flex-col" style={{ background: '#12121e' }}>
+        <div className="fixed inset-0 pointer-events-none opacity-[0.03]" style={{ backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`, backgroundSize: '40px 40px' }} />
+        <div className="sticky top-0 z-40 backdrop-blur-xl safe-area-top" style={{ background: 'rgba(30, 30, 46, 0.9)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+          <div className="max-w-2xl w-full mx-auto px-4 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Link href="/">
+                <button className="w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 active:scale-95" style={{ background: 'rgba(255,255,255,0.05)', color: '#a0a0b0' }}>
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+              </Link>
+              <div className="text-base font-bold text-white">数据面板</div>
+            </div>
+          </div>
+        </div>
+        <div className="flex-1 max-w-2xl w-full mx-auto px-4 py-10">
+          <div className="rounded-3xl p-6 text-center" style={{ background: '#1e1e2e', boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)' }}>
+            <div className="text-white font-medium mb-2">需要登录</div>
+            <div className="text-sm" style={{ color: '#a0a0b0' }}>
+              登录后可查看你的学习数据统计
+            </div>
+            <div className="mt-5">
+              <Link
+                href="/login"
+                className="inline-flex items-center justify-center px-4 py-2 rounded-2xl text-sm font-medium text-white"
+                style={{ background: 'linear-gradient(135deg, #00f0ff, #7c4dff)' }}
+              >
+                去登录
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   useEffect(() => {
+    if (!token) return;
     const run = async () => {
       setLoading(true);
+      setError(null);
       try {
-        const today = shanghaiDateString(new Date());
-        if (!token) {
-          setData(buildMockDashboard(today));
-          return;
-        }
-
         const res = await fetch('/api/stats/dashboard?days=84', { headers: { authorization: `Bearer ${token}` } });
         if (!res.ok) {
-          setData(buildMockDashboard(today));
+          setError('数据加载失败');
           return;
         }
         setData(await res.json());
       } catch {
-        const today = shanghaiDateString(new Date());
-        setData(buildMockDashboard(today));
+        setError('数据加载失败');
       } finally {
         setLoading(false);
       }
@@ -539,13 +604,12 @@ export default function StatsPage() {
       const key = shanghaiDateString(d);
       const r = map.get(key);
       const practice = r?.totalPracticed || 0;
-      const duration = r?.durationMinutes || 0;
       const wrong = r?.wrongCount || 0;
       const mastered = r?.masteredCount || 0;
-      return { date: key, practice, duration, wrong, mastered };
+      return { date: key, practice, wrong, mastered };
     });
 
-    const values = records.map((r) => (mode === 'practice' ? r.practice : r.duration));
+    const values = records.map((r) => r.practice);
     const max = Math.max(1, ...values);
     const p95 = (() => {
       const sorted = [...values].sort((a, b) => a - b);
@@ -555,12 +619,11 @@ export default function StatsPage() {
 
     const denom = Math.max(1, Math.min(max, p95));
     const goalWords = data.dailyProgress.dailyGoal || 200;
-    const goalDurationMinutes = Math.max(10, Math.round(goalWords * 0.2));
 
     const cells = records.map((r) => {
-      const v = mode === 'practice' ? r.practice : r.duration;
+      const v = r.practice;
       const t = clamp01(v / denom);
-      const achieved = mode === 'practice' ? v >= goalWords : v >= goalDurationMinutes;
+      const achieved = v >= goalWords;
       const bg = v === 0 ? 'rgba(255,255,255,0.04)' : achieved ? achievedColor(t) : notAchievedColor(t);
       return {
         ...r,
@@ -571,9 +634,9 @@ export default function StatsPage() {
       };
     });
 
-    const any = records.some((r) => (mode === 'practice' ? r.practice : r.duration) > 0);
-    return { days, cells, denom, goalWords, goalDurationMinutes, any };
-  }, [data, mode]);
+    const any = records.some((r) => r.practice > 0);
+    return { days, cells, denom, goalWords, any };
+  }, [data]);
 
   useEffect(() => {
     const el = cloudRef.current;
@@ -600,7 +663,7 @@ export default function StatsPage() {
     const list = (data?.weakWords || []).slice(0, 30).sort((a, b) => (b.wrongCount || 0) - (a.wrongCount || 0));
     if (!data || list.length === 0) return null;
     const w = cloudSize.w > 0 ? cloudSize.w : 320;
-    const h = cloudSize.h > 0 ? cloudSize.h : 260;
+    const h = cloudSize.h > 0 ? cloudSize.h : 220;
 
     const max = Math.max(1, ...list.map((x) => x.wrongCount || 0));
     const min = Math.min(...list.map((x) => x.wrongCount || 0));
@@ -610,7 +673,7 @@ export default function StatsPage() {
       const seed = (w.wordId * 9301 + (w.wrongCount || 0) * 49297) % 233280;
       const r = seed / 233280;
       const rotate: 0 | 90 = r < 0.28 ? 90 : 0;
-      const fontSize = Math.round(12 + t * 20);
+      const fontSize = Math.round(14 + t * 32);
       return {
         id: w.wordId,
         word: w.word,
@@ -630,7 +693,7 @@ export default function StatsPage() {
   }, [cloudSize.h, cloudSize.w, data]);
 
   return (
-    <div className="min-h-screen flex flex-col overflow-x-hidden safe-area-top" style={{ background: '#12121e' }}>
+    <div className="min-h-screen flex flex-col overflow-x-hidden" style={{ background: '#12121e' }}>
       <div
         className="fixed inset-0 pointer-events-none opacity-[0.03]"
         style={{
@@ -657,22 +720,17 @@ export default function StatsPage() {
         />
       </div>
 
-      <div
-        className="fixed top-0 left-0 right-0 z-30 px-4 pt-6 pb-4"
-        style={{
-          background: 'rgba(18,18,30,0.92)',
-          backdropFilter: 'blur(12px)',
-          borderBottom: '1px solid rgba(255,255,255,0.06)',
-        }}
-      >
-        <div className="max-w-2xl w-full mx-auto flex items-center justify-between">
+      <div className="sticky top-0 z-40 backdrop-blur-xl safe-area-top" style={{ background: 'rgba(30, 30, 46, 0.9)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+        <div className="max-w-2xl w-full mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link href="/" className="p-2 rounded-xl" style={{ background: 'rgba(255,255,255,0.06)' }}>
-              <ChevronLeft className="w-5 h-5 text-white" />
+            <Link href="/">
+              <button className="w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 active:scale-95" style={{ background: 'rgba(255,255,255,0.05)', color: '#a0a0b0' }}>
+                <ChevronLeft className="w-5 h-5" />
+              </button>
             </Link>
             <div>
-              <div className="text-white text-lg font-semibold">数据面板</div>
-              <div className="text-xs mt-0.5" style={{ color: '#a0a0b0' }}>
+              <div className="text-base font-bold text-white">数据面板</div>
+              <div className="text-xs" style={{ color: '#a0a0b0' }}>
                 {data?.today.date || '—'}
               </div>
             </div>
@@ -680,7 +738,12 @@ export default function StatsPage() {
         </div>
       </div>
 
-      <div className="relative px-4 pb-10 pt-24 max-w-2xl w-full mx-auto">
+      <div className="relative px-4 pb-10 pt-6 max-w-2xl w-full mx-auto">
+        {error && (
+          <div className="rounded-2xl px-4 py-3 mb-4" style={{ background: 'rgba(255, 107, 157, 0.10)', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.06)' }}>
+            <div className="text-sm text-white">{error}</div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 gap-4 mb-5">
           <div
@@ -765,32 +828,10 @@ export default function StatsPage() {
                 近 12 周热力图
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setMode('practice')}
-                className="px-3 py-1.5 rounded-full text-xs font-medium"
-                style={{
-                  background: mode === 'practice' ? 'rgba(0, 240, 255, 0.16)' : 'rgba(255,255,255,0.06)',
-                  color: mode === 'practice' ? '#00f0ff' : '#a0a0b0',
-                }}
-              >
-                单词数
-              </button>
-              <button
-                onClick={() => setMode('duration')}
-                className="px-3 py-1.5 rounded-full text-xs font-medium"
-                style={{
-                  background: mode === 'duration' ? 'rgba(0, 240, 255, 0.16)' : 'rgba(255,255,255,0.06)',
-                  color: mode === 'duration' ? '#00f0ff' : '#a0a0b0',
-                }}
-              >
-                时长
-              </button>
-            </div>
           </div>
 
           <div className="flex flex-col md:flex-row md:items-start gap-4">
-            <div className="w-full md:w-auto overflow-x-auto pb-1 -mx-1 px-1">
+            <div className="w-full md:w-auto pb-1 -mx-1 px-1">
               {heatmap && !heatmap.any ? (
                 <div
                   className="rounded-2xl p-5 text-center min-w-max"
@@ -802,12 +843,12 @@ export default function StatsPage() {
                   </div>
                 </div>
               ) : (
-                <div className="grid grid-flow-col grid-rows-7 gap-1.5 min-w-max">
+                <div className="grid grid-cols-12 gap-1.5">
                   {heatmap?.cells.map((c) => (
                     <div
                       key={c.date}
                       className="w-3 h-3 sm:w-3.5 sm:h-3.5 rounded"
-                      title={`${c.date}\n${mode === 'practice' ? `单词: ${c.practice}` : `时长: ${c.duration}min`}\n${c.achieved ? '达标' : '未达标'}`}
+                      title={`${c.date}\n单词: ${c.practice}\n${c.achieved ? '达标' : '未达标'}`}
                       style={{
                         background: c.bg,
                         boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.06)',
@@ -822,7 +863,7 @@ export default function StatsPage() {
               <div className="rounded-2xl p-4" style={{ background: 'rgba(255,255,255,0.04)' }}>
                 <div className="flex items-center justify-between">
                   <div className="text-xs" style={{ color: '#a0a0b0' }}>
-                    {mode === 'practice' ? `目标：${heatmap?.goalWords || 200} 词/天` : `目标：${heatmap?.goalDurationMinutes || 40} 分钟/天`}
+                    目标：{heatmap?.goalWords || 200} 词/天
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-3.5 h-3.5 rounded" style={{ background: notAchievedColor(0.65), boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.06)' }} />
@@ -843,7 +884,7 @@ export default function StatsPage() {
                     { label: '最近 84 天', value: 84 },
                   ].map((x) => {
                     const slice = heatmap?.cells.slice(-x.value) || [];
-                    const sum = slice.reduce((acc, r) => acc + (mode === 'practice' ? r.practice : r.duration), 0);
+                    const sum = slice.reduce((acc, r) => acc + r.practice, 0);
                     const avg = slice.length ? sum / slice.length : 0;
                     return (
                       <div key={x.label} className="rounded-2xl p-3" style={{ background: 'rgba(0,0,0,0.14)' }}>
@@ -852,10 +893,10 @@ export default function StatsPage() {
                         </div>
                         <div className="mt-1 flex items-baseline gap-2">
                           <div className="text-lg font-bold text-white">
-                            {mode === 'practice' ? formatCompact(sum) : `${Math.round(sum)}m`}
+                            {formatCompact(sum)}
                           </div>
                           <div className="text-xs" style={{ color: '#a0a0b0' }}>
-                            {mode === 'practice' ? `${formatCompact(Math.round(avg))}/天` : `${Math.round(avg)}m/天`}
+                            {formatCompact(Math.round(avg))}/天
                           </div>
                         </div>
                       </div>
@@ -882,7 +923,7 @@ export default function StatsPage() {
                       {counts.map((count, step) => {
                         const color = step === 4 ? '#00ff88' : step === 0 ? '#7c4dff' : '#00f0ff';
                         const bg = step === 4 ? 'rgba(0, 255, 136, 0.08)' : step === 0 ? 'rgba(124, 77, 255, 0.10)' : 'rgba(0, 240, 255, 0.08)';
-                        const label = step === 4 ? '4天' : `${step}天`;
+                        const label = step === 4 ? '已掌握' : `${step}天`;
                         return (
                           <div key={step} className="rounded-2xl py-2.5 text-center" style={{ background: bg }}>
                             <div className="text-[11px]" style={{ color: '#a0a0b0' }}>
@@ -966,7 +1007,6 @@ export default function StatsPage() {
                   >
                     {rects.map((r, idx) => {
                       const color = palette[idx % palette.length];
-                      const share = (r.totalWords || 0) / total;
                       const showText = r.w >= 18 && r.h >= 16;
                       const dir = dirFor(r.name, idx);
                       const fillW = `${Math.round(r.masteredRate * 100 * 100) / 100}%`;
@@ -982,7 +1022,7 @@ export default function StatsPage() {
                             background: 'rgba(0,0,0,0.14)',
                             boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.05)',
                           }}
-                          title={`${r.name}\n占比: ${toPercent(share)}\n完成: ${toPercent(r.masteredRate)}\n总词: ${r.totalWords}\n已掌握: ${r.masteredWords}\n已练习: ${r.practicedWords}\n错因强度: ${r.wrongSum}`}
+                          title={`${r.name}\n${r.masteredWords}/${r.totalWords}`}
                         >
                           <div
                             className="absolute inset-y-0"
@@ -998,7 +1038,7 @@ export default function StatsPage() {
                             <div className="relative p-2">
                               <div className="text-xs font-semibold text-white truncate">{r.name}</div>
                               <div className="text-[11px] mt-0.5" style={{ color: '#a0a0b0' }}>
-                                {toPercent(share)} · {toPercent(r.masteredRate)}
+                                {r.masteredWords}/{r.totalWords}
                               </div>
                             </div>
                           )}
@@ -1009,28 +1049,17 @@ export default function StatsPage() {
 
                   <div className="grid grid-cols-2 gap-2 mt-3">
                     {items.map((c, idx) => {
-                      const share = (c.totalWords || 0) / total;
                       const color = palette[idx % palette.length];
                       return (
                         <div
                           key={`${c.id}-compact`}
                           className="rounded-2xl px-3 py-2"
                           style={{ background: 'rgba(255,255,255,0.04)', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.06)' }}
-                          title={`${c.name}\n占比: ${toPercent(share)}\n完成: ${toPercent(c.masteredRate)}\n总词: ${c.totalWords}\n已掌握: ${c.masteredWords}\n已练习: ${c.practicedWords}\n错因强度: ${c.wrongSum}`}
+                          title={`${c.name}\n${c.masteredWords}/${c.totalWords}`}
                         >
                           <div className="flex items-center justify-between gap-2">
                             <div className="text-xs font-semibold text-white truncate">{c.name}</div>
-                            <div className="text-[11px] font-medium" style={{ color }}>
-                              {toPercent(c.masteredRate)}
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-between mt-1">
-                            <div className="text-[11px]" style={{ color: '#a0a0b0' }}>
-                              {toPercent(share)}
-                            </div>
-                            <div className="text-[11px]" style={{ color: '#a0a0b0' }}>
-                              {formatCompact(c.masteredWords)}/{formatCompact(c.totalWords)}
-                            </div>
+                            <div className="text-[11px] font-medium" style={{ color }}>{formatCompact(c.masteredWords)}/{formatCompact(c.totalWords)}</div>
                           </div>
                         </div>
                       );
@@ -1067,7 +1096,7 @@ export default function StatsPage() {
                   <div
                     ref={cloudRef}
                     className="relative w-full rounded-2xl overflow-hidden"
-                    style={{ height: 260, background: 'rgba(0,0,0,0.06)', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.03)' }}
+                    style={{ height: 220, background: 'rgba(0,0,0,0.06)', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.03)' }}
                   >
                     {(cloudLayout || []).map((p) => {
                       const fontWeight = p.t > 0.7 ? 800 : p.t > 0.35 ? 700 : 600;
@@ -1076,8 +1105,8 @@ export default function StatsPage() {
                           key={p.id}
                           className="absolute"
                           style={{
-                            left: p.x,
-                            top: p.y,
+                            left: p.cx,
+                            top: p.cy,
                             transform: `translate(-50%, -50%) rotate(${p.rotate}deg)`,
                             color: cloudColor(p.t),
                             fontSize: p.fontSize,

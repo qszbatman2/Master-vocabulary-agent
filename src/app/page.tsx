@@ -274,6 +274,37 @@ export default function Home() {
               </div>
             </div>
           </Link>
+
+          {user && (
+            <Link href="/stats" className="block col-span-2">
+              <div
+                className="group relative rounded-3xl p-6 cursor-pointer transition-all duration-300 hover:-translate-y-2 hover:scale-[1.02] h-full overflow-hidden"
+                style={{
+                  background: '#1e1e2e',
+                  boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)',
+                  opacity: isLoaded ? 1 : 0,
+                  transform: isLoaded ? 'translateY(0)' : 'translateY(30px)',
+                  transitionDelay: '350ms',
+                }}
+              >
+                <div
+                  className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                  style={{ boxShadow: '0 0 30px rgba(0, 240, 255, 0.22), inset 0 0 30px rgba(0, 240, 255, 0.04)' }}
+                />
+                <div className="relative flex items-center gap-4">
+                  <div className="p-4 rounded-2xl transition-transform duration-300 group-hover:scale-110" style={{ background: 'linear-gradient(135deg, #00f0ff, #00ff88)' }}>
+                    <TrendingUp className="w-7 h-7 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-white">数据面板</h3>
+                    <p className="text-sm mt-1" style={{ color: '#a0a0b0' }}>
+                      查看热力图、分类进度与错词词云
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </Link>
+          )}
         </div>
 
         {/* 统计信息 - 入场动画 */}
