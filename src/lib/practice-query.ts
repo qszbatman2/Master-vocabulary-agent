@@ -1,8 +1,10 @@
 export type PracticeFilter = 'all' | 'wrong_words' | 'collected';
+export type PracticeDistractorMode = 'near_form';
 
 export function buildPracticeQuery(params: {
   categoryId: string;
   filter: PracticeFilter;
+  distractorMode?: PracticeDistractorMode;
   limit: number;
   excludeWordIds?: number[];
   priorityWordIds?: number[];
@@ -17,6 +19,10 @@ export function buildPracticeQuery(params: {
     searchParams.append('filter', params.filter);
   }
 
+  if (params.distractorMode) {
+    searchParams.append('distractorMode', params.distractorMode);
+  }
+
   searchParams.append('limit', String(params.limit));
 
   if (params.excludeWordIds && params.excludeWordIds.length > 0) {
@@ -29,4 +35,3 @@ export function buildPracticeQuery(params: {
 
   return searchParams.toString();
 }
-

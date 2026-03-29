@@ -52,6 +52,7 @@ export default function PracticePage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'wrong_words' | 'collected'>('all');
+  const [distractorMode, setDistractorMode] = useState<'default' | 'near_form'>('default');
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
@@ -265,6 +266,7 @@ export default function PracticePage() {
       const query = buildPracticeQuery({
         categoryId: selectedCategory,
         filter: selectedFilter,
+        distractorMode: distractorMode === 'near_form' ? 'near_form' : undefined,
         limit: 15,
         excludeWordIds: excludeIds,
         priorityWordIds: priorityIds,
@@ -290,11 +292,12 @@ export default function PracticePage() {
     } finally {
       setIsLoading(false);
     }
-  }, [token, selectedCategory, selectedFilter, isLoading]);
+  }, [token, selectedCategory, selectedFilter, distractorMode, isLoading]);
 
-  const startPractice = async () => {
+  const startPractice = async (mode: 'default' | 'near_form' = 'default') => {
     if (!token) return;
     
+    setDistractorMode(mode);
     setQuestions([]);
     setCurrentIndex(0);
     setSelectedAnswer(null);
@@ -325,6 +328,7 @@ export default function PracticePage() {
       const query = buildPracticeQuery({
         categoryId: selectedCategory,
         filter: selectedFilter,
+        distractorMode: mode === 'near_form' ? 'near_form' : undefined,
         limit: 15,
       });
 
@@ -679,7 +683,7 @@ export default function PracticePage() {
               </div>
 
               <button 
-                onClick={startPractice}
+                onClick={() => startPractice('default')}
                 className="w-full h-12 rounded-xl text-white font-medium flex items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] active:scale-95"
                 style={{ background: 'linear-gradient(135deg, #ff6b9d, #c44cff, #4cc9ff)' }}
               >
@@ -687,15 +691,25 @@ export default function PracticePage() {
                 开始练习
               </button>
 
-              <Link href="/practice/cloze">
+              <div className="grid grid-cols-2 gap-3">
+                <Link href="/practice/cloze">
+                  <button 
+                    className="w-full h-12 rounded-xl text-white font-medium flex items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] active:scale-95"
+                    style={{ background: 'linear-gradient(135deg, rgba(0,240,255,0.25), rgba(124,77,255,0.25))', border: '1px solid rgba(255,255,255,0.08)' }}
+                  >
+                    <FileText className="w-5 h-5" />
+                    例句挖空
+                  </button>
+                </Link>
                 <button 
+                  onClick={() => startPractice('near_form')}
                   className="w-full h-12 rounded-xl text-white font-medium flex items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] active:scale-95"
-                  style={{ background: 'linear-gradient(135deg, rgba(0,240,255,0.25), rgba(124,77,255,0.25))', border: '1px solid rgba(255,255,255,0.08)' }}
+                  style={{ background: 'linear-gradient(135deg, rgba(255,107,157,0.25), rgba(124,77,255,0.25))', border: '1px solid rgba(255,255,255,0.08)' }}
                 >
-                  <FileText className="w-5 h-5" />
-                  例句挖空（四选一）
+                  <RefreshCw className="w-5 h-5" />
+                  形近词模式
                 </button>
-              </Link>
+              </div>
             </div>
           </div>
         </div>

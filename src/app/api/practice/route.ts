@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
+import { buildNearFormIndex, queryNearFormIndex, normalizeSpelling } from '@/lib/near-form';
 
 // 解析 token 获取用户 ID
 function getUserIdFromToken(token: string): number | null {
@@ -19,6 +20,7 @@ export async function GET(request: NextRequest) {
     const categoryId = searchParams.get('categoryId');
     const limit = parseInt(searchParams.get('limit') || '10');
     const filter = searchParams.get('filter'); // 'wrong_words' - 错题集
+    const distractorMode = searchParams.get('distractorMode');
     const excludeWordIds = searchParams.get('excludeWordIds')?.split(',').map(Number).filter(Boolean) || [];
     const priorityWordIds = searchParams.get('priorityWordIds')?.split(',').map(Number).filter(Boolean) || [];
     
@@ -156,6 +158,10 @@ export async function GET(request: NextRequest) {
         uniqueWords.set(w.word, w);
       }
     });
+    const uniqueWordRows = Array.from(uniqueWords.values());
+    const wordLowerToRow = new Map<string, typeof allWords[0]>();
+    uniqueWordRows.forEach((w) => wordLowerToRow.set(w.word.toLowerCase(), w));
+    const nearIndex = buildNearFormIndex(uniqueWordRows);
 
     // 根据筛选条件过滤
     let availableWords: typeof allWords = [];
@@ -380,10 +386,48 @@ export async function GET(request: NextRequest) {
       } else {
         question = word.meaning;
         correctAnswer = word.word;
-        options = [
-          word.word,
-          ...shuffledOptions.map((w) => w.word),
-        ];
+        if (distractorMode === 'near_form') {
+          const excludeIds = new Set<number>([word.id]);
+          const excludeWordsLower = new Set<string>([word.word.toLowerCase()]);
+          const nearCandidates = queryNearFormIndex(correctAnswer, nearIndex, {
+            topK: 120,
+            minScore: 0.74,
+            maxLenDiff: 2,
+            expandIfLessThan: 40,
+            excludeIds,
+            excludeWordsLower,
+          });
+          const distractorRows: typeof uniqueWordRows = [];
+          const usedNorms = new Set<string>([normalizeSpelling(correctAnswer)]);
+          for (const e of nearCandidates) {
+            if (distractorRows.length >= 3) break;
+            const row = wordLowerToRow.get(e.word.toLowerCase());
+            if (!row) continue;
+            const n = normalizeSpelling(row.word);
+            if (!n || usedNorms.has(n)) continue;
+            usedNorms.add(n);
+            distractorRows.push(row);
+          }
+          if (distractorRows.length < 3) {
+            const usedWords = new Set<string>([
+              ...excludeWordsLower,
+              ...distractorRows.map((w) => w.word.toLowerCase()),
+            ]);
+            for (const w of otherWords) {
+              if (distractorRows.length >= 3) break;
+              const lw = w.word.toLowerCase();
+              if (usedWords.has(lw)) continue;
+              usedWords.add(lw);
+              distractorRows.push(w);
+            }
+          }
+          options = [word.word, ...distractorRows.map((w) => w.word)];
+        } else {
+          options = [
+            word.word,
+            ...shuffledOptions.map((w) => w.word),
+          ];
+        }
       }
 
       // 最终去重确保选项唯一
