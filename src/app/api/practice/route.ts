@@ -299,7 +299,7 @@ export async function GET(request: NextRequest) {
       // 合并，优先词在前
       selectedWords = [...shuffledPriority, ...shuffledOther].slice(0, limit);
     } else {
-      // 将用户主动收录的词放在前面
+      // 将用户主动收录的词放在前面（形近词模式下不优先）
       const userCollectedAvailable = Array.from(userCollectedMap.values());
       const otherAvailable = availableWords.filter(w => !userCollectedMap.has(w.word));
 
@@ -307,10 +307,20 @@ export async function GET(request: NextRequest) {
       const shuffledCollected = shuffleArray(userCollectedAvailable);
       const shuffledOther = shuffleArray(otherAvailable);
 
-      // 前5题为用户主动收录的词（如果有的话），其余随机
-      const collectedCount = Math.min(5, shuffledCollected.length);
-      const collectedWords = shuffledCollected.slice(0, collectedCount);
-      const remainingWords = shuffledOther.slice(0, limit - collectedCount);
+      // 前5题为用户主动收录的词（如果有的话），其余随机（形近词模式下不启用此逻辑）
+      let collectedWords: typeof allWords = [];
+      let remainingWords: typeof allWords = [];
+
+      if (distractorMode === 'near_form') {
+        // 形近词模式：所有词随机，不优先主动收录词
+        collectedWords = [];
+        remainingWords = shuffleArray([...shuffledCollected, ...shuffledOther]).slice(0, limit);
+      } else {
+        // 普通模式：前5题为用户主动收录的词（如果有的话），其余随机
+        const collectedCount = Math.min(5, shuffledCollected.length);
+        collectedWords = shuffledCollected.slice(0, collectedCount);
+        remainingWords = shuffledOther.slice(0, limit - collectedCount);
+      }
 
       selectedWords = [...collectedWords, ...remainingWords];
     }
@@ -369,8 +379,8 @@ export async function GET(request: NextRequest) {
       const otherWords = Array.from(otherWordsMap.values());
       const shuffledOptions = shuffleArray(otherWords).slice(0, 3);
       
-      // 随机选择模式：en-to-zh 或 zh-to-en
-      const mode = Math.random() > 0.5 ? 'en-to-zh' : 'zh-to-en';
+      // 随机选择模式：en-to-zh 或 zh-to-en（形近词模式固定为 zh-to-en）
+      const mode = distractorMode === 'near_form' ? 'zh-to-en' : (Math.random() > 0.5 ? 'en-to-zh' : 'zh-to-en');
       
       let question: string;
       let options: string[];
@@ -391,7 +401,7 @@ export async function GET(request: NextRequest) {
           const excludeWordsLower = new Set<string>([word.word.toLowerCase()]);
           const nearCandidates = queryNearFormIndex(correctAnswer, nearIndex, {
             topK: 120,
-            minScore: 0.74,
+            minScore: 0.68,
             maxLenDiff: 2,
             expandIfLessThan: 40,
             excludeIds,
