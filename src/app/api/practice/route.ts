@@ -396,28 +396,43 @@ export async function GET(request: NextRequest) {
       } else {
         question = word.meaning;
         correctAnswer = word.word;
+        
+        // 获取正确答案的首字母（小写）
+        const firstLetter = correctAnswer.charAt(0).toLowerCase();
+        
         if (distractorMode === 'near_form') {
           const excludeIds = new Set<number>([word.id]);
           const excludeWordsLower = new Set<string>([word.word.toLowerCase()]);
+          
+          // 形近词模式：强制只查询相同首字母的单词
           const nearCandidates = queryNearFormIndex(correctAnswer, nearIndex, {
             topK: 120,
             minScore: 0.68,
             maxLenDiff: 2,
-            expandIfLessThan: 40,
+            expandIfLessThan: 0, // 关键：不扩展到不同首字母，确保4个选项都是相同首字母
             excludeIds,
             excludeWordsLower,
           });
+          
           const distractorRows: typeof uniqueWordRows = [];
           const usedNorms = new Set<string>([normalizeSpelling(correctAnswer)]);
+          
+          // 只选择相同首字母的形近词
           for (const e of nearCandidates) {
             if (distractorRows.length >= 3) break;
             const row = wordLowerToRow.get(e.word.toLowerCase());
             if (!row) continue;
+            
+            // 强制检查首字母是否相同
+            if (row.word.charAt(0).toLowerCase() !== firstLetter) continue;
+            
             const n = normalizeSpelling(row.word);
             if (!n || usedNorms.has(n)) continue;
             usedNorms.add(n);
             distractorRows.push(row);
           }
+          
+          // 如果形近词不足3个，从 otherWords 中补充，但必须是相同首字母
           if (distractorRows.length < 3) {
             const usedWords = new Set<string>([
               ...excludeWordsLower,
@@ -427,11 +442,24 @@ export async function GET(request: NextRequest) {
               if (distractorRows.length >= 3) break;
               const lw = w.word.toLowerCase();
               if (usedWords.has(lw)) continue;
+              
+              // 只补充相同首字母的单词
+              if (lw.charAt(0) !== firstLetter) continue;
+              
               usedWords.add(lw);
               distractorRows.push(w);
             }
           }
-          options = [word.word, ...distractorRows.map((w) => w.word)];
+          
+          // 如果仍然不足3个，回退到普通模式（不使用形近词）
+          if (distractorRows.length < 3) {
+            options = [
+              word.word,
+              ...shuffledOptions.map((w) => w.word),
+            ];
+          } else {
+            options = [word.word, ...distractorRows.map((w) => w.word)];
+          }
         } else {
           options = [
             word.word,
