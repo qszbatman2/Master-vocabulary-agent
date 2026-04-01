@@ -236,9 +236,8 @@ function SummaryContent() {
                 {/* 错误 - 粉色 */}
                 {wrongCount > 0 && (
                   <div 
-                    className="absolute inset-y-0"
+                    className="absolute inset-y-0 right-0"
                     style={{ 
-                      left: `${((correctNotMastered + correctMastered) / totalPracticed) * 100}%`,
                       width: `${(wrongCount / totalPracticed) * 100}%`,
                       background: 'linear-gradient(90deg, #ff6b9d, #ff4d6d)',
                     }}
