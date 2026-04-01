@@ -407,7 +407,7 @@ export async function GET(request: NextRequest) {
           // 形近词模式：强制只查询相同首字母的单词
           const nearCandidates = queryNearFormIndex(correctAnswer, nearIndex, {
             topK: 120,
-            minScore: 0.68,
+            minScore: 0.60,
             maxLenDiff: 2,
             expandIfLessThan: 0, // 关键：不扩展到不同首字母，确保4个选项都是相同首字母
             excludeIds,
