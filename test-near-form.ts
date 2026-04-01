@@ -15,16 +15,16 @@ async function testNearForm() {
     return;
   }
 
-  // 随机选择10个单词
+  // 随机选择100个单词（大规模测试）
   const shuffled = [...allWords].sort(() => Math.random() - 0.5);
-  const selectedWords = shuffled.slice(0, 10);
+  const selectedWords = shuffled.slice(0, 100);
 
   // 构建形近词索引
   const uniqueWords = Array.from(new Map(allWords.map(w => [w.word, w])).values());
   const nearIndex = buildNearFormIndex(uniqueWords);
 
   console.log('='.repeat(80));
-  console.log('形近词干扰项测试 - 随机10个单词');
+  console.log('形近词干扰项测试 - 随机100个单词（大规模统计）');
   console.log('='.repeat(80));
   console.log();
 
@@ -33,12 +33,12 @@ async function testNearForm() {
     console.log(`   含义: ${word.meaning}`);
     console.log();
 
-    // 查询形近词，获取前50个候选（使用更宽松的参数）
+    // 查询形近词，获取前50个候选（完全去掉首字母限制）
     const candidates = queryNearFormIndex(word.word, nearIndex, {
       topK: 100,
       minScore: 0.55, // 降低阈值，获取更多候选
       maxLenDiff: 3, // 允许长度差增大
-      expandIfLessThan: 50, // 候选不足时扩展到不同首字母
+      expandIfLessThan: 1000, // 值设得很大，确保总是扩展到不同首字母
     });
 
     // 计算每个候选的分数并排序
