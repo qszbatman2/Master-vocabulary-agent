@@ -862,7 +862,7 @@ export default function StatsPage() {
                   </div>
                 </div>
               ) : (
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   {(() => {
                     // 将42天分成6周，每行7天，首列为周日
                     const weeks: Array<typeof heatmap.cells> = [];
@@ -871,11 +871,11 @@ export default function StatsPage() {
                       weeks.push(weekCells);
                     }
                     return weeks.map((weekCells, weekIdx) => (
-                      <div key={weekIdx} className="grid grid-cols-7 gap-1.5">
+                      <div key={weekIdx} className="grid grid-cols-7 gap-2">
                         {weekCells.map((c) => (
                           <div
                             key={c.date}
-                            className="w-3 h-3 sm:w-3.5 sm:h-3.5 rounded"
+                            className="w-5 h-5 sm:w-6 sm:h-6 rounded-sm"
                             title={`${c.date}\n单词: ${c.practice}\n${c.achieved ? '达标' : '未达标'}`}
                             style={{
                               background: c.bg,
