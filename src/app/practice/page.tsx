@@ -287,20 +287,28 @@ export default function PracticePage() {
     }
   };
 
-  // 随机选择一个启用的模式
-  const selectRandomMode = (): 'normal' | 'near_form' | 'cloze' => {
+  // 轮询选择下一个启用的模式
+  const selectNextMode = (): 'normal' | 'near_form' | 'cloze' => {
     if (enabledModes.length === 0) return 'normal';
-    const randomIndex = Math.floor(Math.random() * enabledModes.length);
-    return enabledModes[randomIndex];
+    if (enabledModes.length === 1) return enabledModes[0];
+
+    // 从 localStorage 读取上次使用的模式索引
+    const lastModeIndex = parseInt(localStorage.getItem('practice_last_mode_index') || '0');
+    const nextModeIndex = (lastModeIndex + 1) % enabledModes.length;
+
+    // 保存新的模式索引
+    localStorage.setItem('practice_last_mode_index', nextModeIndex.toString());
+
+    return enabledModes[nextModeIndex];
   };
 
   const fetchMoreQuestions = useCallback(async (excludeIds: number[] = [], priorityIds: number[] = []) => {
     if (!token || isLoading) return;
-    
+
     setIsLoading(true);
     try {
-      // 随机选择一个模式
-      const mode = selectRandomMode();
+      // 轮询选择下一个模式
+      const mode = selectNextMode();
       setCurrentMode(mode);
 
       if (mode === 'cloze') {
@@ -325,12 +333,12 @@ export default function PracticePage() {
         }
         // 挖词填空模式不设置 remainingWords
       } else {
-        // normal 或 near_form 模式：调用 practice API
+        // normal 或 near_form 模式：调用 practice API，每次只获取 5 题
         const query = buildPracticeQuery({
           categoryId: selectedCategory,
           filter: selectedFilter,
           distractorMode: mode === 'near_form' ? 'near_form' : undefined,
-          limit: 15,
+          limit: 5, // 从 15 改为 5，让模式切换更频繁
           excludeWordIds: excludeIds,
           priorityWordIds: priorityIds,
         });
@@ -356,13 +364,14 @@ export default function PracticePage() {
     } finally {
       setIsLoading(false);
     }
-  }, [token, selectedCategory, selectedFilter, enabledModes, isLoading]);
+  }, [token, selectedCategory, selectedFilter, isLoading]);
 
   const startPractice = async () => {
     if (!token) return;
 
-    // 随机选择初始模式
-    const initialMode = selectRandomMode();
+    // 重置模式索引到第一个模式
+    localStorage.setItem('practice_last_mode_index', '0');
+    const initialMode = enabledModes.length > 0 ? enabledModes[0] : 'normal';
     setCurrentMode(initialMode);
 
     setQuestions([]);
@@ -408,12 +417,12 @@ export default function PracticePage() {
         setQuestions(data.questions || []);
         setRemainingWords(0); // 挖词填空模式不显示剩余单词
       } else {
-        // normal 或 near_form 模式：调用 practice API
+        // normal 或 near_form 模式：调用 practice API，每次只获取 5 题
         const query = buildPracticeQuery({
           categoryId: selectedCategory,
           filter: selectedFilter,
           distractorMode: initialMode === 'near_form' ? 'near_form' : undefined,
-          limit: 15,
+          limit: 5, // 从 15 改为 5，让模式切换更频繁
         });
 
         const response = await fetch(`/api/practice?${query}`, {
@@ -571,7 +580,7 @@ export default function PracticePage() {
       .filter(([_, status]) => status.nextAppearAfter <= questionNumber)
       .map(([wordId]) => wordId);
     
-    if (currentIndexRef.current >= questionsRef.current.length - 5 && !isLoadingRef.current) {
+    if (currentIndexRef.current >= questionsRef.current.length - 2 && !isLoadingRef.current) {
       const excludeIds = Array.from(roundCorrectWordsRef.current);
       const priorityIds = wrongWordsToAppear.length > 0 ? wrongWordsToAppear : [];
       await fetchMoreQuestions(excludeIds, priorityIds);
@@ -773,6 +782,7 @@ export default function PracticePage() {
                           : enabledModes.filter(m => m !== 'normal');
                         setEnabledModes(newModes);
                         localStorage.setItem('practice_enabled_modes', JSON.stringify(newModes));
+                        localStorage.setItem('practice_last_mode_index', '0'); // 重置模式索引
                       }}
                       className="data-[state=checked]:bg-[#00f0ff] data-[state=checked]:border-[#00f0ff] data-[state=checked]:text-white border-[#4a4a6a] bg-transparent"
                     />
@@ -790,6 +800,7 @@ export default function PracticePage() {
                           : enabledModes.filter(m => m !== 'near_form');
                         setEnabledModes(newModes);
                         localStorage.setItem('practice_enabled_modes', JSON.stringify(newModes));
+                        localStorage.setItem('practice_last_mode_index', '0'); // 重置模式索引
                       }}
                       className="data-[state=checked]:bg-[#00f0ff] data-[state=checked]:border-[#00f0ff] data-[state=checked]:text-white border-[#4a4a6a] bg-transparent"
                     />
@@ -807,6 +818,7 @@ export default function PracticePage() {
                           : enabledModes.filter(m => m !== 'cloze');
                         setEnabledModes(newModes);
                         localStorage.setItem('practice_enabled_modes', JSON.stringify(newModes));
+                        localStorage.setItem('practice_last_mode_index', '0'); // 重置模式索引
                       }}
                       className="data-[state=checked]:bg-[#00f0ff] data-[state=checked]:border-[#00f0ff] data-[state=checked]:text-white border-[#4a4a6a] bg-transparent"
                     />
