@@ -696,44 +696,48 @@ export default function PracticePage() {
             style={{ background: '#1e1e2e', boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)', opacity: isLoaded ? 1 : 0, transform: isLoaded ? 'translateY(0)' : 'translateY(30px)' }}
           >
             <h2 className="text-lg font-semibold text-white mb-5">练习设置</h2>
-            
+
             <div className="space-y-5">
-              <div>
-                <label className="text-sm mb-2 block" style={{ color: '#a0a0b0' }}>选择词库</label>
-                <Select value={selectedCategory} onValueChange={(value) => {
-                  setSelectedCategory(value);
-                  localStorage.setItem('practice_selected_category', value);
-                }}>
-                  <SelectTrigger className="h-11 rounded-xl border-0" style={{ background: 'rgba(255,255,255,0.05)', color: 'white' }}>
-                    <SelectValue placeholder="选择词库" />
-                  </SelectTrigger>
-                  <SelectContent style={{ background: '#1e1e2e', border: 'none' }}>
-                    <SelectItem value="all" className="text-white hover:bg-white/10 focus:bg-white/10">全部词库</SelectItem>
-                    {categories.map((category) => (
-                      <SelectItem key={category.id} value={category.id.toString()} className="text-white hover:bg-white/10 focus:bg-white/10">{category.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              {/* 词库选择和练习模式并列一行 */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-sm mb-2 block" style={{ color: '#a0a0b0' }}>选择词库</label>
+                  <Select value={selectedCategory} onValueChange={(value) => {
+                    setSelectedCategory(value);
+                    localStorage.setItem('practice_selected_category', value);
+                  }}>
+                    <SelectTrigger className="h-11 rounded-xl border-0" style={{ background: 'rgba(255,255,255,0.05)', color: 'white' }}>
+                      <SelectValue placeholder="选择词库" />
+                    </SelectTrigger>
+                    <SelectContent style={{ background: '#1e1e2e', border: 'none' }}>
+                      <SelectItem value="all" className="text-white hover:bg-white/10 focus:bg-white/10">全部词库</SelectItem>
+                      {categories.map((category) => (
+                        <SelectItem key={category.id} value={category.id.toString()} className="text-white hover:bg-white/10 focus:bg-white/10">{category.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label className="text-sm mb-2 block" style={{ color: '#a0a0b0' }}>练习模式</label>
+                  <Select value={selectedFilter} onValueChange={(v) => setSelectedFilter(v as 'all' | 'wrong_words' | 'collected')}>
+                    <SelectTrigger className="h-11 rounded-xl border-0" style={{ background: 'rgba(255,255,255,0.05)', color: 'white' }}>
+                      <SelectValue placeholder="选择模式" />
+                    </SelectTrigger>
+                    <SelectContent style={{ background: '#1e1e2e', border: 'none' }}>
+                      <SelectItem value="all" className="text-white hover:bg-white/10 focus:bg-white/10">普通模式</SelectItem>
+                      <SelectItem value="wrong_words" className="text-white hover:bg-white/10 focus:bg-white/10">错题集（最近7天）</SelectItem>
+                      <SelectItem value="collected" className="text-white hover:bg-white/10 focus:bg-white/10">主动收录</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
-              <div>
-                <label className="text-sm mb-2 block" style={{ color: '#a0a0b0' }}>练习模式</label>
-                <Select value={selectedFilter} onValueChange={(v) => setSelectedFilter(v as 'all' | 'wrong_words' | 'collected')}>
-                  <SelectTrigger className="h-11 rounded-xl border-0" style={{ background: 'rgba(255,255,255,0.05)', color: 'white' }}>
-                    <SelectValue placeholder="选择模式" />
-                  </SelectTrigger>
-                  <SelectContent style={{ background: '#1e1e2e', border: 'none' }}>
-                    <SelectItem value="all" className="text-white hover:bg-white/10 focus:bg-white/10">普通模式</SelectItem>
-                    <SelectItem value="wrong_words" className="text-white hover:bg-white/10 focus:bg-white/10">错题集（最近7天）</SelectItem>
-                    <SelectItem value="collected" className="text-white hover:bg-white/10 focus:bg-white/10">主动收录</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
+              {/* 练习类型三个选项并列一行 */}
               <div>
                 <label className="text-sm mb-2 block" style={{ color: '#a0a0b0' }}>练习类型</label>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-3 p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)' }}>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="flex items-center gap-2 p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)' }}>
                     <Checkbox
                       id="mode-normal"
                       checked={enabledModes.includes('normal')}
@@ -745,11 +749,11 @@ export default function PracticePage() {
                         }
                       }}
                     />
-                    <label htmlFor="mode-normal" className="text-sm text-white cursor-pointer flex-1">
-                      常规模式
+                    <label htmlFor="mode-normal" className="text-xs text-white cursor-pointer text-center flex-1">
+                      常规
                     </label>
                   </div>
-                  <div className="flex items-center gap-3 p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)' }}>
+                  <div className="flex items-center gap-2 p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)' }}>
                     <Checkbox
                       id="mode-near-form"
                       checked={enabledModes.includes('near_form')}
@@ -761,11 +765,11 @@ export default function PracticePage() {
                         }
                       }}
                     />
-                    <label htmlFor="mode-near-form" className="text-sm text-white cursor-pointer flex-1">
-                      形近词模式
+                    <label htmlFor="mode-near-form" className="text-xs text-white cursor-pointer text-center flex-1">
+                      形近词
                     </label>
                   </div>
-                  <div className="flex items-center gap-3 p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)' }}>
+                  <div className="flex items-center gap-2 p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)' }}>
                     <Checkbox
                       id="mode-cloze"
                       checked={enabledModes.includes('cloze')}
@@ -777,7 +781,7 @@ export default function PracticePage() {
                         }
                       }}
                     />
-                    <label htmlFor="mode-cloze" className="text-sm text-white cursor-pointer flex-1">
+                    <label htmlFor="mode-cloze" className="text-xs text-white cursor-pointer text-center flex-1">
                       挖词填空
                     </label>
                   </div>
