@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { 
   Select,
   SelectContent,
@@ -52,7 +53,9 @@ export default function PracticePage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'wrong_words' | 'collected'>('all');
+  const [enabledModes, setEnabledModes] = useState<('normal' | 'near_form' | 'cloze')[]>(['normal']);
   const [distractorMode, setDistractorMode] = useState<'default' | 'near_form'>('default');
+  const [currentMode, setCurrentMode] = useState<'normal' | 'near_form' | 'cloze'>('normal');
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
@@ -258,46 +261,84 @@ export default function PracticePage() {
     }
   };
 
+  // 随机选择一个启用的模式
+  const selectRandomMode = (): 'normal' | 'near_form' | 'cloze' => {
+    if (enabledModes.length === 0) return 'normal';
+    const randomIndex = Math.floor(Math.random() * enabledModes.length);
+    return enabledModes[randomIndex];
+  };
+
   const fetchMoreQuestions = useCallback(async (excludeIds: number[] = [], priorityIds: number[] = []) => {
     if (!token || isLoading) return;
     
     setIsLoading(true);
     try {
-      const query = buildPracticeQuery({
-        categoryId: selectedCategory,
-        filter: selectedFilter,
-        distractorMode: distractorMode === 'near_form' ? 'near_form' : undefined,
-        limit: 15,
-        excludeWordIds: excludeIds,
-        priorityWordIds: priorityIds,
-      });
+      // 随机选择一个模式
+      const mode = selectRandomMode();
+      setCurrentMode(mode);
 
-      const response = await fetch(`/api/practice?${query}`, {
-        headers: { authorization: `Bearer ${token}` },
-      });
-      const data = await response.json();
-      
-      if (data.message) {
-        setIsFinished(true);
-        setFinishMessage(data.message);
-        return;
-      }
-      
-      if (data.questions && data.questions.length > 0) {
-        setQuestions(prev => [...prev, ...data.questions]);
-        setRemainingWords(data.remainingWords || 0);
+      if (mode === 'cloze') {
+        // 挖词填空模式：调用 cloze API，只获取 1 题
+        const params = new URLSearchParams({
+          categoryId: selectedCategory,
+          filter: selectedFilter,
+          limit: '1',
+        });
+
+        if (excludeIds.length > 0) {
+          params.append('excludeWordIds', excludeIds.join(','));
+        }
+
+        const response = await fetch(`/api/cloze?${params}`, {
+          headers: { authorization: `Bearer ${token}` },
+        });
+        const data = await response.json();
+
+        if (data.questions && data.questions.length > 0) {
+          setQuestions(prev => [...prev, ...data.questions]);
+        }
+        // 挖词填空模式不设置 remainingWords
+      } else {
+        // normal 或 near_form 模式：调用 practice API
+        const query = buildPracticeQuery({
+          categoryId: selectedCategory,
+          filter: selectedFilter,
+          distractorMode: mode === 'near_form' ? 'near_form' : undefined,
+          limit: 15,
+          excludeWordIds: excludeIds,
+          priorityWordIds: priorityIds,
+        });
+
+        const response = await fetch(`/api/practice?${query}`, {
+          headers: { authorization: `Bearer ${token}` },
+        });
+        const data = await response.json();
+
+        if (data.message) {
+          setIsFinished(true);
+          setFinishMessage(data.message);
+          return;
+        }
+
+        if (data.questions && data.questions.length > 0) {
+          setQuestions(prev => [...prev, ...data.questions]);
+          setRemainingWords(data.remainingWords || 0);
+        }
       }
     } catch (error) {
       console.error('Failed to fetch questions:', error);
     } finally {
       setIsLoading(false);
     }
-  }, [token, selectedCategory, selectedFilter, distractorMode, isLoading]);
+  }, [token, selectedCategory, selectedFilter, enabledModes, isLoading]);
 
-  const startPractice = async (mode: 'default' | 'near_form' = 'default') => {
+  const startPractice = async () => {
     if (!token) return;
-    
-    setDistractorMode(mode);
+
+    // 随机选择初始模式
+    const initialMode = selectRandomMode();
+    setCurrentMode(initialMode);
+
     setQuestions([]);
     setCurrentIndex(0);
     setSelectedAnswer(null);
@@ -316,35 +357,53 @@ export default function PracticePage() {
     activeDurationMsRef.current = 0;
     lastActiveAtRef.current = document.visibilityState === 'visible' ? Date.now() : 0;
     isExitingRef.current = false;
-    
+
     // 获取今日进度
     fetchDailyProgress();
-    
+
     // 获取今日累计进度
     fetchTodayStats();
-    
+
     setIsLoading(true);
     try {
-      const query = buildPracticeQuery({
-        categoryId: selectedCategory,
-        filter: selectedFilter,
-        distractorMode: mode === 'near_form' ? 'near_form' : undefined,
-        limit: 15,
-      });
+      if (initialMode === 'cloze') {
+        // 挖词填空模式：调用 cloze API
+        const params = new URLSearchParams({
+          categoryId: selectedCategory,
+          filter: selectedFilter,
+          limit: '1',
+        });
 
-      const response = await fetch(`/api/practice?${query}`, {
-        headers: { authorization: `Bearer ${token}` },
-      });
-      const data = await response.json();
-      
-      if (data.message) {
-        setIsFinished(true);
-        setFinishMessage(data.message);
-        return;
+        const response = await fetch(`/api/cloze?${params}`, {
+          headers: { authorization: `Bearer ${token}` },
+        });
+        const data = await response.json();
+
+        setQuestions(data.questions || []);
+        setRemainingWords(0); // 挖词填空模式不显示剩余单词
+      } else {
+        // normal 或 near_form 模式：调用 practice API
+        const query = buildPracticeQuery({
+          categoryId: selectedCategory,
+          filter: selectedFilter,
+          distractorMode: initialMode === 'near_form' ? 'near_form' : undefined,
+          limit: 15,
+        });
+
+        const response = await fetch(`/api/practice?${query}`, {
+          headers: { authorization: `Bearer ${token}` },
+        });
+        const data = await response.json();
+
+        if (data.message) {
+          setIsFinished(true);
+          setFinishMessage(data.message);
+          return;
+        }
+
+        setQuestions(data.questions || []);
+        setRemainingWords(data.remainingWords || 0);
       }
-      
-      setQuestions(data.questions || []);
-      setRemainingWords(data.remainingWords || 0);
     } catch (error) {
       console.error('Failed to start practice:', error);
     } finally {
@@ -671,6 +730,60 @@ export default function PracticePage() {
                 </Select>
               </div>
 
+              <div>
+                <label className="text-sm mb-2 block" style={{ color: '#a0a0b0' }}>练习类型</label>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3 p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)' }}>
+                    <Checkbox
+                      id="mode-normal"
+                      checked={enabledModes.includes('normal')}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setEnabledModes(prev => [...prev, 'normal']);
+                        } else {
+                          setEnabledModes(prev => prev.filter(m => m !== 'normal'));
+                        }
+                      }}
+                    />
+                    <label htmlFor="mode-normal" className="text-sm text-white cursor-pointer flex-1">
+                      常规模式
+                    </label>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)' }}>
+                    <Checkbox
+                      id="mode-near-form"
+                      checked={enabledModes.includes('near_form')}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setEnabledModes(prev => [...prev, 'near_form']);
+                        } else {
+                          setEnabledModes(prev => prev.filter(m => m !== 'near_form'));
+                        }
+                      }}
+                    />
+                    <label htmlFor="mode-near-form" className="text-sm text-white cursor-pointer flex-1">
+                      形近词模式
+                    </label>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)' }}>
+                    <Checkbox
+                      id="mode-cloze"
+                      checked={enabledModes.includes('cloze')}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setEnabledModes(prev => [...prev, 'cloze']);
+                        } else {
+                          setEnabledModes(prev => prev.filter(m => m !== 'cloze'));
+                        }
+                      }}
+                    />
+                    <label htmlFor="mode-cloze" className="text-sm text-white cursor-pointer flex-1">
+                      挖词填空
+                    </label>
+                  </div>
+                </div>
+              </div>
+
               <div className="p-4 rounded-2xl" style={{ background: 'rgba(0, 240, 255, 0.08)' }}>
                 <p className="text-xs leading-relaxed" style={{ color: '#00f0ff' }}>
                   <strong>无尽模式</strong><br/>
@@ -683,33 +796,19 @@ export default function PracticePage() {
               </div>
 
               <button 
-                onClick={() => startPractice('default')}
+                onClick={() => {
+                  if (enabledModes.length === 0) {
+                    alert('请至少选择一种练习模式');
+                    return;
+                  }
+                  startPractice();
+                }}
                 className="w-full h-12 rounded-xl text-white font-medium flex items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] active:scale-95"
                 style={{ background: 'linear-gradient(135deg, #ff6b9d, #c44cff, #4cc9ff)' }}
               >
                 <Play className="w-5 h-5" />
                 开始练习
               </button>
-
-              <div className="grid grid-cols-2 gap-3">
-                <Link href="/practice/cloze">
-                  <button 
-                    className="w-full h-12 rounded-xl text-white font-medium flex items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] active:scale-95"
-                    style={{ background: 'linear-gradient(135deg, rgba(0,240,255,0.25), rgba(124,77,255,0.25))', border: '1px solid rgba(255,255,255,0.08)' }}
-                  >
-                    <FileText className="w-5 h-5" />
-                    例句挖空
-                  </button>
-                </Link>
-                <button 
-                  onClick={() => startPractice('near_form')}
-                  className="w-full h-12 rounded-xl text-white font-medium flex items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] active:scale-95"
-                  style={{ background: 'linear-gradient(135deg, rgba(255,107,157,0.25), rgba(124,77,255,0.25))', border: '1px solid rgba(255,255,255,0.08)' }}
-                >
-                  <RefreshCw className="w-5 h-5" />
-                  形近词模式
-                </button>
-              </div>
             </div>
           </div>
         </div>
@@ -827,7 +926,10 @@ export default function PracticePage() {
               <div>
                 <div className="text-base font-bold text-white">第 {questionNumber + 1} 题</div>
                 <div className="text-xs" style={{ color: '#a0a0b0' }}>
-                  {currentQuestion.mode === 'en-to-zh' ? '英译中' : '中译英'}
+                  {currentQuestion.mode === 'cloze' ? '挖词填空' :
+                   currentQuestion.mode === 'en-to-zh' ? '英译中' :
+                   currentQuestion.mode === 'zh-to-en' && currentMode === 'near_form' ? '中译英 形近词' :
+                   '中译英'}
                 </div>
               </div>
             </div>

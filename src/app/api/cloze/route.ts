@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
 
     const client = getSupabaseClient();
     const searchParams = request.nextUrl.searchParams;
-    const limit = Math.max(1, Math.min(50, parseInt(searchParams.get('limit') || '10')));
+    const limit = Math.max(1, Math.min(50, parseInt(searchParams.get('limit') || '5')));
     const excludeWordIds = searchParams
       .get('excludeWordIds')
       ?.split(',')

@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '10');
     const filter = searchParams.get('filter'); // 'wrong_words' - 错题集
     const distractorMode = searchParams.get('distractorMode');
+    const mode = searchParams.get('mode'); // 'normal', 'near_form', 'cloze'
     const excludeWordIds = searchParams.get('excludeWordIds')?.split(',').map(Number).filter(Boolean) || [];
     const priorityWordIds = searchParams.get('priorityWordIds')?.split(',').map(Number).filter(Boolean) || [];
     
@@ -30,6 +31,53 @@ export async function GET(request: NextRequest) {
 
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // 如果是挖词填空模式，调用 cloze 接口
+    if (mode === 'cloze') {
+      try {
+        const clozeUrl = new URL(request.nextUrl.origin + '/api/cloze');
+        clozeUrl.searchParams.set('limit', '1');
+        if (excludeWordIds.length > 0) {
+          clozeUrl.searchParams.set('excludeWordIds', excludeWordIds.join(','));
+        }
+
+        const clozeResponse = await fetch(clozeUrl.toString(), {
+          headers: {
+            'authorization': authHeader || '',
+          },
+        });
+
+        if (!clozeResponse.ok) {
+          const errorData = await clozeResponse.json();
+          // 如果挖词填空数据不足，返回空数组（按需求4：数据不足时跳过）
+          return NextResponse.json({
+            questions: [],
+            total: 0,
+            remainingWords: 0,
+            mode: 'cloze',
+            skipReason: 'insufficient_data',
+          });
+        }
+
+        const clozeData = await clozeResponse.json();
+
+        return NextResponse.json({
+          questions: clozeData.questions || [],
+          total: clozeData.total || 0,
+          mode: 'cloze',
+        });
+      } catch (error) {
+        console.error('Error calling cloze API:', error);
+        // 挖词填空出错时，返回空数组
+        return NextResponse.json({
+          questions: [],
+          total: 0,
+          remainingWords: 0,
+          mode: 'cloze',
+          skipReason: 'error',
+        });
+      }
     }
 
     // Fisher-Yates 洗牌算法 - 真正均匀随机
