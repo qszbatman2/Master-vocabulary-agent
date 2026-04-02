@@ -595,7 +595,7 @@ export default function StatsPage() {
 
   const heatmap = useMemo(() => {
     if (!data) return null;
-    const days = 84;
+    const days = 42; // 6周
     const base = new Date(`${data.today.date}T00:00:00+08:00`);
     const map = new Map(data.history.map((r) => [r.date, r]));
 
@@ -825,36 +825,55 @@ export default function StatsPage() {
             <div className="flex items-center gap-2">
               <Gauge className="w-4 h-4" style={{ color: '#a0a0b0' }} />
               <div className="text-sm font-medium" style={{ color: '#a0a0b0' }}>
-                近 12 周热力图
+                近 6 周热力图
               </div>
             </div>
           </div>
 
           <div className="flex flex-col md:flex-row md:items-start gap-4">
             <div className="w-full md:w-auto pb-1 -mx-1 px-1">
-              {heatmap && !heatmap.any ? (
+              {!heatmap ? (
+                <div
+                  className="rounded-2xl p-5 text-center min-w-max"
+                  style={{ background: 'rgba(255,255,255,0.04)', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.06)' }}
+                >
+                  <div className="text-white font-medium">加载中…</div>
+                </div>
+              ) : !heatmap.any ? (
                 <div
                   className="rounded-2xl p-5 text-center min-w-max"
                   style={{ background: 'rgba(255,255,255,0.04)', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.06)' }}
                 >
                   <div className="text-white font-medium">还没有可展示的数据</div>
                   <div className="text-xs mt-2" style={{ color: '#a0a0b0' }}>
-                    开始练习后，这里会生成你的 12 周热力图
+                    开始练习后，这里会生成你的 6 周热力图
                   </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-12 gap-1.5">
-                  {heatmap?.cells.map((c) => (
-                    <div
-                      key={c.date}
-                      className="w-3 h-3 sm:w-3.5 sm:h-3.5 rounded"
-                      title={`${c.date}\n单词: ${c.practice}\n${c.achieved ? '达标' : '未达标'}`}
-                      style={{
-                        background: c.bg,
-                        boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.06)',
-                      }}
-                    />
-                  ))}
+                <div className="space-y-1.5">
+                  {(() => {
+                    // 将42天分成6周，每行7天，首列为周日
+                    const weeks: Array<typeof heatmap.cells> = [];
+                    for (let i = 0; i < 6; i++) {
+                      const weekCells = heatmap.cells.slice(i * 7, (i + 1) * 7);
+                      weeks.push(weekCells);
+                    }
+                    return weeks.map((weekCells, weekIdx) => (
+                      <div key={weekIdx} className="grid grid-cols-7 gap-1.5">
+                        {weekCells.map((c) => (
+                          <div
+                            key={c.date}
+                            className="w-3 h-3 sm:w-3.5 sm:h-3.5 rounded"
+                            title={`${c.date}\n单词: ${c.practice}\n${c.achieved ? '达标' : '未达标'}`}
+                            style={{
+                              background: c.bg,
+                              boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.06)',
+                            }}
+                          />
+                        ))}
+                      </div>
+                    ));
+                  })()}
                 </div>
               )}
             </div>
@@ -879,9 +898,9 @@ export default function StatsPage() {
                 <div className="grid grid-cols-2 gap-3 mt-3">
                   {[
                     { label: '最近 7 天', value: 7 },
+                    { label: '最近 14 天', value: 14 },
                     { label: '最近 28 天', value: 28 },
-                    { label: '最近 56 天', value: 56 },
-                    { label: '最近 84 天', value: 84 },
+                    { label: '最近 42 天', value: 42 },
                   ].map((x) => {
                     const slice = heatmap?.cells.slice(-x.value) || [];
                     const sum = slice.reduce((acc, r) => acc + r.practice, 0);
@@ -1027,8 +1046,8 @@ export default function StatsPage() {
                           <div
                             className="absolute inset-y-0"
                             style={{
-                              left: '50%',
-                              transform: 'translateX(-50%)',
+                              left: dir === 'rtl' ? 'auto' : '0',
+                              right: dir === 'rtl' ? '0' : 'auto',
                               width: fillW,
                               background: dir === 'rtl' ? `linear-gradient(270deg, ${color}, ${color}33)` : `linear-gradient(90deg, ${color}, ${color}33)`,
                               opacity: 0.92,
@@ -1077,7 +1096,7 @@ export default function StatsPage() {
             <div className="flex items-center gap-2 mb-5">
               <TriangleAlert className="w-4 h-4" style={{ color: '#a0a0b0' }} />
               <div className="text-sm font-medium" style={{ color: '#a0a0b0' }}>
-                错词词云 Top30
+                错词列表 Top30
               </div>
             </div>
 
@@ -1091,54 +1110,59 @@ export default function StatsPage() {
                 );
               }
 
+              const maxWrong = Math.max(1, ...list.map((w) => w.wrongCount || 0));
+
               return (
-                <div className="rounded-2xl p-4" style={{ background: 'rgba(255,255,255,0.04)', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.06)' }}>
-                  <div
-                    ref={cloudRef}
-                    className="relative w-full rounded-2xl overflow-hidden"
-                    style={{ height: 220, background: 'rgba(0,0,0,0.06)', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.03)' }}
-                  >
-                    {(cloudLayout || []).map((p) => {
-                      const fontWeight = p.t > 0.7 ? 800 : p.t > 0.35 ? 700 : 600;
-                      return (
+                <div className="space-y-2">
+                  {list.map((w, idx) => {
+                    const wrongCount = w.wrongCount || 0;
+                    const correctCount = w.correctCount || 0;
+                    const percentage = clamp01(wrongCount / maxWrong);
+                    const barColor = percentage > 0.7 ? '#ff6b9d' : percentage > 0.4 ? '#ff8a5b' : '#ffa600';
+
+                    return (
+                      <div
+                        key={w.wordId}
+                        className="rounded-2xl px-4 py-3 relative overflow-hidden"
+                        style={{
+                          background: 'rgba(255,255,255,0.04)',
+                          boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.06)',
+                        }}
+                        title={`${w.word}\n错: ${wrongCount}  对: ${correctCount}\n最近错: ${w.lastWrongAt || '—'}\n分类: ${w.categoryName || '—'}\n${w.meaning || ''}`}
+                      >
                         <div
-                          key={p.id}
-                          className="absolute"
+                          className="absolute inset-y-0 left-0"
                           style={{
-                            left: p.cx,
-                            top: p.cy,
-                            transform: `translate(-50%, -50%) rotate(${p.rotate}deg)`,
-                            color: cloudColor(p.t),
-                            fontSize: p.fontSize,
-                            fontWeight,
-                            lineHeight: 1,
-                            whiteSpace: 'nowrap',
-                            padding: '4px 6px',
-                            borderRadius: 10,
-                            background: 'rgba(0,0,0,0.10)',
-                            boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.05)',
+                            width: `${percentage * 100}%`,
+                            background: `linear-gradient(90deg, ${barColor}22, transparent)`,
+                            pointerEvents: 'none',
                           }}
-                          title={`${p.word}\n错: ${p.wrongCount}  对: ${p.correctCount}\n最近错: ${p.lastWrongAt || '—'}\n分类: ${p.categoryName || '—'}\n${p.meaning || ''}`}
-                        >
-                          {p.word}
+                        />
+                        <div className="relative flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="text-xs font-bold" style={{ color: '#7c4dff', width: 24 }}>
+                              {idx + 1}
+                            </div>
+                            <div className="text-sm font-semibold text-white">{w.word}</div>
+                            <div className="text-xs truncate max-w-[120px]" style={{ color: '#a0a0b0' }}>
+                              {w.meaning}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="px-2 py-1 rounded-lg text-xs font-semibold"
+                              style={{
+                                background: `${barColor}22`,
+                                color: barColor,
+                              }}
+                            >
+                              错 {wrongCount} 次
+                            </div>
+                          </div>
                         </div>
-                      );
-                    })}
-                    {cloudLayout && cloudLayout.length === 0 && (
-                      <div className="absolute inset-0 flex items-center justify-center text-sm" style={{ color: '#a0a0b0' }}>
-                        暂无可用布局
                       </div>
-                    )}
-                    {!cloudLayout && (
-                      <div className="absolute inset-0 flex items-center justify-center text-sm" style={{ color: '#a0a0b0' }}>
-                        {loading ? '加载中…' : '准备布局…'}
-                      </div>
-                    )}
-                  </div>
-                  <div className="text-[11px] mt-3 flex items-center justify-between" style={{ color: '#a0a0b0' }}>
-                    <div>共 {list.length} 个</div>
-                    <div>字号 ∝ 错误次数</div>
-                  </div>
+                    );
+                  })}
                 </div>
               );
             })()}
