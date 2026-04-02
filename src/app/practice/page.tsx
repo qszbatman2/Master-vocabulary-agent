@@ -53,7 +53,20 @@ export default function PracticePage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'wrong_words' | 'collected'>('all');
-  const [enabledModes, setEnabledModes] = useState<('normal' | 'near_form' | 'cloze')[]>(['normal']);
+  const [enabledModes, setEnabledModes] = useState<('normal' | 'near_form' | 'cloze')[]>(() => {
+    // 从 localStorage 读取上次选择的练习类型
+    if (typeof window !== 'undefined') {
+      const savedModes = localStorage.getItem('practice_enabled_modes');
+      if (savedModes) {
+        try {
+          return JSON.parse(savedModes);
+        } catch (e) {
+          return ['normal'];
+        }
+      }
+    }
+    return ['normal'];
+  });
   const [distractorMode, setDistractorMode] = useState<'default' | 'near_form'>('default');
   const [currentMode, setCurrentMode] = useState<'normal' | 'near_form' | 'cloze'>('normal');
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -210,11 +223,24 @@ export default function PracticePage() {
       const response = await fetch('/api/categories');
       const data = await response.json();
       setCategories(data.categories || []);
-      
+
       // 读取上次选择的词库
       const lastCategory = localStorage.getItem('practice_selected_category');
       if (lastCategory) {
         setSelectedCategory(lastCategory);
+      }
+
+      // 读取上次选择的练习类型
+      const lastEnabledModes = localStorage.getItem('practice_enabled_modes');
+      if (lastEnabledModes) {
+        try {
+          const parsedModes = JSON.parse(lastEnabledModes);
+          if (Array.isArray(parsedModes) && parsedModes.length > 0) {
+            setEnabledModes(parsedModes);
+          }
+        } catch (e) {
+          console.error('Failed to parse enabled modes:', e);
+        }
       }
     } catch (error) {
       console.error('Failed to fetch categories:', error);
@@ -742,11 +768,11 @@ export default function PracticePage() {
                       id="mode-normal"
                       checked={enabledModes.includes('normal')}
                       onCheckedChange={(checked) => {
-                        if (checked) {
-                          setEnabledModes(prev => [...prev, 'normal']);
-                        } else {
-                          setEnabledModes(prev => prev.filter(m => m !== 'normal'));
-                        }
+                        const newModes: ('normal' | 'near_form' | 'cloze')[] = checked
+                          ? [...enabledModes, 'normal']
+                          : enabledModes.filter(m => m !== 'normal');
+                        setEnabledModes(newModes);
+                        localStorage.setItem('practice_enabled_modes', JSON.stringify(newModes));
                       }}
                     />
                     <label htmlFor="mode-normal" className="text-xs text-white cursor-pointer text-center flex-1">
@@ -758,11 +784,11 @@ export default function PracticePage() {
                       id="mode-near-form"
                       checked={enabledModes.includes('near_form')}
                       onCheckedChange={(checked) => {
-                        if (checked) {
-                          setEnabledModes(prev => [...prev, 'near_form']);
-                        } else {
-                          setEnabledModes(prev => prev.filter(m => m !== 'near_form'));
-                        }
+                        const newModes: ('normal' | 'near_form' | 'cloze')[] = checked
+                          ? [...enabledModes, 'near_form']
+                          : enabledModes.filter(m => m !== 'near_form');
+                        setEnabledModes(newModes);
+                        localStorage.setItem('practice_enabled_modes', JSON.stringify(newModes));
                       }}
                     />
                     <label htmlFor="mode-near-form" className="text-xs text-white cursor-pointer text-center flex-1">
@@ -774,11 +800,11 @@ export default function PracticePage() {
                       id="mode-cloze"
                       checked={enabledModes.includes('cloze')}
                       onCheckedChange={(checked) => {
-                        if (checked) {
-                          setEnabledModes(prev => [...prev, 'cloze']);
-                        } else {
-                          setEnabledModes(prev => prev.filter(m => m !== 'cloze'));
-                        }
+                        const newModes: ('normal' | 'near_form' | 'cloze')[] = checked
+                          ? [...enabledModes, 'cloze']
+                          : enabledModes.filter(m => m !== 'cloze');
+                        setEnabledModes(newModes);
+                        localStorage.setItem('practice_enabled_modes', JSON.stringify(newModes));
                       }}
                     />
                     <label htmlFor="mode-cloze" className="text-xs text-white cursor-pointer text-center flex-1">
