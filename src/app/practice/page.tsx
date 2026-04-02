@@ -774,6 +774,7 @@ export default function PracticePage() {
                         setEnabledModes(newModes);
                         localStorage.setItem('practice_enabled_modes', JSON.stringify(newModes));
                       }}
+                      className="data-[state=checked]:bg-[#00f0ff] data-[state=checked]:border-[#00f0ff] data-[state=checked]:text-white border-[#4a4a6a] bg-transparent"
                     />
                     <label htmlFor="mode-normal" className="text-xs text-white cursor-pointer text-center flex-1">
                       常规
@@ -790,6 +791,7 @@ export default function PracticePage() {
                         setEnabledModes(newModes);
                         localStorage.setItem('practice_enabled_modes', JSON.stringify(newModes));
                       }}
+                      className="data-[state=checked]:bg-[#00f0ff] data-[state=checked]:border-[#00f0ff] data-[state=checked]:text-white border-[#4a4a6a] bg-transparent"
                     />
                     <label htmlFor="mode-near-form" className="text-xs text-white cursor-pointer text-center flex-1">
                       形近词
@@ -806,6 +808,7 @@ export default function PracticePage() {
                         setEnabledModes(newModes);
                         localStorage.setItem('practice_enabled_modes', JSON.stringify(newModes));
                       }}
+                      className="data-[state=checked]:bg-[#00f0ff] data-[state=checked]:border-[#00f0ff] data-[state=checked]:text-white border-[#4a4a6a] bg-transparent"
                     />
                     <label htmlFor="mode-cloze" className="text-xs text-white cursor-pointer text-center flex-1">
                       挖词填空

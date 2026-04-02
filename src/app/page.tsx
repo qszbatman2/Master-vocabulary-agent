@@ -307,133 +307,13 @@ export default function Home() {
           )}
         </div>
 
-        {/* 统计信息 - 入场动画 */}
-        {user && stats ? (
-          <div 
-            className="group relative rounded-3xl p-6 mb-8 overflow-hidden transition-all duration-700"
-            style={{ 
-              background: '#1e1e2e',
-              boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)',
-              opacity: isLoaded ? 1 : 0,
-              transform: isLoaded ? 'translateY(0)' : 'translateY(30px)',
-              transitionDelay: '400ms'
-            }}
-          >
-            {/* 边缘发光效果 */}
-            <div 
-              className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-              style={{
-                boxShadow: '0 0 30px rgba(0, 255, 136, 0.2), inset 0 0 30px rgba(0, 255, 136, 0.03)'
-              }}
-            />
-            <div className="relative">
-              <div className="flex items-center gap-2 mb-5">
-                <TrendingUp className="w-4 h-4" style={{ color: '#a0a0b0' }} />
-                <span className="text-sm font-medium" style={{ color: '#a0a0b0' }}>累计进度</span>
-              </div>
-              
-              <div className="grid grid-cols-3 gap-4 mb-5">
-                <div 
-                  className="text-center p-4 rounded-2xl transition-transform duration-200 hover:scale-105"
-                  style={{ background: 'rgba(0, 255, 136, 0.08)' }}
-                >
-                  <div className="flex items-center justify-center gap-1.5 mb-2">
-                    <CheckCircle className="w-4 h-4" style={{ color: '#00ff88' }} />
-                    <span className="text-2xl font-bold" style={{ color: '#00ff88' }}>
-                      {stats.total.masteredCount}
-                    </span>
-                  </div>
-                  <div className="text-xs" style={{ color: '#a0a0b0' }}>已掌握</div>
-                </div>
-                <div 
-                  className="text-center p-4 rounded-2xl transition-transform duration-200 hover:scale-105"
-                  style={{ background: 'rgba(255, 107, 157, 0.08)' }}
-                >
-                  <div className="flex items-center justify-center gap-1.5 mb-2">
-                    <RotateCcw className="w-4 h-4" style={{ color: '#ff6b9d' }} />
-                    <span className="text-2xl font-bold" style={{ color: '#ff6b9d' }}>
-                      {stats.total.reviewingCount}
-                    </span>
-                  </div>
-                  <div className="text-xs" style={{ color: '#a0a0b0' }}>复习中</div>
-                </div>
-                <div 
-                  className="text-center p-4 rounded-2xl transition-transform duration-200 hover:scale-105"
-                  style={{ background: 'rgba(0, 240, 255, 0.08)' }}
-                >
-                  <div className="flex items-center justify-center gap-1.5 mb-2">
-                    <BookMarked className="w-4 h-4" style={{ color: '#00f0ff' }} />
-                    <span className="text-2xl font-bold" style={{ color: '#00f0ff' }}>
-                      {stats.total.newWordsCount}
-                    </span>
-                  </div>
-                  <div className="text-xs" style={{ color: '#a0a0b0' }}>剩余新词</div>
-                </div>
-              </div>
-              
-              {/* 进度条 */}
-              <div>
-                <div className="flex justify-between text-sm mb-2" style={{ color: '#a0a0b0' }}>
-                  <span>总进度</span>
-                  <span className="font-medium" style={{ color: '#00ff88' }}>
-                    {stats.total.totalWords > 0 ? Math.round(stats.total.masteredCount / stats.total.totalWords * 100) : 0}%
-                  </span>
-                </div>
-                <div className="h-2.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)' }}>
-                  <div 
-                    className="h-full rounded-full transition-all duration-1000 ease-out"
-                    style={{ 
-                      width: `${stats.total.totalWords > 0 ? Math.min(100, stats.total.masteredCount / stats.total.totalWords * 100) : 0}%`,
-                      background: 'linear-gradient(135deg, #00ff88, #00d4ff)'
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        ) : (
-          /* 未登录状态统计 */
-          <div 
-            className="rounded-3xl p-6 mb-8 text-center transition-all duration-700"
-            style={{ 
-              background: '#1e1e2e',
-              boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)',
-              opacity: isLoaded ? 1 : 0,
-              transform: isLoaded ? 'translateY(0)' : 'translateY(30px)',
-              transitionDelay: '400ms'
-            }}
-          >
-            <div className="flex items-center justify-center gap-10">
-              {[
-                { value: '16', label: '词库', gradient: 'linear-gradient(135deg, #ff6b9d, #c44cff)' },
-                { value: '13K+', label: '单词', gradient: 'linear-gradient(135deg, #00f0ff, #7c4dff)' },
-                { value: '2', label: '模式', gradient: 'linear-gradient(135deg, #00ff88, #00d4ff)' }
-              ].map((item, i) => (
-                <div key={i} className="text-center">
-                  <div 
-                    className="text-3xl font-bold mb-1"
-                    style={{ 
-                      background: item.gradient,
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent'
-                    }}
-                  >
-                    {item.value}
-                  </div>
-                  <div className="text-xs" style={{ color: '#a0a0b0' }}>{item.label}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
         {/* 功能说明 - 入场动画 */}
-        <div 
+        <div
           className="transition-all duration-700"
-          style={{ 
+          style={{
             opacity: isLoaded ? 1 : 0,
             transform: isLoaded ? 'translateY(0)' : 'translateY(30px)',
-            transitionDelay: '500ms'
+            transitionDelay: '400ms'
           }}
         >
           <h2 className="text-sm font-medium text-center mb-4" style={{ color: '#a0a0b0' }}>核心功能</h2>
