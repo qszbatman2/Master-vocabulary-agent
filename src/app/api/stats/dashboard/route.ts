@@ -158,8 +158,15 @@ export async function GET(request: NextRequest) {
           masteredRate,
         };
       })
-      .sort((a, b) => b.masteredRate - a.masteredRate)
-      .slice(0, 12);
+      .sort((a, b) => b.masteredRate - a.masteredRate);
+
+    // 计算前12个分类和剩余分类的统计
+    const topCategories = categoryBreakdown.slice(0, 12);
+    const restCategories = categoryBreakdown.slice(12);
+    const restTotal = restCategories.reduce((sum, c) => sum + c.totalWords, 0);
+    const restPracticed = restCategories.reduce((sum, c) => sum + c.practicedWords, 0);
+    const restMastered = restCategories.reduce((sum, c) => sum + c.masteredWords, 0);
+    const restWrongSum = restCategories.reduce((sum, c) => sum + c.wrongSum, 0);
 
     const weakWords = (weakStatus || []).map((s) => {
       const w = wordMap.get(s.word_id);
@@ -199,8 +206,14 @@ export async function GET(request: NextRequest) {
         counts: ladderCounts,
       },
       categories: {
-        top: categoryBreakdown,
+        top: topCategories,
         totalCategories: (categories || []).length + 1,
+        rest: {
+          totalWords: restTotal,
+          practicedWords: restPracticed,
+          masteredWords: restMastered,
+          wrongSum: restWrongSum,
+        },
       },
       weakWords,
       history: (history || []).map((record) => ({

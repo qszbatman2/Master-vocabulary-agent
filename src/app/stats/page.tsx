@@ -36,6 +36,12 @@ type DashboardResponse = {
       masteredRate: number;
     }>;
     totalCategories: number;
+    rest: {
+      totalWords: number;
+      practicedWords: number;
+      masteredWords: number;
+      wrongSum: number;
+    };
   };
   weakWords: Array<{
     wordId: number;
@@ -493,6 +499,12 @@ function buildMockDashboard(dateString: string): DashboardResponse {
     categories: {
       top: categoriesTop.slice(0, 12),
       totalCategories: 9,
+      rest: {
+        totalWords: 0,
+        practicedWords: 0,
+        masteredWords: 0,
+        wrongSum: 0,
+      },
     },
     weakWords,
     history,
@@ -978,6 +990,7 @@ export default function StatsPage() {
 
             {(() => {
               const top = data?.categories.top || [];
+              const rest = data?.categories.rest || { totalWords: 0, practicedWords: 0, masteredWords: 0, wrongSum: 0 };
               if (!data || top.length === 0) {
                 return (
                   <div className="text-sm" style={{ color: '#a0a0b0' }}>
@@ -987,9 +1000,7 @@ export default function StatsPage() {
               }
 
               const main = top.slice(0, 9);
-              const rest = top.slice(9);
-              const restTotal = rest.reduce((acc, c) => acc + (c.totalWords || 0), 0);
-              const list = restTotal > 0 ? [...main, { categoryId: -1 as any, name: '其他', totalWords: restTotal, practicedWords: 0, masteredWords: 0, wrongSum: 0, masteredRate: 0 }] : main;
+              const list = rest.totalWords > 0 ? [...main, { categoryId: -1 as any, name: '其他', totalWords: rest.totalWords, practicedWords: rest.practicedWords, masteredWords: rest.masteredWords, wrongSum: rest.wrongSum, masteredRate: rest.totalWords > 0 ? rest.masteredWords / rest.totalWords : 0 }] : main;
               const items: TreemapItem[] = list
                 .map((c) => ({
                   id: String(c.categoryId),
