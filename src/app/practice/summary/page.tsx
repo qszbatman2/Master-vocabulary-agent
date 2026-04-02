@@ -209,36 +209,35 @@ function SummaryContent() {
             {/* 进度条 */}
             <div className="mb-3">
               <div 
-                className="relative w-full overflow-hidden rounded-full"
-                style={{ height: '16px', background: 'rgba(255,255,255,0.05)' }}
+                className="flex w-full overflow-hidden rounded-full"
+                style={{ height: '16px' }}
               >
                 {/* 正确未掌握 - 浅青色 */}
                 {correctNotMastered > 0 && (
-                  <div 
-                    className="absolute inset-y-0 left-0"
-                    style={{ 
-                      width: `${(correctNotMastered / totalPracticed) * 100}%`,
+                  <div
+                    style={{
+                      flex: correctNotMastered,
+                      minWidth: `${(correctNotMastered / totalPracticed) * 100}%`,
                       background: 'linear-gradient(90deg, #00f0ff, #00d4ff)',
                     }}
                   />
                 )}
                 {/* 正确掌握 - 深青色 */}
                 {correctMastered > 0 && (
-                  <div 
-                    className="absolute inset-y-0"
-                    style={{ 
-                      left: `${(correctNotMastered / totalPracticed) * 100}%`,
-                      width: `${(correctMastered / totalPracticed) * 100}%`,
+                  <div
+                    style={{
+                      flex: correctMastered,
+                      minWidth: `${(correctMastered / totalPracticed) * 100}%`,
                       background: 'linear-gradient(90deg, #00a8cc, #0088aa)',
                     }}
                   />
                 )}
                 {/* 错误 - 粉色 */}
                 {wrongCount > 0 && (
-                  <div 
-                    className="absolute inset-y-0 right-0"
-                    style={{ 
-                      width: `${(wrongCount / totalPracticed) * 100}%`,
+                  <div
+                    style={{
+                      flex: wrongCount,
+                      minWidth: `${(wrongCount / totalPracticed) * 100}%`,
                       background: 'linear-gradient(90deg, #ff6b9d, #ff4d6d)',
                     }}
                   />
