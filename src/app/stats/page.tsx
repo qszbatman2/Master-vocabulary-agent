@@ -611,8 +611,17 @@ export default function StatsPage() {
     const base = new Date(`${data.today.date}T00:00:00+08:00`);
     const map = new Map(data.history.map((r) => [r.date, r]));
 
+    // 找到今天之前的最近一个周日
+    const todayDayOfWeek = base.getDay(); // 0-6, 0 is Sunday
+    const daysToSunday = todayDayOfWeek;
+    const lastSunday = new Date(base.getTime() - daysToSunday * 24 * 60 * 60 * 1000);
+
+    // 从上周日开始，往前推足够周数，确保覆盖42天
+    const weeksNeeded = 6;
+    const startDate = new Date(lastSunday.getTime() - (weeksNeeded - 1) * 7 * 24 * 60 * 60 * 1000);
+
     const records = Array.from({ length: days }).map((_, i) => {
-      const d = new Date(base.getTime() - (days - 1 - i) * 24 * 60 * 60 * 1000);
+      const d = new Date(startDate.getTime() + i * 24 * 60 * 60 * 1000);
       const key = shanghaiDateString(d);
       const r = map.get(key);
       const practice = r?.totalPracticed || 0;

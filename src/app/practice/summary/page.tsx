@@ -147,8 +147,11 @@ function SummaryContent() {
   const wrongCount = roundStats?.wrongCount || 0;
   const totalPracticed = roundStats?.totalPracticed || 0;
 
-  // 正确率
-  const accuracy = totalPracticed > 0 ? Math.round(((roundStats?.correctCount || 0) / totalPracticed) * 100) : 0;
+  // 正确率：本轮正确总数 / 本轮答题总数
+  // 本轮正确总数 = correctCount（包括已掌握和未掌握的正确数）
+  // 本轮答题总数 = correctCount + wrongCount（实际答题数）
+  const totalAnswered = (roundStats?.correctCount || 0) + (roundStats?.wrongCount || 0);
+  const accuracy = totalAnswered > 0 ? Math.round(((roundStats?.correctCount || 0) / totalAnswered) * 100) : 0;
 
   // 根据正确率返回渐变色
   const getAccuracyColor = (acc: number): string => {
