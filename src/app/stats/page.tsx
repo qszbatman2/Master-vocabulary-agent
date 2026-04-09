@@ -518,7 +518,7 @@ export default function StatsPage() {
   const [error, setError] = useState<string | null>(null);
   const cloudRef = useRef<HTMLDivElement | null>(null);
   const [cloudSize, setCloudSize] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
-  const [selectedCell, setSelectedCell] = useState<{ date: string; practice: number; wrong: number; mastered: number; isFuture: boolean } | null>(null);
+  const [selectedCell, setSelectedCell] = useState<{ date: string; correctCount: number; wrong: number; mastered: number; isFuture: boolean } | null>(null);
   const [tipsPosition, setTipsPosition] = useState<{ x: number; y: number } | null>(null);
 
   if (!token) {
@@ -627,9 +627,10 @@ export default function StatsPage() {
       const key = shanghaiDateString(d);
       const r = map.get(key);
       const practice = r?.totalPracticed || 0;
+      const correctCount = r?.correctCount || 0;
       const wrong = r?.wrongCount || 0;
       const mastered = r?.masteredCount || 0;
-      return { date: key, practice, wrong, mastered };
+      return { date: key, practice, correctCount, wrong, mastered };
     });
 
     const values = records.map((r) => r.practice);
@@ -929,7 +930,7 @@ export default function StatsPage() {
                             key={c.date}
                             onClick={() => {
                               if (!c.isFuture && c.practice > 0) {
-                                setSelectedCell({ date: c.date, practice: c.practice, wrong: c.wrong, mastered: c.mastered, isFuture: c.isFuture });
+                                setSelectedCell({ date: c.date, correctCount: c.correctCount, wrong: c.wrong, mastered: c.mastered, isFuture: c.isFuture });
                                 setTipsPosition({ x: 0, y: 0 });
                               }
                             }}
@@ -1033,10 +1034,10 @@ export default function StatsPage() {
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <div className="text-xs" style={{ color: '#a0a0b0' }}>
-                          完成单词
+                          正确答题
                         </div>
                         <div className="text-sm font-semibold" style={{ color: '#00ff88' }}>
-                          {selectedCell.practice} 个
+                          {selectedCell.correctCount} 个
                         </div>
                       </div>
                       <div className="flex items-center justify-between">
