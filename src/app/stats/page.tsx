@@ -518,6 +518,8 @@ export default function StatsPage() {
   const [error, setError] = useState<string | null>(null);
   const cloudRef = useRef<HTMLDivElement | null>(null);
   const [cloudSize, setCloudSize] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
+  const [selectedCell, setSelectedCell] = useState<{ date: string; practice: number; wrong: number; mastered: number; isFuture: boolean } | null>(null);
+  const [tipsPosition, setTipsPosition] = useState<{ x: number; y: number } | null>(null);
 
   if (!token) {
     return (
@@ -641,22 +643,38 @@ export default function StatsPage() {
     const denom = Math.max(1, Math.min(max, p95));
     const goalWords = data.dailyProgress.dailyGoal || 200;
 
+    const todayStr = data.today.date;
     const cells = records.map((r) => {
       const v = r.practice;
       const t = clamp01(v / denom);
       const achieved = v >= goalWords;
+      const isFuture = r.date > todayStr;
 
-      // 根据练习量和达标状态确定格子颜色
-      // 1. 无数据 (v === 0) → 浅灰色
-      // 2. 有数据且达标 (achieved = true) → 绿色系 achievedColor
-      // 3. 有数据但未达标 (achieved = false) → 粉色系 notAchievedColor
+      // 根据练习量、达标状态和是否未来日期确定格子颜色和样式
+      // 1. 未来日期 → 更浅的灰色背景 + 虚线边框
+      // 2. 无数据 (v === 0) → 浅灰色
+      // 3. 有数据且达标 (achieved = true) → 绿色系 achievedColor
+      // 4. 有数据但未达标 (achieved = false) → 粉色系 notAchievedColor
       let bg: string;
-      if (v === 0) {
+      let borderStyle: string;
+      let opacity: number;
+
+      if (isFuture) {
+        bg = 'rgba(255,255,255,0.02)';
+        borderStyle = 'dashed';
+        opacity = 0.4;
+      } else if (v === 0) {
         bg = 'rgba(255,255,255,0.04)';
+        borderStyle = 'solid';
+        opacity = 1;
       } else if (achieved) {
         bg = achievedColor(t);
+        borderStyle = 'solid';
+        opacity = 1;
       } else {
         bg = notAchievedColor(t);
+        borderStyle = 'solid';
+        opacity = 1;
       }
 
       return {
@@ -665,12 +683,24 @@ export default function StatsPage() {
         bg,
         intensity: t,
         achieved,
+        isFuture,
+        borderStyle,
+        opacity,
       };
     });
 
     const any = records.some((r) => r.practice > 0);
     return { days, cells, denom, goalWords, any };
   }, [data]);
+
+  // 点击其他地方关闭 tooltip
+  useEffect(() => {
+    const handleClickOutside = () => setSelectedCell(null);
+    if (selectedCell) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [selectedCell]);
 
   useEffect(() => {
     const el = cloudRef.current;
@@ -895,13 +925,22 @@ export default function StatsPage() {
                     return weeks.map((weekCells, weekIdx) => (
                       <div key={weekIdx} className="grid grid-cols-7 gap-1">
                         {weekCells.map((c) => (
-                          <div
+                          <button
                             key={c.date}
-                            className="w-10 h-10 sm:w-12 sm:h-12 rounded-sm"
-                            title={`${c.date}\n单词: ${c.practice}\n${c.achieved ? '达标' : '未达标'}`}
+                            onClick={() => {
+                              if (!c.isFuture && c.practice > 0) {
+                                setSelectedCell({ date: c.date, practice: c.practice, wrong: c.wrong, mastered: c.mastered, isFuture: c.isFuture });
+                                setTipsPosition({ x: 0, y: 0 });
+                              }
+                            }}
+                            className={`w-10 h-10 sm:w-12 sm:h-12 rounded-sm transition-all duration-200 ${!c.isFuture && c.practice > 0 ? 'cursor-pointer hover:scale-110 active:scale-95' : ''}`}
                             style={{
                               background: c.bg,
-                              boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.06)',
+                              opacity: c.opacity,
+                              borderWidth: c.borderStyle === 'dashed' ? 1 : 0,
+                              borderStyle: c.borderStyle,
+                              borderColor: 'rgba(255,255,255,0.15)',
+                              boxShadow: c.borderStyle === 'solid' ? 'inset 0 0 0 1px rgba(255,255,255,0.06)' : 'none',
                             }}
                           />
                         ))}
@@ -918,14 +957,24 @@ export default function StatsPage() {
                   <div className="text-xs" style={{ color: '#a0a0b0' }}>
                     目标：{heatmap?.goalWords || 200} 词/天
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3.5 h-3.5 rounded" style={{ background: notAchievedColor(0.65), boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.06)' }} />
-                    <div className="text-[11px]" style={{ color: '#a0a0b0' }}>
-                      未达标
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-3.5 h-3.5 rounded" style={{ background: 'rgba(255,255,255,0.02)', borderWidth: 1, borderStyle: 'dashed', borderColor: 'rgba(255,255,255,0.15)' }} />
+                      <div className="text-[11px]" style={{ color: '#a0a0b0' }}>
+                        未来
+                      </div>
                     </div>
-                    <div className="w-3.5 h-3.5 rounded ml-1" style={{ background: achievedColor(0.65), boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.06)' }} />
-                    <div className="text-[11px]" style={{ color: '#a0a0b0' }}>
-                      达标
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-3.5 h-3.5 rounded" style={{ background: notAchievedColor(0.65), boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.06)' }} />
+                      <div className="text-[11px]" style={{ color: '#a0a0b0' }}>
+                        未达标
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-3.5 h-3.5 rounded" style={{ background: achievedColor(0.65), boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.06)' }} />
+                      <div className="text-[11px]" style={{ color: '#a0a0b0' }}>
+                        达标
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -957,6 +1006,66 @@ export default function StatsPage() {
                   })}
                 </div>
               </div>
+
+              {/* 日期详情 Tooltip */}
+              {selectedCell && (
+                <div
+                  className="fixed inset-0 z-50 flex items-center justify-center"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedCell(null);
+                  }}
+                >
+                  <div
+                    className="rounded-2xl p-4 max-w-[280px] w-full mx-4"
+                    style={{
+                      background: '#1e1e2e',
+                      boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255,255,255,0.08)',
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="text-sm font-semibold text-white mb-3">
+                      {(() => {
+                        const [year, month, day] = selectedCell.date.split('-');
+                        return `${year}年${parseInt(month)}月${parseInt(day)}日`;
+                      })()}
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="text-xs" style={{ color: '#a0a0b0' }}>
+                          完成单词
+                        </div>
+                        <div className="text-sm font-semibold" style={{ color: '#00ff88' }}>
+                          {selectedCell.practice} 个
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="text-xs" style={{ color: '#a0a0b0' }}>
+                          答错次数
+                        </div>
+                        <div className="text-sm font-semibold" style={{ color: '#ff6b9d' }}>
+                          {selectedCell.wrong} 次
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="text-xs" style={{ color: '#a0a0b0' }}>
+                          掌握单词
+                        </div>
+                        <div className="text-sm font-semibold" style={{ color: '#00d4ff' }}>
+                          {selectedCell.mastered} 个
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      className="w-full mt-4 py-2 rounded-xl text-xs font-medium text-white transition-all duration-200 active:scale-98"
+                      style={{ background: 'rgba(255,255,255,0.08)' }}
+                      onClick={() => setSelectedCell(null)}
+                    >
+                      关闭
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {(() => {
                 const counts = data?.ladder.counts || [0, 0, 0, 0, 0];
