@@ -284,7 +284,15 @@ export async function POST(request: NextRequest) {
         dailyUpdateData.wrong_count = (todayStats?.wrong_count || 0) + 1;
       }
     } else {
-      dailyUpdateData.correct_count = (todayStats?.correct_count || 0) + 1;
+      // 首次答对才计入正确答题数（每个单词今天只计一次）
+      const currentCorrectIds = todayStats?.correct_word_ids
+        ? todayStats.correct_word_ids.split(',').filter((id: string) => id)
+        : [];
+      if (!currentCorrectIds.includes(String(wordId))) {
+        currentCorrectIds.push(String(wordId));
+        dailyUpdateData.correct_word_ids = currentCorrectIds.join(',');
+        dailyUpdateData.correct_count = (todayStats?.correct_count || 0) + 1;
+      }
     }
 
     // 如果掌握，更新掌握数
