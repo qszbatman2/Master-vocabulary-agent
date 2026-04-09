@@ -645,7 +645,20 @@ export default function StatsPage() {
       const v = r.practice;
       const t = clamp01(v / denom);
       const achieved = v >= goalWords;
-      const bg = v === 0 ? 'rgba(255,255,255,0.04)' : achieved ? achievedColor(t) : notAchievedColor(t);
+
+      // 根据练习量和达标状态确定格子颜色
+      // 1. 无数据 (v === 0) → 浅灰色
+      // 2. 有数据且达标 (achieved = true) → 绿色系 achievedColor
+      // 3. 有数据但未达标 (achieved = false) → 粉色系 notAchievedColor
+      let bg: string;
+      if (v === 0) {
+        bg = 'rgba(255,255,255,0.04)';
+      } else if (achieved) {
+        bg = achievedColor(t);
+      } else {
+        bg = notAchievedColor(t);
+      }
+
       return {
         ...r,
         value: v,
