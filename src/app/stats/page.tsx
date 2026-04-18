@@ -923,7 +923,7 @@ export default function StatsPage() {
         </div>
 
         {/* 打卡统计卡片 */}
-        <div className="flex items-center justify-center gap-8 py-4 mb-4">
+        <div className="flex items-center justify-center gap-8 p-4 mb-4 rounded-2xl" style={{ background: 'rgba(0,0,0,0.14)' }}>
           <div className="flex items-center gap-2">
             <span style={{ color: '#a0a0b0' }} className="text-sm">累计</span>
             <span className="text-xl font-bold" style={{ color: '#4ade80' }}>{streakDays}</span>
