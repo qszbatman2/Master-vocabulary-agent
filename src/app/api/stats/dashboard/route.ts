@@ -168,6 +168,41 @@ export async function GET(request: NextRequest) {
     const restMastered = restCategories.reduce((sum, c) => sum + c.masteredWords, 0);
     const restWrongSum = restCategories.reduce((sum, c) => sum + c.wrongSum, 0);
 
+    // 计算每个日期的有效答对单词数（基于 last_correct_date）
+    const completedByDate = new Map<string, number>();
+    for (const s of statusList) {
+      const date = s.last_correct_date;
+      if (date) {
+        completedByDate.set(date, (completedByDate.get(date) || 0) + 1);
+      }
+    }
+
+    // 获取历史日期范围
+    const historyDates = new Set((history || []).map((r) => String(r.date)));
+    const minDate = historyDates.size > 0 ? new Date(Math.min(...Array.from(historyDates).map((d) => new Date(d).getTime()))) : null;
+    const maxDate = historyDates.size > 0 ? new Date(Math.max(...Array.from(historyDates).map((d) => new Date(d).getTime()))) : null;
+
+    // 如果有历史记录，重新查询该日期范围内的所有 last_correct_date
+    let completedCountByDate: Map<string, number> = new Map();
+    if (minDate && maxDate) {
+      const minDateStr = getShanghaiDateString(minDate);
+      const maxDateStr = getShanghaiDateString(maxDate);
+
+      const { data: dateRangeStatuses } = await client
+        .from('user_word_status')
+        .select('last_correct_date')
+        .eq('user_id', userId)
+        .not('last_correct_date', 'is', null)
+        .gte('last_correct_date', minDateStr)
+        .lte('last_correct_date', maxDateStr);
+
+      for (const s of dateRangeStatuses || []) {
+        if (s.last_correct_date) {
+          completedCountByDate.set(s.last_correct_date, (completedCountByDate.get(s.last_correct_date) || 0) + 1);
+        }
+      }
+    }
+
     const weakWords = (weakStatus || []).map((s) => {
       const w = wordMap.get(s.word_id);
       const categoryId = w?.categoryId ?? null;
@@ -216,16 +251,20 @@ export async function GET(request: NextRequest) {
         },
       },
       weakWords,
-      history: (history || []).map((record) => ({
-        date: record.date,
-        totalPracticed: record.total_practiced || 0,
-        correctCount: record.correct_count || 0,
-        wrongCount: record.wrong_count || 0,
-        masteredCount: record.mastered_count || 0,
-        durationMinutes: Math.floor((record.duration_seconds || 0) / 60),
-        isSettled: record.is_settled || false,
-        wrongWordCount: record.wrong_word_ids ? record.wrong_word_ids.split(',').filter((x: string) => x).length : 0,
-      })),
+      history: (history || []).map((record) => {
+        const dateStr = String(record.date);
+        return {
+          date: dateStr,
+          totalPracticed: record.total_practiced || 0,
+          correctCount: record.correct_count || 0,  // 原始正确答题数（每次答对计入）
+          completedCount: completedCountByDate.get(dateStr) || 0,  // 有效答对单词数（基于 last_correct_date，用于达标判断）
+          wrongCount: record.wrong_count || 0,
+          masteredCount: record.mastered_count || 0,
+          durationMinutes: Math.floor((record.duration_seconds || 0) / 60),
+          isSettled: record.is_settled || false,
+          wrongWordCount: record.wrong_word_ids ? record.wrong_word_ids.split(',').filter((x: string) => x).length : 0,
+        };
+      }),
     });
   } catch (error) {
     console.error('Error fetching stats dashboard:', error);

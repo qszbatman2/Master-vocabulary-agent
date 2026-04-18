@@ -9,7 +9,7 @@ import { BookOpen, GraduationCap, LogIn, LogOut, User, CheckCircle, RotateCcw, B
 import { useAuth } from '@/contexts/AuthContext';
 
 interface Stats {
-  today: { practicedCount: number; masteredCount: number; };
+  today: { practicedCount: number; masteredCount: number; completedCount: number; };
   total: { masteredCount: number; reviewingCount: number; newWordsCount: number; totalWords: number; };
 }
 
@@ -20,17 +20,23 @@ interface DailyProgress {
   isCompleted: boolean;
 }
 
+interface HistoryRecord {
+  date: string;
+  correctCount: number;
+  completedCount: number;  // 新增：有效答对单词数
+}
+
 export default function Home() {
   const { user, logout, token } = useAuth();
   const [stats, setStats] = useState<Stats | null>(null);
   const [dailyProgress, setDailyProgress] = useState<DailyProgress | null>(null);
-  const [history, setHistory] = useState<Array<{ date: string; correctCount: number }>>([]);
+  const [history, setHistory] = useState<HistoryRecord[]>([]);
   const [showGoalDialog, setShowGoalDialog] = useState(false);
   const [newGoal, setNewGoal] = useState('200');
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // 计算累计打卡天数
-  const streakDays = history.filter(h => h.correctCount > 0).length;
+  // 计算累计打卡天数（completedCount > 0 的天数）
+  const streakDays = history.filter(h => h.completedCount > 0).length;
 
   // 计算连续打卡天数
   const consecutiveDays = (() => {
@@ -38,8 +44,8 @@ export default function Home() {
     const today = new Date();
     const todayStr = today.toISOString().split('T')[0];
     const todayRecord = history.find(h => h.date === todayStr);
-    if (!todayRecord || todayRecord.correctCount === 0) return 0;
-    const dateSet = new Set(history.filter(h => h.correctCount > 0).map(h => h.date));
+    if (!todayRecord || todayRecord.completedCount === 0) return 0;
+    const dateSet = new Set(history.filter(h => h.completedCount > 0).map(h => h.date));
     let count = 0;
     let currentDate = new Date(today);
     while (dateSet.has(currentDate.toISOString().split('T')[0])) {
