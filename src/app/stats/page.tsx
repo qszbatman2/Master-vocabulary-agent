@@ -613,6 +613,24 @@ export default function StatsPage() {
     return data.history.filter(h => h.correctCount > 0).length;
   }, [data]);
 
+  // 计算连续打卡天数（从最新一天往前推，连续 correctCount > 0 的天数）
+  const consecutiveDays = useMemo(() => {
+    if (!data?.history || data.history.length === 0) return 0;
+    // 按日期倒序排列
+    const sortedHistory = [...data.history].sort((a, b) =>
+      new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+    let count = 0;
+    for (const h of sortedHistory) {
+      if (h.correctCount > 0) {
+        count++;
+      } else {
+        break;
+      }
+    }
+    return count;
+  }, [data]);
+
   const heatmap = useMemo(() => {
     if (!data) return null;
     const days = 42; // 6周
@@ -899,8 +917,13 @@ export default function StatsPage() {
                 近 6 周热力图
               </div>
             </div>
-            <span className="text-sm font-medium" style={{ color: '#4ade80' }}>
-              累计打卡 {streakDays} 天
+            <span className="ml-auto flex items-center gap-4">
+              <span className="text-sm font-medium" style={{ color: '#a0a0b0' }}>
+                累计打卡 <span style={{ color: '#4ade80' }}>{streakDays}</span> 天
+              </span>
+              <span className="text-sm font-medium" style={{ color: '#a0a0b0' }}>
+                连续打卡 <span style={{ color: '#fbbf24' }}>{consecutiveDays}</span> 天
+              </span>
             </span>
           </div>
 
