@@ -685,8 +685,10 @@ export default function StatsPage() {
     const todayStr = data.today.date;
     const cells = records.map((r) => {
       const v = r.practice;
+      const correctV = r.correctCount;
       const t = clamp01(v / denom);
-      const achieved = v >= goalWords;
+      // 达标判断使用正确答题数（已去重），而非练习题数
+      const achieved = correctV >= goalWords;
       const isFuture = r.date > todayStr;
 
       // 根据练习量、达标状态和是否未来日期确定格子颜色和样式
