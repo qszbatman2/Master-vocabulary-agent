@@ -57,6 +57,7 @@ type DashboardResponse = {
     date: string;
     totalPracticed: number;
     correctCount: number;
+    completedCount: number;  // 有效答对单词数（基于 last_correct_date，与每日学习目标逻辑一致）
     wrongCount: number;
     masteredCount: number;
     durationMinutes: number;
@@ -414,11 +415,14 @@ function buildMockDashboard(dateString: string): DashboardResponse {
     const masteredCountDaily = Math.max(0, Math.round(totalPracticed * (0.03 + wave2 * 0.01)));
     const durationMinutes = Math.max(0, Math.round(totalPracticed * (0.32 + noise * 0.12)));
     const wrongWordCount = Math.min(wrongCount, Math.max(0, Math.round(3 + noise * 11)));
+    // Mock 数据中 completedCount 等于 correctCount（简化处理）
+    const completedCount = correctCount;
 
     return {
       date,
       totalPracticed,
       correctCount,
+      completedCount,
       wrongCount,
       masteredCount: masteredCountDaily,
       durationMinutes,
@@ -607,10 +611,10 @@ export default function StatsPage() {
     };
   }, [data]);
 
-  // 计算累计打卡天数（correctCount > 0 的天数）
+  // 计算累计打卡天数（completedCount > 0 的天数，即有效答对的单词数 > 0）
   const streakDays = useMemo(() => {
     if (!data?.history) return 0;
-    return data.history.filter(h => h.correctCount > 0).length;
+    return data.history.filter(h => h.completedCount > 0).length;
   }, [data]);
 
   // 计算连续打卡天数（必须从今天开始算起）
@@ -621,14 +625,14 @@ export default function StatsPage() {
     const today = new Date();
     const todayStr = today.toISOString().split('T')[0];
 
-    // 检查今天是否有打卡记录
+    // 检查今天是否有打卡记录（completedCount > 0）
     const todayRecord = data.history.find(h => h.date === todayStr);
-    if (!todayRecord || todayRecord.correctCount === 0) {
+    if (!todayRecord || todayRecord.completedCount === 0) {
       return 0; // 今天没打卡，连续天数为0
     }
 
     // 从今天往前推算连续天数
-    const dateSet = new Set(data.history.filter(h => h.correctCount > 0).map(h => h.date));
+    const dateSet = new Set(data.history.filter(h => h.completedCount > 0).map(h => h.date));
     let count = 0;
     let currentDate = new Date(today);
 
@@ -666,9 +670,10 @@ export default function StatsPage() {
       const r = map.get(key);
       const practice = r?.totalPracticed || 0;
       const correctCount = r?.correctCount || 0;
+      const completedCount = r?.completedCount || 0;  // 有效答对单词数
       const wrong = r?.wrongCount || 0;
       const mastered = r?.masteredCount || 0;
-      return { date: key, practice, correctCount, wrong, mastered };
+      return { date: key, practice, correctCount, completedCount, wrong, mastered };
     });
 
     const values = records.map((r) => r.practice);
@@ -686,9 +691,10 @@ export default function StatsPage() {
     const cells = records.map((r) => {
       const v = r.practice;
       const correctV = r.correctCount;
+      const completedV = r.completedCount;  // 有效答对单词数
       const t = clamp01(v / denom);
-      // 达标判断使用正确答题数（已去重，每个单词今天首次答对才计入）
-      const achieved = correctV >= goalWords;
+      // 达标判断使用有效答对单词数（基于 last_correct_date），与每日学习目标逻辑一致
+      const achieved = completedV >= goalWords;
       const isFuture = r.date > todayStr;
 
       // 根据练习量、达标状态和是否未来日期确定格子颜色和样式
