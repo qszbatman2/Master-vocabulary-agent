@@ -303,7 +303,7 @@ export default function Home() {
         {/* 打卡统计卡片 */}
         {user && (
           <Link href="/stats">
-            <div className="flex items-center justify-center gap-8 p-4 mb-4 rounded-2xl cursor-pointer hover:opacity-90 transition-opacity" style={{ background: 'rgba(0,0,0,0.14)' }}>
+            <div className="flex items-center justify-center gap-8 p-4 mb-4 rounded-2xl cursor-pointer hover:opacity-90 transition-opacity" style={{ background: 'rgba(0,0,0,0.3)' }}>
               <div className="flex items-center gap-2">
                 <span className="text-sm" style={{ color: '#a0a0b0' }}>累计</span>
                 <span className="text-xl font-bold" style={{ color: '#4ade80' }}>{streakDays}</span>
@@ -321,23 +321,24 @@ export default function Home() {
 
         {/* 统计信息 - 入场动画 */}
         {user && stats ? (
-          <div
-            className="group relative rounded-3xl p-6 mb-8 overflow-hidden transition-all duration-700"
-            style={{
-              background: '#1e1e2e',
-              boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)',
-              opacity: isLoaded ? 1 : 0,
-              transform: isLoaded ? 'translateY(0)' : 'translateY(30px)',
-              transitionDelay: '350ms'
-            }}
-          >
-            {/* 边缘发光效果 */}
+          <Link href="/stats">
             <div
-              className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+              className="group relative rounded-3xl p-6 mb-8 overflow-hidden transition-all duration-700 cursor-pointer hover:opacity-90"
               style={{
-                boxShadow: '0 0 30px rgba(0, 255, 136, 0.2), inset 0 0 30px rgba(0, 255, 136, 0.03)'
+                background: '#1e1e2e',
+                boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)',
+                opacity: isLoaded ? 1 : 0,
+                transform: isLoaded ? 'translateY(0)' : 'translateY(30px)',
+                transitionDelay: '350ms'
               }}
-            />
+            >
+              {/* 边缘发光效果 */}
+              <div
+                className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                style={{
+                  boxShadow: '0 0 30px rgba(0, 255, 136, 0.2), inset 0 0 30px rgba(0, 255, 136, 0.03)'
+                }}
+              />
             <div className="relative">
               <div className="flex items-center gap-2 mb-5">
                 <TrendingUp className="w-4 h-4" style={{ color: '#a0a0b0' }} />
@@ -403,6 +404,7 @@ export default function Home() {
               </div>
             </div>
           </div>
+          </Link>
         ) : (
           /* 未登录状态统计 */
           <div
