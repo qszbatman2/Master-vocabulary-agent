@@ -922,25 +922,32 @@ export default function StatsPage() {
           </div>
         </div>
 
+        {/* 打卡统计卡片 */}
+        <div className="flex items-center justify-center gap-8 py-4 mb-4">
+          <div className="flex items-center gap-2">
+            <span style={{ color: '#a0a0b0' }} className="text-sm">累计</span>
+            <span className="text-xl font-bold" style={{ color: '#4ade80' }}>{streakDays}</span>
+            <span style={{ color: '#a0a0b0' }} className="text-sm">天</span>
+          </div>
+          <div className="w-px h-6 bg-gray-600"></div>
+          <div className="flex items-center gap-2">
+            <span style={{ color: '#a0a0b0' }} className="text-sm">连续</span>
+            <span className="text-xl font-bold" style={{ color: '#fbbf24' }}>{consecutiveDays}</span>
+            <span style={{ color: '#a0a0b0' }} className="text-sm">天</span>
+          </div>
+        </div>
+
         <div
           className="rounded-3xl p-6 mb-5 overflow-hidden"
           style={{ background: '#1e1e2e', boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)' }}
         >
-          <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center mb-5">
             <div className="flex items-center gap-2">
               <Gauge className="w-4 h-4" style={{ color: '#a0a0b0' }} />
               <div className="text-sm font-medium" style={{ color: '#a0a0b0' }}>
                 近 6 周热力图
               </div>
             </div>
-            <span className="ml-auto flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
-              <span className="text-xs sm:text-sm" style={{ color: '#a0a0b0' }}>
-                累计 <span style={{ color: '#4ade80' }}>{streakDays}</span> 天
-              </span>
-              <span className="text-xs sm:text-sm" style={{ color: '#a0a0b0' }}>
-                连续 <span style={{ color: '#fbbf24' }}>{consecutiveDays}</span> 天
-              </span>
-            </span>
           </div>
 
           <div className="flex flex-col md:flex-row md:items-start gap-4">
