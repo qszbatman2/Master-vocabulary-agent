@@ -613,21 +613,35 @@ export default function StatsPage() {
     return data.history.filter(h => h.correctCount > 0).length;
   }, [data]);
 
-  // 计算连续打卡天数（从最新一天往前推，连续 correctCount > 0 的天数）
+  // 计算连续打卡天数（必须从今天开始算起）
   const consecutiveDays = useMemo(() => {
     if (!data?.history || data.history.length === 0) return 0;
-    // 按日期倒序排列
-    const sortedHistory = [...data.history].sort((a, b) =>
-      new Date(b.date).getTime() - new Date(a.date).getTime()
-    );
+
+    // 获取今天的日期字符串
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+
+    // 检查今天是否有打卡记录
+    const todayRecord = data.history.find(h => h.date === todayStr);
+    if (!todayRecord || todayRecord.correctCount === 0) {
+      return 0; // 今天没打卡，连续天数为0
+    }
+
+    // 从今天往前推算连续天数
+    const dateSet = new Set(data.history.filter(h => h.correctCount > 0).map(h => h.date));
     let count = 0;
-    for (const h of sortedHistory) {
-      if (h.correctCount > 0) {
+    let currentDate = new Date(today);
+
+    while (true) {
+      const dateStr = currentDate.toISOString().split('T')[0];
+      if (dateSet.has(dateStr)) {
         count++;
+        currentDate.setDate(currentDate.getDate() - 1);
       } else {
         break;
       }
     }
+
     return count;
   }, [data]);
 
