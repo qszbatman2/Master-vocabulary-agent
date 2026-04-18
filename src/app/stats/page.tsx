@@ -607,6 +607,12 @@ export default function StatsPage() {
     };
   }, [data]);
 
+  // 计算累计打卡天数（correctCount > 0 的天数）
+  const streakDays = useMemo(() => {
+    if (!data?.history) return 0;
+    return data.history.filter(h => h.correctCount > 0).length;
+  }, [data]);
+
   const heatmap = useMemo(() => {
     if (!data) return null;
     const days = 42; // 6周
@@ -893,6 +899,9 @@ export default function StatsPage() {
                 近 6 周热力图
               </div>
             </div>
+            <span className="text-sm font-medium" style={{ color: '#4ade80' }}>
+              累计打卡 {streakDays} 天
+            </span>
           </div>
 
           <div className="flex flex-col md:flex-row md:items-start gap-4">
