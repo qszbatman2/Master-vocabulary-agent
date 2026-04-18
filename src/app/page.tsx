@@ -24,17 +24,51 @@ export default function Home() {
   const { user, logout, token } = useAuth();
   const [stats, setStats] = useState<Stats | null>(null);
   const [dailyProgress, setDailyProgress] = useState<DailyProgress | null>(null);
+  const [history, setHistory] = useState<Array<{ date: string; correctCount: number }>>([]);
   const [showGoalDialog, setShowGoalDialog] = useState(false);
   const [newGoal, setNewGoal] = useState('200');
   const [isLoaded, setIsLoaded] = useState(false);
+
+  // 计算累计打卡天数
+  const streakDays = history.filter(h => h.correctCount > 0).length;
+
+  // 计算连续打卡天数
+  const consecutiveDays = (() => {
+    if (history.length === 0) return 0;
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+    const todayRecord = history.find(h => h.date === todayStr);
+    if (!todayRecord || todayRecord.correctCount === 0) return 0;
+    const dateSet = new Set(history.filter(h => h.correctCount > 0).map(h => h.date));
+    let count = 0;
+    let currentDate = new Date(today);
+    while (dateSet.has(currentDate.toISOString().split('T')[0])) {
+      count++;
+      currentDate.setDate(currentDate.getDate() - 1);
+    }
+    return count;
+  })();
 
   useEffect(() => {
     setIsLoaded(true);
     if (user && token) {
       fetchStats();
       fetchDailyProgress();
+      fetchHistory();
     }
   }, [user, token]);
+
+  const fetchHistory = async () => {
+    try {
+      const response = await fetch('/api/stats/dashboard?days=365', { headers: { authorization: `Bearer ${token}` } });
+      if (response.ok) {
+        const data = await response.json();
+        setHistory(data.history || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch history:', error);
+    }
+  };
 
   const fetchStats = async () => {
     try {
@@ -138,16 +172,6 @@ export default function Home() {
                 <User className="w-4 h-4" />
                 <span>{user.nickname}</span>
               </div>
-              <Link href="/stats">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-white/50 hover:text-white hover:bg-white/10 border-0 transition-all duration-200 active:scale-95"
-                >
-                  <TrendingUp className="w-4 h-4 mr-1" />
-                  统计
-                </Button>
-              </Link>
               <Button 
                 variant="ghost" 
                 size="sm" 
@@ -275,6 +299,25 @@ export default function Home() {
             </div>
           </Link>
         </div>
+
+        {/* 打卡统计卡片 */}
+        {user && (
+          <Link href="/stats">
+            <div className="flex items-center justify-center gap-8 p-4 mb-4 rounded-2xl cursor-pointer hover:opacity-90 transition-opacity" style={{ background: 'rgba(0,0,0,0.14)' }}>
+              <div className="flex items-center gap-2">
+                <span className="text-sm" style={{ color: '#a0a0b0' }}>累计</span>
+                <span className="text-xl font-bold" style={{ color: '#4ade80' }}>{streakDays}</span>
+                <span className="text-sm" style={{ color: '#a0a0b0' }}>天</span>
+              </div>
+              <div className="w-px h-6 bg-gray-600"></div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm" style={{ color: '#a0a0b0' }}>连续</span>
+                <span className="text-xl font-bold" style={{ color: '#fbbf24' }}>{consecutiveDays}</span>
+                <span className="text-sm" style={{ color: '#a0a0b0' }}>天</span>
+              </div>
+            </div>
+          </Link>
+        )}
 
         {/* 统计信息 - 入场动画 */}
         {user && stats ? (
