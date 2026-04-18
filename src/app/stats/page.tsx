@@ -931,12 +931,12 @@ export default function StatsPage() {
                 近 6 周热力图
               </div>
             </div>
-            <span className="ml-auto flex items-center gap-4">
-              <span className="text-sm font-medium" style={{ color: '#a0a0b0' }}>
-                累计打卡 <span style={{ color: '#4ade80' }}>{streakDays}</span> 天
+            <span className="ml-auto flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
+              <span className="text-xs sm:text-sm" style={{ color: '#a0a0b0' }}>
+                累计 <span style={{ color: '#4ade80' }}>{streakDays}</span> 天
               </span>
-              <span className="text-sm font-medium" style={{ color: '#a0a0b0' }}>
-                连续打卡 <span style={{ color: '#fbbf24' }}>{consecutiveDays}</span> 天
+              <span className="text-xs sm:text-sm" style={{ color: '#a0a0b0' }}>
+                连续 <span style={{ color: '#fbbf24' }}>{consecutiveDays}</span> 天
               </span>
             </span>
           </div>
