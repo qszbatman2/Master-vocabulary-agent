@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
+import { getShanghaiDateString } from '@/lib/shanghai-date';
 
 function getUserIdFromToken(token: string): number | null {
   try {
@@ -9,11 +10,6 @@ function getUserIdFromToken(token: string): number | null {
   } catch {
     return null;
   }
-}
-
-function getShanghaiDateString(date: Date): string {
-  const shanghaiTime = new Date(date.getTime() + 8 * 60 * 60 * 1000);
-  return shanghaiTime.toISOString().split('T')[0];
 }
 
 function clampDays(days: number): number {
@@ -93,15 +89,6 @@ export async function GET(request: NextRequest) {
 
     const statusList = statuses || [];
 
-    // 计算每个日期的有效答对单词数（基于 last_correct_date，与每日学习目标逻辑一致）
-    const completedCountByDate = new Map<string, number>();
-    for (const s of statusList) {
-      const date = s.last_correct_date;
-      if (date) {
-        completedCountByDate.set(date, (completedCountByDate.get(date) || 0) + 1);
-      }
-    }
-
     const masteredCount = statusList.filter((s) => s.is_mastered).length;
     const reviewingCount = statusList.filter((s) => !s.is_mastered && (s.wrong_count || 0) > 0).length;
     const practicedWordIds = new Set(statusList.map((s) => s.word_id));
@@ -112,9 +99,11 @@ export async function GET(request: NextRequest) {
     const todayStatus = statusList.filter((s) => s.last_practiced_at && s.last_practiced_at >= todayStart);
     const todayPracticedCount = todayStatus.length;
     const todayMasteredCount = todayStatus.filter((s) => s.is_mastered).length;
+    const todayHistoryRecord = (history || []).find((record) => String(record.date) === today);
 
     const dailyGoal = user?.daily_goal || 200;
-    const todayCompleted = statusList.filter((s) => s.last_correct_date === today).length;
+    const todayCompleted = todayHistoryRecord?.correct_count || 0;
+    const hasStudyActivity = (todayHistoryRecord?.total_practiced || 0) > 0;
     const dailyProgress = Math.min(100, Math.round((todayCompleted / dailyGoal) * 100));
 
     const ladderCounts = [0, 0, 0, 0, 0];
@@ -168,6 +157,7 @@ export async function GET(request: NextRequest) {
         };
       })
       .sort((a, b) => b.masteredRate - a.masteredRate);
+    const hasUncategorizedBucket = categoryTotals.has(null);
 
     // 计算前12个分类和剩余分类的统计
     const topCategories = categoryBreakdown.slice(0, 12);
@@ -197,11 +187,12 @@ export async function GET(request: NextRequest) {
         date: today,
         practicedCount: todayPracticedCount,
         masteredCount: todayMasteredCount,
-        completedCount: todayCompleted,
+        effectiveCompletedCount: todayCompleted,
+        hasStudyActivity,
       },
       dailyProgress: {
         dailyGoal,
-        completed: todayCompleted,
+        effectiveCompletedCount: todayCompleted,
         progress: dailyProgress,
         isCompleted: todayCompleted >= dailyGoal,
       },
@@ -216,7 +207,7 @@ export async function GET(request: NextRequest) {
       },
       categories: {
         top: topCategories,
-        totalCategories: (categories || []).length + 1,
+        totalCategories: (categories || []).length + (hasUncategorizedBucket ? 1 : 0),
         rest: {
           totalWords: restTotal,
           practicedWords: restPracticed,
@@ -230,13 +221,12 @@ export async function GET(request: NextRequest) {
         return {
           date: dateStr,
           totalPracticed: record.total_practiced || 0,
-          correctCount: record.correct_count || 0,
-          // 有效答对单词数（基于 last_correct_date，与每日学习目标逻辑一致）
-          completedCount: completedCountByDate.get(dateStr) || 0,
+          effectiveCompletedCount: record.correct_count || 0,
           wrongCount: record.wrong_count || 0,
           masteredCount: record.mastered_count || 0,
           durationMinutes: Math.floor((record.duration_seconds || 0) / 60),
           isSettled: record.is_settled || false,
+          hasStudyActivity: (record.total_practiced || 0) > 0,
           wrongWordCount: record.wrong_word_ids ? record.wrong_word_ids.split(',').filter((x: string) => x).length : 0,
         };
       }),

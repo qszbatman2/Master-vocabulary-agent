@@ -25,7 +25,7 @@ interface TodayStats {
 
 interface DailyProgress {
   dailyGoal: number;
-  completed: number;
+  effectiveCompletedCount: number;
 }
 
 function SummaryContent() {
@@ -107,7 +107,7 @@ function SummaryContent() {
             const progressData = await progressResponse.json();
             setDailyProgress({
               dailyGoal: progressData.dailyGoal || 20,
-              completed: progressData.completed || 0,
+              effectiveCompletedCount: progressData.effectiveCompletedCount || 0,
             });
           }
         } catch (e) {
@@ -163,7 +163,7 @@ function SummaryContent() {
   };
 
   // 今日进度
-  const todayCompleted = dailyProgress.completed;
+  const todayCompleted = dailyProgress.effectiveCompletedCount;
   const todayGoal = dailyProgress.dailyGoal;
   const isGoalCompleted = todayCompleted >= todayGoal;
 
@@ -302,7 +302,7 @@ function SummaryContent() {
               />
             </div>
             <div className="flex justify-between items-center mt-2">
-              <span className="text-xs" style={{ color: '#a0a0b0' }}>今日正确</span>
+              <span className="text-xs" style={{ color: '#a0a0b0' }}>今日完成</span>
               <span className="text-sm font-semibold" style={{ color: isGoalCompleted ? '#ffd700' : '#00f0ff' }}>
                 {todayCompleted}/{todayGoal}
               </span>

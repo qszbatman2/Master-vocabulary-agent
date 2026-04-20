@@ -89,7 +89,7 @@ export default function PracticePage() {
   const [systemMasteredCount, setSystemMasteredCount] = useState(0);
   const [startTime, setStartTime] = useState<number>(0);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [dailyProgress, setDailyProgress] = useState<{ completed: number; goal: number } | null>(null);
+  const [dailyProgress, setDailyProgress] = useState<{ effectiveCompletedCount: number; goal: number } | null>(null);
   const [progressAnimated, setProgressAnimated] = useState(false);
   
   // 今日累计进度（从数据库读取）
@@ -255,7 +255,7 @@ export default function PracticePage() {
       });
       if (response.ok) {
         const data = await response.json();
-        setDailyProgress({ completed: data.completed, goal: data.dailyGoal });
+        setDailyProgress({ effectiveCompletedCount: data.effectiveCompletedCount, goal: data.dailyGoal });
       }
     } catch (error) {
       console.error('Failed to fetch daily progress:', error);
@@ -489,7 +489,7 @@ export default function PracticePage() {
     
     // 更新今日进度条
     if (result?.validCorrectRecorded) {
-      setDailyProgress(prev => prev ? { ...prev, completed: prev.completed + 1 } : prev);
+      setDailyProgress(prev => prev ? { ...prev, effectiveCompletedCount: prev.effectiveCompletedCount + 1 } : prev);
       setProgressAnimated(true);
       setTimeout(() => setProgressAnimated(false), 500);
     }
@@ -980,7 +980,7 @@ export default function PracticePage() {
             </div>
             <div className="flex items-center gap-2 text-sm">
               <span className="font-semibold" style={{ color: '#00ff88' }}>
-                成功 {(todayStats?.correctCount || 0) + roundSuccessCount}
+                完成 {dailyProgress?.effectiveCompletedCount || 0}
               </span>
               <span style={{ color: 'rgba(255,255,255,0.2)' }}>|</span>
               <span className="font-semibold" style={{ color: '#ff6b9d' }}>
@@ -1006,8 +1006,8 @@ export default function PracticePage() {
             <div 
               className={`absolute inset-y-0 left-0 transition-all duration-500 ease-out ${progressAnimated ? 'animate-progress-flash' : ''}`}
               style={{ 
-                width: `${Math.min(100, (dailyProgress.completed / dailyProgress.goal) * 100)}%`,
-                background: dailyProgress.completed >= dailyProgress.goal 
+                width: `${Math.min(100, (dailyProgress.effectiveCompletedCount / dailyProgress.goal) * 100)}%`,
+                background: dailyProgress.effectiveCompletedCount >= dailyProgress.goal 
                   ? 'linear-gradient(90deg, rgba(255,215,0,0.4), rgba(255,107,157,0.3))' 
                   : 'linear-gradient(90deg, rgba(0,255,136,0.25), rgba(0,212,255,0.2))',
               }}
@@ -1016,10 +1016,10 @@ export default function PracticePage() {
             <div className="absolute inset-0 flex items-center justify-center">
               <span 
                 className="text-[10px] font-medium tracking-wide"
-                style={{ color: dailyProgress.completed >= dailyProgress.goal ? 'rgba(255,215,0,0.7)' : 'rgba(255,255,255,0.5)' }}
+                style={{ color: dailyProgress.effectiveCompletedCount >= dailyProgress.goal ? 'rgba(255,215,0,0.7)' : 'rgba(255,255,255,0.5)' }}
               >
-                今日 {dailyProgress.completed}/{dailyProgress.goal}
-                {dailyProgress.completed >= dailyProgress.goal && ' ✓'}
+                今日完成 {dailyProgress.effectiveCompletedCount}/{dailyProgress.goal}
+                {dailyProgress.effectiveCompletedCount >= dailyProgress.goal && ' ✓'}
               </span>
             </div>
           </div>

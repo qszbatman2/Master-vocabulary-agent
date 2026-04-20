@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
+import { getTodayShanghaiDateString } from '@/lib/shanghai-date';
 
 // 解析 token 获取用户 ID
 function getUserIdFromToken(token: string): number | null {
@@ -12,18 +13,10 @@ function getUserIdFromToken(token: string): number | null {
   }
 }
 
-// 获取今天的日期字符串 (YYYY-MM-DD) - 使用上海时区
-function getTodayDateString(): string {
-  const now = new Date();
-  // 使用上海时区 (UTC+8)
-  const shanghaiTime = new Date(now.getTime() + 8 * 60 * 60 * 1000);
-  return shanghaiTime.toISOString().split('T')[0];
-}
-
 // 检查日期是否是今天
 function isToday(dateString: string | null): boolean {
   if (!dateString) return false;
-  const today = getTodayDateString();
+  const today = getTodayShanghaiDateString();
   return dateString === today;
 }
 
@@ -67,7 +60,7 @@ export async function POST(request: NextRequest) {
     }
 
     const now = new Date().toISOString();
-    const today = getTodayDateString();
+    const today = getTodayShanghaiDateString();
 
     // 获取用户对这些单词的当前状态
     const { data: existingStatuses, error: existingStatusesError } = await client
@@ -269,7 +262,8 @@ export async function POST(request: NextRequest) {
       todayStats = newStats;
     }
 
-    // 更新每日统计
+    // 更新每日统计。这里的 correct_count 作为历史遗留物理列继续保留，
+    // 但业务语义统一为“当日去重后的有效答对词数”。
     const dailyUpdateData: Record<string, unknown> = { updated_at: now };
     dailyUpdateData.total_practiced = (todayStats?.total_practiced || 0) + 1;
 
@@ -283,16 +277,10 @@ export async function POST(request: NextRequest) {
         dailyUpdateData.wrong_word_ids = currentWrongIds.join(',');
         dailyUpdateData.wrong_count = (todayStats?.wrong_count || 0) + 1;
       }
-    } else {
-      // 首次答对才计入正确答题数（每个单词今天只计一次）
-      const currentCorrectIds = todayStats?.correct_word_ids
-        ? todayStats.correct_word_ids.split(',').filter((id: string) => id)
-        : [];
-      if (!currentCorrectIds.includes(String(wordId))) {
-        currentCorrectIds.push(String(wordId));
-        dailyUpdateData.correct_word_ids = currentCorrectIds.join(',');
-        dailyUpdateData.correct_count = (todayStats?.correct_count || 0) + 1;
-      }
+    } else if (validCorrectRecorded) {
+      // 仅在触发一次“有效答对”时累计。
+      // 错词需连续答对 3 次后才会把 validCorrectRecorded 置为 true。
+      dailyUpdateData.correct_count = (todayStats?.correct_count || 0) + 1;
     }
 
     // 如果掌握，更新掌握数

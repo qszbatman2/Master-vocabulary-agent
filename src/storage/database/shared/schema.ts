@@ -109,6 +109,37 @@ export const userWordStatus = pgTable(
   ]
 );
 
+// 每日练习统计表
+// 注意：数据库中的 correct_count 是历史遗留物理列名，
+// 在业务语义上应统一理解为“去重后的有效答对词数”。
+export const dailyPracticeStats = pgTable(
+  "daily_practice_stats",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id),
+    date: varchar("date", { length: 10 }).notNull(),
+    totalPracticed: integer("total_practiced").default(0).notNull(),
+    effectiveCompletedCount: integer("correct_count").default(0).notNull(),
+    wrongCount: integer("wrong_count").default(0).notNull(),
+    masteredCount: integer("mastered_count").default(0).notNull(),
+    wrongWordIds: text("wrong_word_ids"),
+    legacyCorrectWordIds: text("correct_word_ids"),
+    durationSeconds: integer("duration_seconds").default(0).notNull(),
+    isSettled: boolean("is_settled").default(false).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }),
+  },
+  (table) => [
+    index("daily_practice_stats_user_id_idx").on(table.userId),
+    index("daily_practice_stats_date_idx").on(table.date),
+    index("daily_practice_stats_user_date_idx").on(table.userId, table.date),
+  ]
+);
+
 // 使用 createSchemaFactory 配置 date coercion
 const { createInsertSchema: createCoercedInsertSchema } = createSchemaFactory({
   coerce: { date: true },
@@ -159,3 +190,4 @@ export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type UserWordStatus = typeof userWordStatus.$inferSelect;
 export type InsertUserWordStatus = z.infer<typeof insertUserWordStatusSchema>;
+export type DailyPracticeStats = typeof dailyPracticeStats.$inferSelect;

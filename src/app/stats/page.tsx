@@ -4,72 +4,10 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, Gauge, Layers, TriangleAlert } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { getShanghaiDateString } from '@/lib/shanghai-date';
+import type { StatsDashboardResponse } from '@/lib/stats/contracts';
 
-type DashboardResponse = {
-  today: {
-    date: string;
-    practicedCount: number;
-    masteredCount: number;
-    completedCount: number;
-  };
-  dailyProgress: {
-    dailyGoal: number;
-    completed: number;
-    progress: number;
-    isCompleted: boolean;
-  };
-  total: {
-    totalWords: number;
-    masteredCount: number;
-    reviewingCount: number;
-    newWordsCount: number;
-  };
-  ladder: { counts: number[] };
-  categories: {
-    top: Array<{
-      categoryId: number | null;
-      name: string;
-      totalWords: number;
-      practicedWords: number;
-      masteredWords: number;
-      wrongSum: number;
-      masteredRate: number;
-    }>;
-    totalCategories: number;
-    rest: {
-      totalWords: number;
-      practicedWords: number;
-      masteredWords: number;
-      wrongSum: number;
-    };
-  };
-  weakWords: Array<{
-    wordId: number;
-    word: string;
-    meaning: string | null;
-    phonetic: string | null;
-    categoryName: string | null;
-    wrongCount: number;
-    correctCount: number;
-    lastWrongAt: string | null;
-  }>;
-  history: Array<{
-    date: string;
-    totalPracticed: number;
-    correctCount: number;
-    completedCount: number;  // 有效答对单词数（基于 last_correct_date，与每日学习目标逻辑一致）
-    wrongCount: number;
-    masteredCount: number;
-    durationMinutes: number;
-    isSettled: boolean;
-    wrongWordCount: number;
-  }>;
-};
-
-function shanghaiDateString(date: Date): string {
-  const shanghaiTime = new Date(date.getTime() + 8 * 60 * 60 * 1000);
-  return shanghaiTime.toISOString().split('T')[0];
-}
+type DashboardResponse = StatsDashboardResponse;
 
 function formatCompact(n: number): string {
   if (n >= 10000) return `${(n / 10000).toFixed(n >= 100000 ? 0 : 1)}w`;
@@ -395,15 +333,15 @@ function buildMockDashboard(dateString: string): DashboardResponse {
   const newWordsCount = 6820;
 
   const dailyGoal = 200;
-  const completed = 136;
-  const progress = Math.min(100, Math.round((completed / dailyGoal) * 100));
+  const effectiveCompletedCount = 136;
+  const progress = Math.min(100, Math.round((effectiveCompletedCount / dailyGoal) * 100));
 
   const days = 84;
   const base = new Date(`${dateString}T00:00:00+08:00`);
 
   const history = Array.from({ length: days }).map((_, i) => {
     const d = new Date(base.getTime() - (days - 1 - i) * 24 * 60 * 60 * 1000);
-    const date = shanghaiDateString(d);
+    const date = getShanghaiDateString(d);
     const wave = Math.sin((i / 7) * Math.PI * 2);
     const wave2 = Math.sin((i / 31) * Math.PI * 2);
     const seed = (i * 9301 + 49297) % 233280;
@@ -415,18 +353,17 @@ function buildMockDashboard(dateString: string): DashboardResponse {
     const masteredCountDaily = Math.max(0, Math.round(totalPracticed * (0.03 + wave2 * 0.01)));
     const durationMinutes = Math.max(0, Math.round(totalPracticed * (0.32 + noise * 0.12)));
     const wrongWordCount = Math.min(wrongCount, Math.max(0, Math.round(3 + noise * 11)));
-    // Mock 数据中 completedCount 等于 correctCount（简化处理）
-    const completedCount = correctCount;
+    const effectiveCompletedCountDaily = correctCount;
 
     return {
       date,
       totalPracticed,
-      correctCount,
-      completedCount,
+      effectiveCompletedCount: effectiveCompletedCountDaily,
       wrongCount,
       masteredCount: masteredCountDaily,
       durationMinutes,
       isSettled: i < days - 1,
+      hasStudyActivity: totalPracticed > 0,
       wrongWordCount,
     };
   });
@@ -485,13 +422,14 @@ function buildMockDashboard(dateString: string): DashboardResponse {
       date: dateString,
       practicedCount: today.totalPracticed,
       masteredCount: today.masteredCount,
-      completedCount: completed,
+      effectiveCompletedCount,
+      hasStudyActivity: today.totalPracticed > 0,
     },
     dailyProgress: {
       dailyGoal,
-      completed,
+      effectiveCompletedCount,
       progress,
-      isCompleted: completed >= dailyGoal,
+      isCompleted: effectiveCompletedCount >= dailyGoal,
     },
     total: {
       totalWords,
@@ -522,8 +460,7 @@ export default function StatsPage() {
   const [error, setError] = useState<string | null>(null);
   const cloudRef = useRef<HTMLDivElement | null>(null);
   const [cloudSize, setCloudSize] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
-  const [selectedCell, setSelectedCell] = useState<{ date: string; correctCount: number; wrong: number; mastered: number; isFuture: boolean } | null>(null);
-  const [tipsPosition, setTipsPosition] = useState<{ x: number; y: number } | null>(null);
+  const [selectedCell, setSelectedCell] = useState<{ date: string; effectiveCompletedCount: number; wrong: number; mastered: number; isFuture: boolean } | null>(null);
 
   if (!token) {
     return (
@@ -611,33 +548,29 @@ export default function StatsPage() {
     };
   }, [data]);
 
-  // 计算累计打卡天数（completedCount > 0 的天数，即有效答对的单词数 > 0）
+  // 打卡定义为“当天进入学习状态”，即当天存在练习行为。
   const streakDays = useMemo(() => {
     if (!data?.history) return 0;
-    return data.history.filter(h => h.completedCount > 0).length;
+    return data.history.filter(h => h.hasStudyActivity).length;
   }, [data]);
 
   // 计算连续打卡天数（必须从今天开始算起）
   const consecutiveDays = useMemo(() => {
     if (!data?.history || data.history.length === 0) return 0;
+    const today = new Date(`${data.today.date}T00:00:00+08:00`);
+    const todayStr = data.today.date;
 
-    // 获取今天的日期字符串
-    const today = new Date();
-    const todayStr = today.toISOString().split('T')[0];
-
-    // 检查今天是否有打卡记录（completedCount > 0）
     const todayRecord = data.history.find(h => h.date === todayStr);
-    if (!todayRecord || todayRecord.completedCount === 0) {
-      return 0; // 今天没打卡，连续天数为0
+    if (!todayRecord || !todayRecord.hasStudyActivity) {
+      return 0;
     }
 
-    // 从今天往前推算连续天数
-    const dateSet = new Set(data.history.filter(h => h.completedCount > 0).map(h => h.date));
+    const dateSet = new Set(data.history.filter(h => h.hasStudyActivity).map(h => h.date));
     let count = 0;
     let currentDate = new Date(today);
 
     while (true) {
-      const dateStr = currentDate.toISOString().split('T')[0];
+      const dateStr = getShanghaiDateString(currentDate);
       if (dateSet.has(dateStr)) {
         count++;
         currentDate.setDate(currentDate.getDate() - 1);
@@ -666,14 +599,13 @@ export default function StatsPage() {
 
     const records = Array.from({ length: days }).map((_, i) => {
       const d = new Date(startDate.getTime() + i * 24 * 60 * 60 * 1000);
-      const key = shanghaiDateString(d);
+      const key = getShanghaiDateString(d);
       const r = map.get(key);
       const practice = r?.totalPracticed || 0;
-      const correctCount = r?.correctCount || 0;
-      const completedCount = r?.completedCount || 0;  // 有效答对单词数
+      const effectiveCompletedCount = r?.effectiveCompletedCount || 0;
       const wrong = r?.wrongCount || 0;
       const mastered = r?.masteredCount || 0;
-      return { date: key, practice, correctCount, completedCount, wrong, mastered };
+      return { date: key, practice, effectiveCompletedCount, wrong, mastered };
     });
 
     const values = records.map((r) => r.practice);
@@ -690,11 +622,9 @@ export default function StatsPage() {
     const todayStr = data.today.date;
     const cells = records.map((r) => {
       const v = r.practice;
-      const correctV = r.correctCount;
-      const completedV = r.completedCount;  // 有效答对单词数
+      const effectiveCompletedV = r.effectiveCompletedCount;
       const t = clamp01(v / denom);
-      // 达标判断使用有效答对单词数（基于 last_correct_date），与每日学习目标逻辑一致
-      const achieved = completedV >= goalWords;
+      const achieved = effectiveCompletedV >= goalWords;
       const isFuture = r.date > todayStr;
 
       // 根据练习量、达标状态和是否未来日期确定格子颜色和样式
@@ -991,8 +921,7 @@ export default function StatsPage() {
                             key={c.date}
                             onClick={() => {
                               if (!c.isFuture && c.practice > 0) {
-                                setSelectedCell({ date: c.date, correctCount: c.correctCount, wrong: c.wrong, mastered: c.mastered, isFuture: c.isFuture });
-                                setTipsPosition({ x: 0, y: 0 });
+                                setSelectedCell({ date: c.date, effectiveCompletedCount: c.effectiveCompletedCount, wrong: c.wrong, mastered: c.mastered, isFuture: c.isFuture });
                               }
                             }}
                             className={`w-10 h-10 sm:w-12 sm:h-12 rounded-sm transition-all duration-200 ${!c.isFuture && c.practice > 0 ? 'cursor-pointer hover:scale-110 active:scale-95' : ''}`}
@@ -1095,10 +1024,10 @@ export default function StatsPage() {
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <div className="text-xs" style={{ color: '#a0a0b0' }}>
-                          正确答题
+                          有效答对
                         </div>
                         <div className="text-sm font-semibold" style={{ color: '#00ff88' }}>
-                          {selectedCell.correctCount} 个
+                          {selectedCell.effectiveCompletedCount} 个
                         </div>
                       </div>
                       <div className="flex items-center justify-between">

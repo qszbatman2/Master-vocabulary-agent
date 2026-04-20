@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
 import { addClampedDurationSeconds, MAX_DAILY_SECONDS } from '@/lib/duration';
+import { getTodayShanghaiDateString } from '@/lib/shanghai-date';
 
 // 解析 token 获取用户 ID
 function getUserIdFromToken(token: string): number | null {
@@ -11,14 +12,6 @@ function getUserIdFromToken(token: string): number | null {
   } catch {
     return null;
   }
-}
-
-// 获取今天的日期字符串 (YYYY-MM-DD) - 使用上海时区
-function getTodayDateString(): string {
-  const now = new Date();
-  // 使用上海时区 (UTC+8)
-  const shanghaiTime = new Date(now.getTime() + 8 * 60 * 60 * 1000);
-  return shanghaiTime.toISOString().split('T')[0];
 }
 
 // 获取今日练习统计
@@ -37,7 +30,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: '无效的token' }, { status: 401 });
     }
 
-    const today = getTodayDateString();
+    const today = getTodayShanghaiDateString();
 
     // 获取今日统计
     const { data: todayStats } = await client
@@ -64,6 +57,7 @@ export async function GET(request: NextRequest) {
       today: {
         date: today,
         totalPracticed: todayStats?.total_practiced || 0,
+        effectiveCompletedCount: todayStats?.correct_count || 0,
         correctCount: todayStats?.correct_count || 0,
         wrongCount: todayStats?.wrong_count || 0,
         masteredCount: todayStats?.mastered_count || 0,
@@ -105,7 +99,7 @@ export async function POST(request: NextRequest) {
       durationIncrement = 0,
     } = body;
 
-    const today = getTodayDateString();
+    const today = getTodayShanghaiDateString();
     const now = new Date().toISOString();
 
     // 获取或创建今日统计记录
@@ -159,10 +153,10 @@ export async function POST(request: NextRequest) {
             updateData.wrong_word_ids = currentWrongIds.join(',');
             updateData.wrong_count = (todayStats.wrong_count || 0) + 1;
           }
-        } else if (isCorrect) {
-          updateData.correct_count = (todayStats.correct_count || 0) + 1;
         }
-        
+
+        // 有效答对的累计统一由 /api/practice/submit 判定并写入，
+        // 避免备用接口再次把 correct_count 写成“答对题次数”。
         // 更新练习时长
         updateData.duration_seconds = addClampedDurationSeconds(
           todayStats.duration_seconds,
@@ -209,6 +203,7 @@ export async function POST(request: NextRequest) {
       success: true,
       stats: {
         totalPracticed: latestStats?.total_practiced || 0,
+        effectiveCompletedCount: latestStats?.correct_count || 0,
         correctCount: latestStats?.correct_count || 0,
         wrongCount: latestStats?.wrong_count || 0,
         masteredCount: latestStats?.mastered_count || 0,

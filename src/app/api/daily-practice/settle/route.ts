@@ -1,19 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
-
-// 获取今天的日期字符串 (YYYY-MM-DD) - 使用上海时区
-function getTodayDateString(): string {
-  const now = new Date();
-  const shanghaiTime = new Date(now.getTime() + 8 * 60 * 60 * 1000);
-  return shanghaiTime.toISOString().split('T')[0];
-}
-
-// 获取昨天的日期字符串
-function getYesterdayDateString(): string {
-  const now = new Date();
-  const shanghaiTime = new Date(now.getTime() + 8 * 60 * 60 * 1000 - 24 * 60 * 60 * 1000);
-  return shanghaiTime.toISOString().split('T')[0];
-}
+import { getShanghaiDateWithOffset, getTodayShanghaiDateString } from '@/lib/shanghai-date';
 
 /**
  * 结算 API
@@ -42,8 +29,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const yesterday = getYesterdayDateString();
-    const today = getTodayDateString();
+    const yesterday = getShanghaiDateWithOffset(-1);
+    const today = getTodayShanghaiDateString();
 
     // 获取昨天所有未结算的记录
     const { data: unsettledRecords, error: fetchError } = await client
@@ -101,6 +88,7 @@ export async function POST(request: NextRequest) {
       settledCount: unsettledRecords.length,
       stats: {
         totalPracticed: totalStats.totalPracticed,
+        effectiveCompletedCount: totalStats.correctCount,
         correctCount: totalStats.correctCount,
         wrongCount: totalStats.wrongCount,
         masteredCount: totalStats.masteredCount,
@@ -162,6 +150,7 @@ export async function GET(request: NextRequest) {
       history: (history || []).map(record => ({
         date: record.date,
         totalPracticed: record.total_practiced,
+        effectiveCompletedCount: record.correct_count,
         correctCount: record.correct_count,
         wrongCount: record.wrong_count,
         masteredCount: record.mastered_count,

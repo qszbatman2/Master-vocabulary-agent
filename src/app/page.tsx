@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input } from '@/components/ui/input';
 import { BookOpen, GraduationCap, LogIn, LogOut, User, CheckCircle, RotateCcw, BookMarked, TrendingUp, FileText } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import type { StatsHistoryPoint } from '@/lib/stats/contracts';
 
 interface Stats {
   today: { practicedCount: number; masteredCount: number; };
@@ -15,31 +16,33 @@ interface Stats {
 
 interface DailyProgress {
   dailyGoal: number;
-  completed: number;
+  effectiveCompletedCount: number;
   progress: number;
   isCompleted: boolean;
+  hasStudyActivity: boolean;
 }
 
 export default function Home() {
   const { user, logout, token } = useAuth();
   const [stats, setStats] = useState<Stats | null>(null);
   const [dailyProgress, setDailyProgress] = useState<DailyProgress | null>(null);
-  const [history, setHistory] = useState<Array<{ date: string; correctCount: number }>>([]);
+  const [history, setHistory] = useState<StatsHistoryPoint[]>([]);
+  const [historyToday, setHistoryToday] = useState<string>('');
   const [showGoalDialog, setShowGoalDialog] = useState(false);
   const [newGoal, setNewGoal] = useState('200');
   const [isLoaded, setIsLoaded] = useState(false);
 
   // 计算累计打卡天数
-  const streakDays = history.filter(h => h.correctCount > 0).length;
+  const streakDays = history.filter(h => h.hasStudyActivity).length;
 
   // 计算连续打卡天数
   const consecutiveDays = (() => {
-    if (history.length === 0) return 0;
-    const today = new Date();
-    const todayStr = today.toISOString().split('T')[0];
+    if (history.length === 0 || !historyToday) return 0;
+    const today = new Date(`${historyToday}T00:00:00+08:00`);
+    const todayStr = historyToday;
     const todayRecord = history.find(h => h.date === todayStr);
-    if (!todayRecord || todayRecord.correctCount === 0) return 0;
-    const dateSet = new Set(history.filter(h => h.correctCount > 0).map(h => h.date));
+    if (!todayRecord || !todayRecord.hasStudyActivity) return 0;
+    const dateSet = new Set(history.filter(h => h.hasStudyActivity).map(h => h.date));
     let count = 0;
     let currentDate = new Date(today);
     while (dateSet.has(currentDate.toISOString().split('T')[0])) {
@@ -64,6 +67,7 @@ export default function Home() {
       if (response.ok) {
         const data = await response.json();
         setHistory(data.history || []);
+        setHistoryToday(data.today?.date || '');
       }
     } catch (error) {
       console.error('Failed to fetch history:', error);
@@ -258,7 +262,7 @@ export default function Home() {
                       background: 'rgba(0, 240, 255, 0.1)'
                     }}
                   >
-                    今日 {dailyProgress.completed}/{dailyProgress.dailyGoal}
+                    今日完成 {dailyProgress.effectiveCompletedCount}/{dailyProgress.dailyGoal}
                   </button>
                 )}
               </div>

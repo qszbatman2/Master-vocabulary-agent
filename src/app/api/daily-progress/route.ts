@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
+import { getTodayShanghaiDateString } from '@/lib/shanghai-date';
 
 // 解析 token 获取用户 ID
 function getUserIdFromToken(token: string): number | null {
@@ -10,14 +11,6 @@ function getUserIdFromToken(token: string): number | null {
   } catch {
     return null;
   }
-}
-
-// 获取今天的日期字符串 (YYYY-MM-DD) - 使用上海时区
-function getTodayDateString(): string {
-  const now = new Date();
-  // 使用上海时区 (UTC+8)
-  const shanghaiTime = new Date(now.getTime() + 8 * 60 * 60 * 1000);
-  return shanghaiTime.toISOString().split('T')[0];
 }
 
 // GET: 获取今日学习进度
@@ -36,7 +29,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: '无效的token' }, { status: 401 });
     }
 
-    const today = getTodayDateString();
+    const today = getTodayShanghaiDateString();
 
     // 获取用户信息（包括每日目标）
     const { data: user, error: userError } = await client
@@ -49,37 +42,26 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: '用户不存在' }, { status: 404 });
     }
 
-    // 获取今日有效答对的单词数
-    const { count: todayCorrectCount, error: countError } = await client
-      .from('user_word_status')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', userId)
-      .eq('last_correct_date', today);
-
-    if (countError) {
-      console.error('Count error:', countError);
-    }
-
-    // 获取今日练习总数
+    // 历史物理列名仍为 correct_count，但业务语义统一为“去重后的有效答对词数”。
     const { data: todayStats } = await client
-      .from('user_word_status')
-      .select('total_practice_count, correct_count, wrong_count')
+      .from('daily_practice_stats')
+      .select('correct_count,total_practiced')
       .eq('user_id', userId)
-      .gte('last_practiced_at', `${today}T00:00:00`);
-
-    // 计算今日总练习数（需要更精确的统计）
-    // 由于 total_practice_count 是累计值，我们需要另一种方式
-    // 简化：使用今日有效答对数作为主要指标
+      .eq('date', today)
+      .maybeSingle();
 
     const dailyGoal = user?.daily_goal || 200;
-    const completed = todayCorrectCount || 0;
-    const progress = Math.min(100, Math.round((completed / dailyGoal) * 100));
+    const effectiveCompletedCount = todayStats?.correct_count || 0;
+    const hasStudyActivity = (todayStats?.total_practiced || 0) > 0;
+    const progress = Math.min(100, Math.round((effectiveCompletedCount / dailyGoal) * 100));
 
     return NextResponse.json({
       dailyGoal,
-      completed,
+      effectiveCompletedCount,
+      completed: effectiveCompletedCount,
       progress,
-      isCompleted: completed >= dailyGoal,
+      hasStudyActivity,
+      isCompleted: effectiveCompletedCount >= dailyGoal,
     });
   } catch (error) {
     console.error('Error fetching daily progress:', error);
