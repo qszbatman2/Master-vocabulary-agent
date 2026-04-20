@@ -505,7 +505,7 @@ export default function StatsPage() {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch('/api/stats/dashboard?days=84', { headers: { authorization: `Bearer ${token}` } });
+        const res = await fetch('/api/stats/dashboard?days=365', { headers: { authorization: `Bearer ${token}` } });
         if (!res.ok) {
           setError('数据加载失败');
           return;
