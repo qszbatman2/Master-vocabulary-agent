@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
 import { buildNearFormIndex, queryNearFormIndex, normalizeSpelling } from '@/lib/near-form';
+import { getShanghaiDateWithOffset, getTodayShanghaiDateString } from '@/lib/shanghai-date';
 
 // 解析 token 获取用户 ID
 function getUserIdFromToken(token: string): number | null {
@@ -159,10 +160,7 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    // 获取今天的日期（上海时区）
-    const now = new Date();
-    const shanghaiTime = new Date(now.getTime() + 8 * 60 * 60 * 1000);
-    const today = shanghaiTime.toISOString().split('T')[0];
+    const today = getTodayShanghaiDateString();
 
     // 构建单词到所有 id 的映射（同一个单词可能在多个分类中）
     const wordToIds = new Map<string, number[]>();
@@ -275,9 +273,7 @@ export async function GET(request: NextRequest) {
     // 只在普通模式下加入复习词
     if (filter !== 'wrong_words' && filter !== 'collected') {
       if (collectedWordIdSet.size > 0) {
-        // 计算4天前的日期
-        const fourDaysAgo = new Date();
-        fourDaysAgo.setDate(fourDaysAgo.getDate() - 4);
+        const fourDaysAgoDate = getShanghaiDateWithOffset(-4);
         
         uniqueWords.forEach((w, word) => {
           if (!isWordCollected(word)) return;
@@ -292,7 +288,7 @@ export async function GET(request: NextRequest) {
             .sort()
             .pop();
           
-          if (lastCorrectDate && new Date(lastCorrectDate) < fourDaysAgo) {
+          if (lastCorrectDate && lastCorrectDate < fourDaysAgoDate) {
             reviewWords.push({ ...w, is_review: true });
           }
         });

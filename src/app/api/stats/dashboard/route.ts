@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
-import { getShanghaiDateString } from '@/lib/shanghai-date';
+import { getShanghaiDateFromTimestamp, getShanghaiDateString } from '@/lib/shanghai-date';
 
 function getUserIdFromToken(token: string): number | null {
   try {
@@ -95,8 +95,7 @@ export async function GET(request: NextRequest) {
     const totalWordsCount = totalWords || 0;
     const newWordsCount = Math.max(0, totalWordsCount - practicedWordIds.size);
 
-    const todayStart = `${today}T00:00:00`;
-    const todayStatus = statusList.filter((s) => s.last_practiced_at && s.last_practiced_at >= todayStart);
+    const todayStatus = statusList.filter((s) => getShanghaiDateFromTimestamp(s.last_practiced_at) === today);
     const todayPracticedCount = todayStatus.length;
     const todayMasteredCount = todayStatus.filter((s) => s.is_mastered).length;
     const todayHistoryRecord = (history || []).find((record) => String(record.date) === today);

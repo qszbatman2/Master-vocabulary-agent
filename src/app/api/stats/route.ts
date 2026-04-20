@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
+import { getShanghaiDateFromTimestamp, getTodayShanghaiDateString } from '@/lib/shanghai-date';
 
 // 解析 token 获取用户 ID
 function getUserIdFromToken(token: string): number | null {
@@ -27,11 +28,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: '无效的token' }, { status: 401 });
     }
 
-    // 获取今天的日期字符串（上海时区）
-    const now = new Date();
-    const shanghaiTime = new Date(now.getTime() + 8 * 60 * 60 * 1000);
-    const today = shanghaiTime.toISOString().split('T')[0];
-    const todayStart = `${today}T00:00:00`;
+    const today = getTodayShanghaiDateString();
 
     // 获取用户所有单词状态
     const { data: userStatus, error: statusError } = await client
@@ -66,10 +63,7 @@ export async function GET(request: NextRequest) {
     const newWordsCount = (totalWords || 0) - practicedWordIds.size;
 
     // 今日统计
-    const todayStatus = statusList.filter(s => {
-      const lastPracticed = s.last_practiced_at;
-      return lastPracticed && lastPracticed >= todayStart;
-    });
+    const todayStatus = statusList.filter((s) => getShanghaiDateFromTimestamp(s.last_practiced_at) === today);
     
     const todayPracticedCount = todayStatus.length;
     const todayMasteredCount = todayStatus.filter(s => s.is_mastered).length;

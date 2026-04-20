@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
+import {
+  getShanghaiDateFromTimestamp,
+  getShanghaiDaySpan,
+  getTodayShanghaiDateString,
+} from '@/lib/shanghai-date';
 
 // 管理员授权码（优先从环境变量读取）
 const ADMIN_TOKEN = process.env.ADMIN_KEY || 'vocabulary-admin-2024';
-
-// 获取上海时区的日期字符串
-function getShanghaiDateString(date: Date): string {
-  const shanghaiTime = new Date(date.getTime() + 8 * 60 * 60 * 1000);
-  return shanghaiTime.toISOString().split('T')[0];
-}
 
 export async function GET(request: NextRequest) {
   try {
@@ -120,9 +119,7 @@ export async function GET(request: NextRequest) {
         // 如果 correct_count >= 1，说明至少有1次有效答对
         // 我们需要估算实际应该有多少天有效答对
         
-        const createdAt = new Date(status.created_at);
-        const lastPracticedAt = new Date(status.last_practiced_at);
-        const daysDiff = Math.floor((lastPracticedAt.getTime() - createdAt.getTime()) / (24 * 60 * 60 * 1000));
+        const daysDiff = getShanghaiDaySpan(status.created_at, status.last_practiced_at);
         
         // 假设：如果跨天学习且全部答对，应该有 min(daysDiff + 1, correct_count) 天有效答对
         const estimatedDailyCorrect = Math.min(daysDiff + 1, status.correct_count);
@@ -191,7 +188,6 @@ export async function GET(request: NextRequest) {
     
     // 修复已达到4天有效答对但未标记掌握的单词
     if (fixMastery) {
-      const now = new Date();
       const masteryIssues: any[] = [];
       const masteryFixed: any[] = [];
       
@@ -213,7 +209,7 @@ export async function GET(request: NextRequest) {
             .from('user_word_status')
             .update({
               is_mastered: true,
-              updated_at: now.toISOString(),
+              updated_at: new Date().toISOString(),
             })
             .eq('id', status.id);
 
@@ -250,17 +246,14 @@ export async function GET(request: NextRequest) {
       const issues: any[] = [];
       const fixed: any[] = [];
       const now = new Date();
-      const shanghaiTime = new Date(now.getTime() + 8 * 60 * 60 * 1000);
-      const today = shanghaiTime.toISOString().split('T')[0];
+      const today = getTodayShanghaiDateString();
       
       for (const status of statuses || []) {
         // 只分析未掌握且全对或大部分对的记录
         if (status.is_mastered) continue;
         if (status.correct_count < 2) continue;
         
-        const createdAt = new Date(status.created_at);
-        const lastPracticedAt = new Date(status.last_practiced_at);
-        const daysSpan = Math.floor((lastPracticedAt.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
+        const daysSpan = getShanghaiDaySpan(status.created_at, status.last_practiced_at);
         
         // 计算预期的有效答对天数
         const expectedDailyCorrect = Math.min(daysSpan + 1, status.correct_count);

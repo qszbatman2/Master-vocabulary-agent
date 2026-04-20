@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
+import { getShanghaiDateStartIso, getShanghaiDateWithOffset, getTodayShanghaiDateString } from '@/lib/shanghai-date';
 
 const ADMIN_TOKEN = process.env.ADMIN_KEY || 'vocabulary-admin-2024';
 
@@ -46,20 +47,20 @@ export async function GET(request: NextRequest) {
       .eq('is_mastered', true);
 
     // 获取今日活跃用户
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayShanghaiDateString();
     const { data: todayActive } = await client
       .from('user_word_status')
       .select('user_id')
-      .gte('updated_at', today);
+      .gte('updated_at', getShanghaiDateStartIso(today));
 
     const todayActiveUsers = new Set(todayActive?.map(r => r.user_id) || []);
 
     // 获取最近7天活跃用户
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const sevenDaysAgo = getShanghaiDateWithOffset(-7);
     const { data: weekActive } = await client
       .from('user_word_status')
       .select('user_id')
-      .gte('updated_at', sevenDaysAgo);
+      .gte('updated_at', getShanghaiDateStartIso(sevenDaysAgo));
 
     const weekActiveUsers = new Set(weekActive?.map(r => r.user_id) || []);
 

@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input } from '@/components/ui/input';
 import { BookOpen, GraduationCap, LogIn, LogOut, User, CheckCircle, RotateCcw, BookMarked, TrendingUp, FileText } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { getShanghaiDateString } from '@/lib/shanghai-date';
 import type { StatsHistoryPoint } from '@/lib/stats/contracts';
 
 interface Stats {
@@ -45,7 +46,7 @@ export default function Home() {
     const dateSet = new Set(history.filter(h => h.hasStudyActivity).map(h => h.date));
     let count = 0;
     let currentDate = new Date(today);
-    while (dateSet.has(currentDate.toISOString().split('T')[0])) {
+    while (dateSet.has(getShanghaiDateString(currentDate))) {
       count++;
       currentDate.setDate(currentDate.getDate() - 1);
     }

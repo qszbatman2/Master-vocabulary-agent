@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
+import { getShanghaiDaySpan, getTodayShanghaiDateString } from '@/lib/shanghai-date';
 
 const ADMIN_TOKEN = process.env.ADMIN_KEY || 'vocabulary-admin-2024';
 
@@ -72,9 +73,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 分析数据
-    const createdAt = new Date(status.created_at);
-    const lastPracticedAt = new Date(status.last_practiced_at);
-    const daysSpan = Math.floor((lastPracticedAt.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
+    const daysSpan = getShanghaiDaySpan(status.created_at, status.last_practiced_at);
     
     // 计算应该的有效答对天数
     // 逻辑：如果全部答对且跨越多天，应该有 min(daysSpan + 1, correct_count) 天有效答对
@@ -109,8 +108,7 @@ export async function POST(request: NextRequest) {
       
       // 获取今天的日期作为新的 last_correct_date
       const now = new Date();
-      const shanghaiTime = new Date(now.getTime() + 8 * 60 * 60 * 1000);
-      const today = shanghaiTime.toISOString().split('T')[0];
+      const today = getTodayShanghaiDateString();
 
       const { error: updateError } = await client
         .from('user_word_status')
@@ -198,9 +196,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 计算预期值
-    const createdAt = new Date(status.created_at);
-    const lastPracticedAt = new Date(status.last_practiced_at);
-    const daysSpan = Math.floor((lastPracticedAt.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
+    const daysSpan = getShanghaiDaySpan(status.created_at, status.last_practiced_at);
     const expectedDailyCorrect = Math.min(daysSpan + 1, status.correct_count);
 
     return NextResponse.json({

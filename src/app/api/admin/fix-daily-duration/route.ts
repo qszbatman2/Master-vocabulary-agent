@@ -1,14 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
 import { MAX_DAILY_SECONDS, sanitizeDurationSeconds } from '@/lib/duration';
+import { getTodayShanghaiDateString } from '@/lib/shanghai-date';
 
 const ADMIN_TOKEN = process.env.ADMIN_KEY || 'vocabulary-admin-2024';
-
-function getTodayDateString(): string {
-  const now = new Date();
-  const shanghaiTime = new Date(now.getTime() + 8 * 60 * 60 * 1000);
-  return shanghaiTime.toISOString().split('T')[0];
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,7 +14,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json().catch(() => ({}));
-    const date: string = typeof body?.date === 'string' && body.date ? body.date : getTodayDateString();
+    const date: string = typeof body?.date === 'string' && body.date ? body.date : getTodayShanghaiDateString();
     const userId: number | null =
       typeof body?.userId === 'number' && Number.isFinite(body.userId) ? Math.floor(body.userId) : null;
     const maxDailySeconds = sanitizeDurationSeconds(body?.maxDailySeconds ?? MAX_DAILY_SECONDS, 24 * 60 * 60);

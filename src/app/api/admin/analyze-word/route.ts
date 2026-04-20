@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
+import { getShanghaiDateFromTimestamp, getShanghaiDaySpan } from '@/lib/shanghai-date';
 
 const ADMIN_TOKEN = process.env.ADMIN_KEY || 'vocabulary-admin-2024';
 
@@ -78,12 +79,9 @@ export async function GET(request: NextRequest) {
       time_analysis: {
         first_practice: status.created_at,
         last_practice: status.last_practiced_at,
-        first_practice_date: status.created_at?.split('T')[0],
-        last_practice_date: status.last_practiced_at?.split('T')[0],
-        days_span: Math.floor(
-          (new Date(status.last_practiced_at).getTime() - new Date(status.created_at).getTime()) 
-          / (1000 * 60 * 60 * 24)
-        ),
+        first_practice_date: getShanghaiDateFromTimestamp(status.created_at),
+        last_practice_date: getShanghaiDateFromTimestamp(status.last_practiced_at),
+        days_span: getShanghaiDaySpan(status.created_at, status.last_practiced_at),
       },
       
       // 问题分析

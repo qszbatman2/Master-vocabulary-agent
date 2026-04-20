@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
+import { getShanghaiDateFromTimestamp, getShanghaiDaySpan } from '@/lib/shanghai-date';
 
 const ADMIN_TOKEN = process.env.ADMIN_KEY || 'vocabulary-admin-2024';
 
@@ -56,14 +57,8 @@ export async function GET(request: NextRequest) {
     }
 
     // 分析数据
-    const createdAt = new Date(status.created_at);
-    const updatedAt = new Date(status.updated_at);
-    const lastPracticedAt = new Date(status.last_practiced_at);
-    
-    // 计算时间跨度（天数）
-    const daysSpan = Math.floor(
-      (lastPracticedAt.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24)
-    );
+    // 计算上海自然日跨度
+    const daysSpan = getShanghaiDaySpan(status.created_at, status.last_practiced_at);
 
     // 推断问题
     const problems: string[] = [];
@@ -130,8 +125,8 @@ export async function GET(request: NextRequest) {
       
       // 推断的答题历史（基于现有数据）
       inferred_history: {
-        first_practice_date: status.created_at?.split('T')[0],
-        last_practice_date: status.last_practiced_at?.split('T')[0],
+        first_practice_date: getShanghaiDateFromTimestamp(status.created_at),
+        last_practice_date: getShanghaiDateFromTimestamp(status.last_practiced_at),
         first_practice_result: status.wrong_count === 0 ? '可能答对' : '可能答错',
         note: '数据库没有答题日志表，无法获取详细答题历史',
       },

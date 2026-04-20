@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
+import { getShanghaiDaySpan, getTodayShanghaiDateString } from '@/lib/shanghai-date';
 
 const ADMIN_TOKEN = process.env.ADMIN_KEY || 'vocabulary-admin-2024';
 
@@ -66,17 +67,14 @@ export async function GET(request: NextRequest) {
     const issues: any[] = [];
     const fixed: any[] = [];
     const now = new Date();
-    const shanghaiTime = new Date(now.getTime() + 8 * 60 * 60 * 1000);
-    const today = shanghaiTime.toISOString().split('T')[0];
+    const today = getTodayShanghaiDateString();
 
     for (const status of statuses || []) {
       // 只分析未掌握且全对或大部分对的记录
       if (status.is_mastered) continue;
       if (status.correct_count < 2) continue;
       
-      const createdAt = new Date(status.created_at);
-      const lastPracticedAt = new Date(status.last_practiced_at);
-      const daysSpan = Math.floor((lastPracticedAt.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
+      const daysSpan = getShanghaiDaySpan(status.created_at, status.last_practiced_at);
       
       // 计算预期的有效答对天数
       // 如果全对或大部分对，且跨越多天，应该有 min(跨越天数+1, 答对次数) 天有效答对
