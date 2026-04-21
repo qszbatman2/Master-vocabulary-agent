@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
 import { findBlankableMatches, isVariantWord, parsePosTags, shuffleArray } from '@/lib/cloze-utils';
+import { fetchAllFromSupabase } from '@/lib/supabase-fetch-all';
 
 function getUserIdFromToken(token: string): number | null {
   try {
@@ -28,14 +29,16 @@ async function getWords(client: ReturnType<typeof getSupabaseClient>): Promise<W
   const now = Date.now();
   if (cachedWords && now - cachedAt < 5 * 60 * 1000) return cachedWords;
 
-  const { data, error } = await client
+  const baseQuery = client
     .from('words')
     .select('id, word, phonetic, meaning, example_sentence, example_sentence_cn')
-    .not('example_sentence', 'is', null);
+    .not('example_sentence', 'is', null)
+    .order('id', { ascending: true });
 
-  if (error) throw new Error(error.message);
+  const { data, error } = await fetchAllFromSupabase<WordRow>(baseQuery);
+  if (error) throw new Error(error.message || 'Failed to fetch words');
 
-  cachedWords = (data || []) as WordRow[];
+  cachedWords = data as WordRow[];
   cachedAt = now;
   return cachedWords;
 }

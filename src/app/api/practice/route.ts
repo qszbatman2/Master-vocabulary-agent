@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
 import { buildNearFormIndex, queryNearFormIndex, normalizeSpelling } from '@/lib/near-form';
 import { getShanghaiDateWithOffset, getTodayShanghaiDateString } from '@/lib/shanghai-date';
+import { fetchAllFromSupabase } from '@/lib/supabase-fetch-all';
 
 // 解析 token 获取用户 ID
 function getUserIdFromToken(token: string): number | null {
@@ -91,6 +92,18 @@ export async function GET(request: NextRequest) {
       return result;
     }
 
+    // Insert items evenly into a base array to avoid clumping at the end.
+    function spreadInsert<T>(base: T[], inserts: T[]): T[] {
+      if (inserts.length === 0) return [...base];
+      const result = [...base];
+      const interval = Math.floor(result.length / (inserts.length + 1));
+      inserts.forEach((item, index) => {
+        const insertPos = Math.min(interval * (index + 1) + index, result.length);
+        result.splice(insertPos, 0, item);
+      });
+      return result;
+    }
+
     // 先获取用户主动收录的 word_id（用于后续扩展查询范围）
     const { data: userCollectedWordIds, error: userCollectedError } = await client
       .from('user_word_contexts')
@@ -106,13 +119,14 @@ export async function GET(request: NextRequest) {
     // 获取指定词库的所有单词
     let query = client
       .from('words')
-      .select('*');
+      .select('id, word, phonetic, meaning, example_sentence, example_sentence_cn, category_id')
+      .order('id', { ascending: true });
 
     if (categoryId && categoryId !== 'all') {
       query = query.eq('category_id', parseInt(categoryId));
     }
 
-    const { data, error: wordsError } = await query;
+    const { data, error: wordsError } = await fetchAllFromSupabase<any>(query);
 
     if (wordsError) {
       return NextResponse.json({ error: wordsError.message }, { status: 500 });
@@ -143,11 +157,12 @@ export async function GET(request: NextRequest) {
     allWords = shuffleArray(allWords);
 
     // 获取用户掌握状态 - 增加 last_correct_date 字段
-    const { data: userStatusData, error: userStatusError } = await client
+    const statusQuery = client
       .from('user_word_status')
       .select('word_id, is_mastered, last_wrong_at, last_correct_date, updated_at')
-      .eq('user_id', userId)
-      .order('updated_at', { ascending: false });
+      .eq('user_id', userId);
+
+    const { data: userStatusData, error: userStatusError } = await fetchAllFromSupabase<any>(statusQuery);
 
     if (userStatusError) {
       return NextResponse.json({ error: userStatusError.message }, { status: 500 });
@@ -155,7 +170,14 @@ export async function GET(request: NextRequest) {
 
     const statusMap = new Map<number, any>();
     (userStatusData || []).forEach((s: any) => {
-      if (!statusMap.has(s.word_id)) {
+      const prev = statusMap.get(s.word_id);
+      if (!prev) {
+        statusMap.set(s.word_id, s);
+        return;
+      }
+      const prevUpdated = prev.updated_at as string | undefined;
+      const curUpdated = s.updated_at as string | undefined;
+      if (curUpdated && (!prevUpdated || curUpdated > prevUpdated)) {
         statusMap.set(s.word_id, s);
       }
     });
@@ -174,6 +196,12 @@ export async function GET(request: NextRequest) {
     const isWordMastered = (word: string): boolean => {
       const ids = wordToIds.get(word) || [];
       return ids.some(id => statusMap.get(id)?.is_mastered);
+    };
+
+    // 新词：用户从未练过（任意一个 id 有状态即认为不是新词）
+    const isWordNew = (word: string): boolean => {
+      const ids = wordToIds.get(word) || [];
+      return !ids.some((id) => statusMap.has(id));
     };
 
     const isWordCollected = (word: string): boolean => {
@@ -343,30 +371,38 @@ export async function GET(request: NextRequest) {
       // 合并，优先词在前
       selectedWords = [...shuffledPriority, ...shuffledOther].slice(0, limit);
     } else {
-      // 将用户主动收录的词放在前面（形近词模式下不优先）
-      const userCollectedAvailable = Array.from(userCollectedMap.values());
-      const otherAvailable = availableWords.filter(w => !userCollectedMap.has(w.word));
+      // 渐进：默认 80% 复习 + 20% 新词（每次 5 题通常为 4 复习 1 新词）
+      const NEW_WORD_RATIO = 0.2;
+      const targetNewCount = Math.min(limit, Math.max(0, Math.round(limit * NEW_WORD_RATIO)));
+      const targetReviewCount = limit - targetNewCount;
 
-      // 洗牌
-      const shuffledCollected = shuffleArray(userCollectedAvailable);
-      const shuffledOther = shuffleArray(otherAvailable);
+      const preferCollected = distractorMode !== 'near_form';
+      const collectedPool = preferCollected ? shuffleArray(Array.from(userCollectedMap.values())) : [];
 
-      // 前5题为用户主动收录的词（如果有的话），其余随机（形近词模式下不启用此逻辑）
-      let collectedWords: typeof allWords = [];
-      let remainingWords: typeof allWords = [];
+      const basePool = preferCollected
+        ? availableWords.filter(w => !userCollectedMap.has(w.word))
+        : availableWords;
 
-      if (distractorMode === 'near_form') {
-        // 形近词模式：所有词随机，不优先主动收录词
-        collectedWords = [];
-        remainingWords = shuffleArray([...shuffledCollected, ...shuffledOther]).slice(0, limit);
-      } else {
-        // 普通模式：前5题为用户主动收录的词（如果有的话），其余随机
-        const collectedCount = Math.min(5, shuffledCollected.length);
-        collectedWords = shuffledCollected.slice(0, collectedCount);
-        remainingWords = shuffledOther.slice(0, limit - collectedCount);
+      const reviewPool = shuffleArray(basePool.filter(w => !isWordNew(w.word)));
+      const newPool = shuffleArray(basePool.filter(w => isWordNew(w.word)));
+
+      const selectedReview = [...collectedPool, ...reviewPool].slice(0, targetReviewCount);
+      const selectedNew = newPool.slice(0, targetNewCount);
+
+      let mixed = spreadInsert(selectedReview, selectedNew);
+
+      // 不足时兜底：先补复习池，再补新词池
+      if (mixed.length < limit) {
+        const used = new Set(mixed.map((w: any) => w.id));
+        for (const w of [...collectedPool, ...reviewPool, ...newPool]) {
+          if (mixed.length >= limit) break;
+          if (used.has(w.id)) continue;
+          used.add(w.id);
+          mixed.push(w);
+        }
       }
 
-      selectedWords = [...collectedWords, ...remainingWords];
+      selectedWords = mixed.slice(0, limit);
     }
 
     // ========== 插入复习词（分散在整个题目中）==========
