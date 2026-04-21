@@ -5,6 +5,7 @@ import {
   getShanghaiDaySpan,
   getTodayShanghaiDateString,
 } from '@/lib/shanghai-date';
+import { fetchAllFromSupabase } from '@/lib/supabase-fetch-all';
 
 // 管理员授权码（优先从环境变量读取）
 const ADMIN_TOKEN = process.env.ADMIN_KEY || 'vocabulary-admin-2024';
@@ -80,7 +81,9 @@ export async function GET(request: NextRequest) {
       statusQuery = statusQuery.in('word_id', wordIds);
     }
 
-    const { data: statuses, error: statusError } = await statusQuery.order('last_practiced_at', { ascending: false });
+    const { data: statuses, error: statusError } = await fetchAllFromSupabase(
+      statusQuery.order('last_practiced_at', { ascending: false })
+    );
 
     if (statusError) {
       return NextResponse.json({ error: '查询学习记录失败', details: statusError.message }, { status: 500 });
@@ -193,10 +196,9 @@ export async function GET(request: NextRequest) {
       
       // 获取所有单词信息
       const wordIds = statuses?.map(s => s.word_id) || [];
-      const { data: words } = await client
-        .from('words')
-        .select('id, word')
-        .in('id', wordIds);
+      const { data: words } = await fetchAllFromSupabase(
+        client.from('words').select('id, word').in('id', wordIds)
+      );
       const wordMap = new Map(words?.map(w => [w.id, w.word]) || []);
       
       for (const status of statuses || []) {
@@ -235,10 +237,9 @@ export async function GET(request: NextRequest) {
     if (diagnose || batchFix) {
       // 获取所有单词信息
       const wordIds = statuses?.map(s => s.word_id) || [];
-      const { data: words } = await client
-        .from('words')
-        .select('id, word')
-        .in('id', wordIds);
+      const { data: words } = await fetchAllFromSupabase(
+        client.from('words').select('id, word').in('id', wordIds)
+      );
       
       const wordMap = new Map(words?.map(w => [w.id, w.word]) || []);
       

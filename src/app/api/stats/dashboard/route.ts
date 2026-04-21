@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
 import { getShanghaiDateFromTimestamp, getShanghaiDateString } from '@/lib/shanghai-date';
 import { normalizeSpelling } from '@/lib/near-form';
+import { fetchAllFromSupabase } from '@/lib/supabase-fetch-all';
 
 function getUserIdFromToken(token: string): number | null {
   try {
@@ -48,10 +49,12 @@ export async function GET(request: NextRequest) {
     ] = await Promise.all([
       client.from('words').select('*', { count: 'exact', head: true }),
       client.from('users').select('daily_goal').eq('id', userId).single(),
-      client
-        .from('user_word_status')
-        .select('word_id,is_mastered,wrong_count,daily_correct_count,last_practiced_at,last_correct_date,last_wrong_at')
-        .eq('user_id', userId),
+      fetchAllFromSupabase(
+        client
+          .from('user_word_status')
+          .select('word_id,is_mastered,wrong_count,daily_correct_count,last_practiced_at,last_correct_date,last_wrong_at')
+          .eq('user_id', userId)
+      ),
       client
         .from('daily_practice_stats')
         .select('date,total_practiced,correct_count,wrong_count,mastered_count,duration_seconds,is_settled,wrong_word_ids')
@@ -66,7 +69,9 @@ export async function GET(request: NextRequest) {
         .order('wrong_count', { ascending: false })
         .limit(30),
       client.from('vocabulary_categories').select('id,name'),
-      client.from('words').select('id,word,meaning,phonetic,category_id'),
+      fetchAllFromSupabase(
+        client.from('words').select('id,word,meaning,phonetic,category_id')
+      ),
     ]);
 
     if (userError) {

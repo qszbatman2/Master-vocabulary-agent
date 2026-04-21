@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
 import { getShanghaiDaySpan, getTodayShanghaiDateString } from '@/lib/shanghai-date';
+import { fetchAllFromSupabase } from '@/lib/supabase-fetch-all';
 
 const ADMIN_TOKEN = process.env.ADMIN_KEY || 'vocabulary-admin-2024';
 
@@ -34,21 +35,23 @@ export async function GET(request: NextRequest) {
     }
 
     // 查询所有学习记录
-    const { data: statuses, error } = await client
-      .from('user_word_status')
-      .select(`
-        id,
-        word_id,
-        is_mastered,
-        total_practice_count,
-        correct_count,
-        wrong_count,
-        daily_correct_count,
-        last_correct_date,
-        created_at,
-        last_practiced_at
-      `)
-      .eq('user_id', user.id);
+    const { data: statuses, error } = await fetchAllFromSupabase(
+      client
+        .from('user_word_status')
+        .select(`
+          id,
+          word_id,
+          is_mastered,
+          total_practice_count,
+          correct_count,
+          wrong_count,
+          daily_correct_count,
+          last_correct_date,
+          created_at,
+          last_practiced_at
+        `)
+        .eq('user_id', user.id)
+    );
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
@@ -56,10 +59,9 @@ export async function GET(request: NextRequest) {
 
     // 获取所有单词信息
     const wordIds = statuses?.map(s => s.word_id) || [];
-    const { data: words } = await client
-      .from('words')
-      .select('id, word')
-      .in('id', wordIds);
+    const { data: words } = await fetchAllFromSupabase(
+      client.from('words').select('id, word').in('id', wordIds)
+    );
 
     const wordMap = new Map(words?.map(w => [w.id, w.word]) || []);
 

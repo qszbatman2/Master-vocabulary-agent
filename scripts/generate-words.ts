@@ -1,5 +1,6 @@
 import { LLMClient, Config } from 'coze-coding-dev-sdk';
 import { getSupabaseClient } from '../src/storage/database/supabase-client';
+import { fetchAllFromSupabase } from '../src/lib/supabase-fetch-all';
 
 const supabase = getSupabaseClient();
 const llmClient = new LLMClient(new Config());
@@ -17,9 +18,9 @@ interface WordData {
 
 // 获取已存在的单词
 async function getExistingWords(): Promise<string[]> {
-  const { data, error } = await supabase
-    .from(WORDS_TABLE)
-    .select('word');
+  const { data, error } = await fetchAllFromSupabase(
+    supabase.from(WORDS_TABLE).select('word')
+  );
   
   if (error || !data) return [];
   return data.map((w: { word: string }) => w.word.toLowerCase());

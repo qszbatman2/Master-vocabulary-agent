@@ -5,6 +5,19 @@ const key = process.env.COZE_SUPABASE_ANON_KEY;
 
 const client = createClient(url, key);
 
+async function fetchAll(query, pageSize = 1000) {
+  const all = [];
+  for (let from = 0; ; from += pageSize) {
+    const to = from + pageSize - 1;
+    const { data, error } = await query.range(from, to);
+    if (error) throw error;
+    const batch = data || [];
+    all.push(...batch);
+    if (batch.length < pageSize) break;
+  }
+  return all;
+}
+
 // 1. 获取所有分类及其词汇数量
 const { data: categories } = await client
   .from('categories')
@@ -28,17 +41,17 @@ const { count: totalWords } = await client
 console.log(`\n总记录数: ${totalWords}`);
 
 // 3. 获取去重后的词汇数
-const { data: allWords } = await client
-  .from('words')
-  .select('word');
+const allWords = await fetchAll(
+  client.from('words').select('word')
+);
 
 const uniqueWords = new Set(allWords?.map(w => w.word) || []);
 console.log(`去重后词汇数: ${uniqueWords.size}`);
 
 // 4. 找出存在于多个分类的词
-const { data: wordsWithCategory } = await client
-  .from('words')
-  .select('word, category_id, categories(name)');
+const wordsWithCategory = await fetchAll(
+  client.from('words').select('word, category_id, categories(name)')
+);
 
 const wordCategoryMap = new Map();
 wordsWithCategory?.forEach(w => {

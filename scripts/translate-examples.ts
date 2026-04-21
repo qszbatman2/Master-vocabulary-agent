@@ -1,16 +1,19 @@
 import { LLMClient, Config } from 'coze-coding-dev-sdk';
 import { getSupabaseClient } from '../src/storage/database/supabase-client';
+import { fetchAllFromSupabase } from '../src/lib/supabase-fetch-all';
 
 async function translateExamples() {
   const client = getSupabaseClient();
   const llmClient = new LLMClient(new Config());
 
   // 获取所有没有中文翻译的例句
-  const { data: words, error } = await client
-    .from('words')
-    .select('id, word, example_sentence')
-    .not('example_sentence', 'is', null)
-    .is('example_sentence_cn', null);
+  const { data: words, error } = await fetchAllFromSupabase(
+    client
+      .from('words')
+      .select('id, word, example_sentence')
+      .not('example_sentence', 'is', null)
+      .is('example_sentence_cn', null)
+  );
 
   if (error || !words) {
     console.error('Failed to fetch words:', error);

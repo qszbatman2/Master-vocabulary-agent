@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
 import { getShanghaiDateFromTimestamp, getTodayShanghaiDateString } from '@/lib/shanghai-date';
+import { fetchAllFromSupabase } from '@/lib/supabase-fetch-all';
 
 // 解析 token 获取用户 ID
 function getUserIdFromToken(token: string): number | null {
@@ -31,10 +32,9 @@ export async function GET(request: NextRequest) {
     const today = getTodayShanghaiDateString();
 
     // 获取用户所有单词状态
-    const { data: userStatus, error: statusError } = await client
-      .from('user_word_status')
-      .select('*')
-      .eq('user_id', userId);
+    const { data: userStatus, error: statusError } = await fetchAllFromSupabase(
+      client.from('user_word_status').select('*').eq('user_id', userId)
+    );
 
     if (statusError) {
       return NextResponse.json({ error: statusError.message }, { status: 500 });

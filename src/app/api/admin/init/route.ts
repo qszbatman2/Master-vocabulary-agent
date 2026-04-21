@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
+import { fetchAllFromSupabase } from '@/lib/supabase-fetch-all';
 
 const client = getSupabaseClient();
 
@@ -367,9 +368,9 @@ export async function POST(request: NextRequest) {
     console.log('分类ID映射:', categoryIds);
     
     // 获取已有单词
-    const { data: existingWords } = await client
-      .from('words')
-      .select('word');
+    const { data: existingWords } = await fetchAllFromSupabase(
+      client.from('words').select('word')
+    );
     
     const existingSet = new Set(existingWords?.map(w => w.word.toLowerCase()) || []);
     console.log(`已存在 ${existingSet.size} 个单词`);

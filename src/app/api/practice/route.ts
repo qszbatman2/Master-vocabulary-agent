@@ -105,10 +105,12 @@ export async function GET(request: NextRequest) {
     }
 
     // 先获取用户主动收录的 word_id（用于后续扩展查询范围）
-    const { data: userCollectedWordIds, error: userCollectedError } = await client
-      .from('user_word_contexts')
-      .select('word_id')
-      .eq('user_id', userId);
+    const { data: userCollectedWordIds, error: userCollectedError } = await fetchAllFromSupabase<{ word_id: number }>(
+      client
+        .from('user_word_contexts')
+        .select('word_id')
+        .eq('user_id', userId)
+    );
 
     if (userCollectedError) {
       return NextResponse.json({ error: userCollectedError.message }, { status: 500 });
@@ -143,10 +145,12 @@ export async function GET(request: NextRequest) {
       const missingWordIds = Array.from(collectedWordIdSet).filter(id => !currentWordIdSet.has(id));
 
       if (missingWordIds.length > 0) {
-        const { data: extraWords } = await client
-          .from('words')
-          .select('*')
-          .in('id', missingWordIds);
+        const { data: extraWords } = await fetchAllFromSupabase<any>(
+          client
+            .from('words')
+            .select('*')
+            .in('id', missingWordIds)
+        );
         if (extraWords) {
           allWords = [...allWords, ...extraWords];
         }
@@ -324,13 +328,15 @@ export async function GET(request: NextRequest) {
     }
 
     // 查询用户主动收录的单词（有上下文记录的，且未掌握且今天未答对）
-    const { data: userCollectedData } = await client
-      .from('user_word_contexts')
-      .select(`
-        word_id,
-        words!inner(id, word, phonetic, meaning, example_sentence, example_sentence_cn, category_id)
-      `)
-      .eq('user_id', userId);
+    const { data: userCollectedData } = await fetchAllFromSupabase<any>(
+      client
+        .from('user_word_contexts')
+        .select(`
+          word_id,
+          words!inner(id, word, phonetic, meaning, example_sentence, example_sentence_cn, category_id)
+        `)
+        .eq('user_id', userId)
+    );
 
     // 构建用户收录词的映射（word -> word数据）
     const userCollectedMap = new Map<string, typeof allWords[0]>();

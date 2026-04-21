@@ -1,5 +1,6 @@
 // 扩展单词数据 - E和F字母
 import { getSupabaseClient } from '../src/storage/database/supabase-client';
+import { fetchAllFromSupabase } from '../src/lib/supabase-fetch-all';
 
 const supabase = getSupabaseClient();
 
@@ -605,9 +606,9 @@ async function getCategoryIds(): Promise<Map<string, number>> {
 
 // 获取已存在的单词
 async function getExistingWords(): Promise<Set<string>> {
-  const { data, error } = await supabase
-    .from(WORDS_TABLE)
-    .select('word');
+  const { data, error } = await fetchAllFromSupabase(
+    supabase.from(WORDS_TABLE).select('word')
+  );
   
   if (error) return new Set();
   return new Set(data?.map((w: { word: string }) => w.word.toLowerCase()) || []);

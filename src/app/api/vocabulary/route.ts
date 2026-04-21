@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
+import { fetchAllFromSupabase } from '@/lib/supabase-fetch-all';
 
 // 解析 token 获取用户 ID
 function getUserIdFromToken(token: string): number | null {
@@ -54,10 +55,12 @@ export async function GET(request: NextRequest) {
 
     // 主动收录筛选
     if (userId && filter === 'collected') {
-      const { data: collectedData, error: collectedError } = await client
-        .from('user_word_contexts')
-        .select('word_id, context_text, surface_form')
-        .eq('user_id', userId);
+      const { data: collectedData, error: collectedError } = await fetchAllFromSupabase(
+        client
+          .from('user_word_contexts')
+          .select('word_id, context_text, surface_form')
+          .eq('user_id', userId)
+      );
       
       if (collectedError) {
         console.error('Collected query error:', collectedError);
@@ -81,21 +84,25 @@ export async function GET(request: NextRequest) {
       // 搜索过滤
       let filteredWordIds = wordIds;
       if (search) {
-        const { data: searchWords } = await client
-          .from('words')
-          .select('id')
-          .in('id', wordIds)
-          .or(`word.ilike.%${search}%,meaning.ilike.%${search}%`);
+        const { data: searchWords } = await fetchAllFromSupabase(
+          client
+            .from('words')
+            .select('id')
+            .in('id', wordIds)
+            .or(`word.ilike.%${search}%,meaning.ilike.%${search}%`)
+        );
         filteredWordIds = searchWords?.map(w => w.id) || [];
       }
 
       // 分类过滤
       if (categoryId && categoryId !== 'all') {
-        const { data: categoryWords } = await client
-          .from('words')
-          .select('id')
-          .in('id', filteredWordIds)
-          .eq('category_id', parseInt(categoryId));
+        const { data: categoryWords } = await fetchAllFromSupabase(
+          client
+            .from('words')
+            .select('id')
+            .in('id', filteredWordIds)
+            .eq('category_id', parseInt(categoryId))
+        );
         filteredWordIds = categoryWords?.map(w => w.id) || [];
       }
 
@@ -185,7 +192,7 @@ export async function GET(request: NextRequest) {
         statusQuery = statusQuery.eq('is_mastered', false);
       }
 
-      const { data: statusData, error: statusError } = await statusQuery;
+      const { data: statusData, error: statusError } = await fetchAllFromSupabase(statusQuery);
       
       if (statusError) {
         console.error('Status query error:', statusError);
@@ -214,7 +221,7 @@ export async function GET(request: NextRequest) {
         wordsQuery = wordsQuery.eq('category_id', parseInt(categoryId));
       }
 
-      const { data: wordsCategoryData } = await wordsQuery;
+      const { data: wordsCategoryData } = await fetchAllFromSupabase(wordsQuery);
 
       if (!wordsCategoryData || wordsCategoryData.length === 0) {
         return NextResponse.json({
@@ -243,11 +250,13 @@ export async function GET(request: NextRequest) {
       let filteredWordData = wordDataList;
       if (search) {
         const wordIdsToSearch = wordDataList.map(w => w.wordId);
-        const { data: searchWords } = await client
-          .from('words')
-          .select('id')
-          .in('id', wordIdsToSearch)
-          .or(`word.ilike.%${search}%,meaning.ilike.%${search}%`);
+        const { data: searchWords } = await fetchAllFromSupabase(
+          client
+            .from('words')
+            .select('id')
+            .in('id', wordIdsToSearch)
+            .or(`word.ilike.%${search}%,meaning.ilike.%${search}%`)
+        );
         
         const searchWordIds = new Set(searchWords?.map(w => w.id) || []);
         filteredWordData = wordDataList.filter(w => searchWordIds.has(w.wordId));

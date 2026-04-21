@@ -1,5 +1,6 @@
 // N-R字母开头的单词 - Part 1/4
 import { getSupabaseClient } from '../src/storage/database/supabase-client';
+import { fetchAllFromSupabase } from '../src/lib/supabase-fetch-all';
 
 const supabase = getSupabaseClient();
 const WORDS_TABLE = 'words';
@@ -781,9 +782,9 @@ async function getCategoryIds(): Promise<Map<string, number>> {
 }
 
 async function getExistingWords(): Promise<Set<string>> {
-  const { data, error } = await supabase
-    .from(WORDS_TABLE)
-    .select('word');
+  const { data, error } = await fetchAllFromSupabase(
+    supabase.from(WORDS_TABLE).select('word')
+  );
   
   if (error) return new Set();
   return new Set(data?.map((w: { word: string }) => w.word.toLowerCase()) || []);

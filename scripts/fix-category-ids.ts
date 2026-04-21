@@ -1,4 +1,5 @@
 import { getSupabaseClient } from '../src/storage/database/supabase-client';
+import { fetchAllFromSupabase } from '../src/lib/supabase-fetch-all';
 
 const client = getSupabaseClient();
 
@@ -47,10 +48,12 @@ async function fixCategoryIds() {
     if (error4) console.error('日常词汇更新失败:', error4);
 
     console.log('验证数据...');
-    const { data, error } = await client
-      .from('words')
-      .select('id, word, category_id')
-      .order('id');
+    const { data, error } = await fetchAllFromSupabase(
+      client
+        .from('words')
+        .select('id, word, category_id')
+        .order('id')
+    );
 
     if (error) {
       console.error('查询失败:', error);

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
 import { getShanghaiDateStartIso, getShanghaiDateWithOffset, getTodayShanghaiDateString } from '@/lib/shanghai-date';
+import { fetchAllFromSupabase } from '@/lib/supabase-fetch-all';
 
 const ADMIN_TOKEN = process.env.ADMIN_KEY || 'vocabulary-admin-2024';
 
@@ -29,9 +30,9 @@ export async function GET(request: NextRequest) {
       .limit(20);
 
     // 获取有学习记录的用户数
-    const { data: usersWithRecords } = await client
-      .from('user_word_status')
-      .select('user_id');
+    const { data: usersWithRecords } = await fetchAllFromSupabase(
+      client.from('user_word_status').select('user_id')
+    );
 
     const uniqueUserIds = new Set(usersWithRecords?.map(r => r.user_id) || []);
 
@@ -48,19 +49,23 @@ export async function GET(request: NextRequest) {
 
     // 获取今日活跃用户
     const today = getTodayShanghaiDateString();
-    const { data: todayActive } = await client
-      .from('user_word_status')
-      .select('user_id')
-      .gte('updated_at', getShanghaiDateStartIso(today));
+    const { data: todayActive } = await fetchAllFromSupabase(
+      client
+        .from('user_word_status')
+        .select('user_id')
+        .gte('updated_at', getShanghaiDateStartIso(today))
+    );
 
     const todayActiveUsers = new Set(todayActive?.map(r => r.user_id) || []);
 
     // 获取最近7天活跃用户
     const sevenDaysAgo = getShanghaiDateWithOffset(-7);
-    const { data: weekActive } = await client
-      .from('user_word_status')
-      .select('user_id')
-      .gte('updated_at', getShanghaiDateStartIso(sevenDaysAgo));
+    const { data: weekActive } = await fetchAllFromSupabase(
+      client
+        .from('user_word_status')
+        .select('user_id')
+        .gte('updated_at', getShanghaiDateStartIso(sevenDaysAgo))
+    );
 
     const weekActiveUsers = new Set(weekActive?.map(r => r.user_id) || []);
 

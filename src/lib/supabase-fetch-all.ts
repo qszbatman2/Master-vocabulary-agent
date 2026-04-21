@@ -1,5 +1,5 @@
 type SupabaseQueryLike<T> = {
-  range: (from: number, to: number) => Promise<{ data: T[] | null; error: any | null }>;
+  range: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: any | null }>;
 };
 
 /**
@@ -25,4 +25,3 @@ export async function fetchAllFromSupabase<T>(
 
   return { data: all, error: null };
 }
-

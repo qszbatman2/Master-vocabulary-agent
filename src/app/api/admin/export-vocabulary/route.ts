@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
+import { fetchAllFromSupabase } from '@/lib/supabase-fetch-all';
 
 const ADMIN_TOKEN = process.env.ADMIN_KEY || 'vocabulary-admin-2024';
 
@@ -25,10 +26,9 @@ export async function GET(request: NextRequest) {
     }
 
     // 获取所有单词
-    const { data: words, error: wordsError } = await client
-      .from('words')
-      .select('*')
-      .order('id');
+    const { data: words, error: wordsError } = await fetchAllFromSupabase(
+      client.from('words').select('*').order('id')
+    );
 
     if (wordsError) {
       return NextResponse.json({ error: wordsError.message }, { status: 500 });
