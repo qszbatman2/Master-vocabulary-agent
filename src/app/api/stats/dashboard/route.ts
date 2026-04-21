@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
 import { getShanghaiDateFromTimestamp, getShanghaiDateString } from '@/lib/shanghai-date';
+import { normalizeSpelling } from '@/lib/near-form';
 
 function getUserIdFromToken(token: string): number | null {
   try {
@@ -49,7 +50,7 @@ export async function GET(request: NextRequest) {
       client.from('users').select('daily_goal').eq('id', userId).single(),
       client
         .from('user_word_status')
-        .select('word_id,is_mastered,wrong_count,daily_correct_count,last_practiced_at,last_correct_date')
+        .select('word_id,is_mastered,wrong_count,daily_correct_count,last_practiced_at,last_correct_date,last_wrong_at')
         .eq('user_id', userId),
       client
         .from('daily_practice_stats')
@@ -89,15 +90,51 @@ export async function GET(request: NextRequest) {
 
     const statusList = statuses || [];
 
-    const masteredCount = statusList.filter((s) => s.is_mastered).length;
-    const reviewingCount = statusList.filter((s) => !s.is_mastered && (s.wrong_count || 0) > 0).length;
-    const practicedWordIds = new Set(statusList.map((s) => s.word_id));
-    const totalWordsCount = totalWords || 0;
-    const newWordsCount = Math.max(0, totalWordsCount - practicedWordIds.size);
+    // Learning-structure metrics should match practice semantics:
+    // - de-duplicate by normalized word text (same word may have multiple ids/categories)
+    // - "reviewing" should reflect recent wrongness, not lifetime wrong_count
+    const wordKeyById = new Map<number, string>();
+    const allWordKeys = new Set<string>();
+    for (const w of words || []) {
+      const raw = typeof w.word === 'string' ? w.word : '';
+      const k = normalizeSpelling(raw) || raw.trim().toLowerCase() || `#${w.id}`;
+      wordKeyById.set(w.id, k);
+      allWordKeys.add(k);
+    }
+
+    const sevenDaysAgo = new Date(`${today}T00:00:00+08:00`);
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const practicedKeys = new Set<string>();
+    const masteredKeys = new Set<string>();
+    const correctTodayKeys = new Set<string>();
+    const recentWrongKeys = new Set<string>();
+
+    for (const s of statusList) {
+      const k = wordKeyById.get(s.word_id) || `#${s.word_id}`;
+      practicedKeys.add(k);
+      if (s.is_mastered) masteredKeys.add(k);
+      if (s.last_correct_date === today) correctTodayKeys.add(k);
+      if (s.last_wrong_at && new Date(s.last_wrong_at) >= sevenDaysAgo) recentWrongKeys.add(k);
+    }
+
+    const reviewingKeys = new Set<string>();
+    for (const k of recentWrongKeys) {
+      if (masteredKeys.has(k)) continue;
+      if (correctTodayKeys.has(k)) continue;
+      reviewingKeys.add(k);
+    }
+
+    const totalWordsCount = allWordKeys.size;
+    const masteredCount = masteredKeys.size;
+    const reviewingCount = reviewingKeys.size;
+    const newWordsCount = Math.max(0, totalWordsCount - practicedKeys.size);
 
     const todayStatus = statusList.filter((s) => getShanghaiDateFromTimestamp(s.last_practiced_at) === today);
-    const todayPracticedCount = todayStatus.length;
-    const todayMasteredCount = todayStatus.filter((s) => s.is_mastered).length;
+    const todayPracticedKeys = new Set(todayStatus.map((s) => wordKeyById.get(s.word_id) || `#${s.word_id}`));
+    const todayPracticedCount = todayPracticedKeys.size;
+    const todayMasteredKeys = new Set(todayStatus.filter((s) => s.is_mastered).map((s) => wordKeyById.get(s.word_id) || `#${s.word_id}`));
+    const todayMasteredCount = todayMasteredKeys.size;
     const todayHistoryRecord = (history || []).find((record) => String(record.date) === today);
 
     const dailyGoal = user?.daily_goal || 200;

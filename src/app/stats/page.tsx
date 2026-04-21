@@ -823,8 +823,8 @@ export default function StatsPage() {
                     {[
                       { name: '已掌握', value: orbit.mastered, color: '#00ff88', bg: 'rgba(0, 255, 136, 0.08)' },
                       { name: '复习中', value: orbit.reviewing, color: '#ff6b9d', bg: 'rgba(255, 107, 157, 0.08)' },
-                      { name: '推进中', value: orbit.inProgress, color: '#00d4ff', bg: 'rgba(0, 212, 255, 0.08)' },
-                      { name: '未开始', value: orbit.newWords, color: '#7c4dff', bg: 'rgba(124, 77, 255, 0.10)' },
+                      { name: '学习中', value: orbit.inProgress, color: '#00d4ff', bg: 'rgba(0, 212, 255, 0.08)' },
+                      { name: '未练习', value: orbit.newWords, color: '#7c4dff', bg: 'rgba(124, 77, 255, 0.10)' },
                     ].map((x) => (
                       <div key={x.name} className="rounded-2xl p-3" style={{ background: x.bg }}>
                         <div className="flex items-center justify-between">
