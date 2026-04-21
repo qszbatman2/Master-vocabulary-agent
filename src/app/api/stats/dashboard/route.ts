@@ -183,26 +183,20 @@ export async function GET(request: NextRequest) {
         const agg = categoryAgg.get(categoryId) || { practiced: 0, mastered: 0, wrongSum: 0 };
         const name = categoryId === null ? '未分类' : categoryMap.get(categoryId) || `分类 ${categoryId}`;
         const masteredRate = total > 0 ? agg.mastered / total : 0;
+        const libraryShare = totalWordsCount > 0 ? total / totalWordsCount : 0;
         return {
           categoryId,
           name,
           totalWords: total,
+          libraryShare,
           practicedWords: agg.practiced,
           masteredWords: agg.mastered,
           wrongSum: agg.wrongSum,
           masteredRate,
         };
       })
-      .sort((a, b) => b.masteredRate - a.masteredRate);
+      .sort((a, b) => b.totalWords - a.totalWords);
     const hasUncategorizedBucket = categoryTotals.has(null);
-
-    // 计算前12个分类和剩余分类的统计
-    const topCategories = categoryBreakdown.slice(0, 12);
-    const restCategories = categoryBreakdown.slice(12);
-    const restTotal = restCategories.reduce((sum, c) => sum + c.totalWords, 0);
-    const restPracticed = restCategories.reduce((sum, c) => sum + c.practicedWords, 0);
-    const restMastered = restCategories.reduce((sum, c) => sum + c.masteredWords, 0);
-    const restWrongSum = restCategories.reduce((sum, c) => sum + c.wrongSum, 0);
 
     const weakWords = (weakStatus || []).map((s) => {
       const w = wordMap.get(s.word_id);
@@ -244,14 +238,8 @@ export async function GET(request: NextRequest) {
         counts: ladderCounts,
       },
       categories: {
-        top: topCategories,
+        items: categoryBreakdown,
         totalCategories: (categories || []).length + (hasUncategorizedBucket ? 1 : 0),
-        rest: {
-          totalWords: restTotal,
-          practicedWords: restPracticed,
-          masteredWords: restMastered,
-          wrongSum: restWrongSum,
-        },
       },
       weakWords,
       history: (history || []).map((record) => {

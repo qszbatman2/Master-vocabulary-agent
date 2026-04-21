@@ -293,6 +293,7 @@ type TreemapItem = {
   id: string;
   name: string;
   totalWords: number;
+  libraryShare: number;
   masteredRate: number;
   masteredWords: number;
   practicedWords: number;
@@ -371,7 +372,7 @@ function buildMockDashboard(dateString: string): DashboardResponse {
 
   const today = history[history.length - 1];
 
-  const categoriesTop = [
+  const categoryItems = [
     { categoryId: 2, name: 'CET-6 高频', totalWords: 4200, masteredWords: 1360, practicedWords: 2280, wrongSum: 1680 },
     { categoryId: 1, name: 'CET-4 高频', totalWords: 3100, masteredWords: 1780, practicedWords: 2340, wrongSum: 920 },
     { categoryId: 3, name: '雅思核心', totalWords: 1900, masteredWords: 620, practicedWords: 980, wrongSum: 840 },
@@ -382,8 +383,9 @@ function buildMockDashboard(dateString: string): DashboardResponse {
     { categoryId: null, name: '未分类', totalWords: 228, masteredWords: 80, practicedWords: 140, wrongSum: 70 },
   ].map((c) => ({
     ...c,
+    libraryShare: c.totalWords / totalWords,
     masteredRate: c.totalWords > 0 ? c.masteredWords / c.totalWords : 0,
-  }));
+  })).sort((a, b) => b.totalWords - a.totalWords);
 
   const weakWords: DashboardResponse['weakWords'] = [
     { wordId: 101, word: 'sustain', meaning: '维持；支撑', phonetic: 'səˈsteɪn', categoryName: '雅思核心', wrongCount: 18, correctCount: 24, lastWrongAt: dateString },
@@ -441,14 +443,8 @@ function buildMockDashboard(dateString: string): DashboardResponse {
     },
     ladder: { counts: [3200, 2100, 1700, 1200, 880] },
     categories: {
-      top: categoriesTop.slice(0, 12),
+      items: categoryItems,
       totalCategories: 9,
-      rest: {
-        totalWords: 0,
-        practicedWords: 0,
-        masteredWords: 0,
-        wrongSum: 0,
-      },
     },
     weakWords,
     history,
@@ -1108,14 +1104,13 @@ export default function StatsPage() {
                 分类概览
               </div>
               <div className="text-xs" style={{ color: '#a0a0b0' }}>
-                Top {data?.categories.top.length || 0} / {data?.categories.totalCategories || 0}
+                {data?.categories.totalCategories || 0} 个分类
               </div>
             </div>
 
             {(() => {
-              const top = data?.categories.top || [];
-              const rest = data?.categories.rest || { totalWords: 0, practicedWords: 0, masteredWords: 0, wrongSum: 0 };
-              if (!data || top.length === 0) {
+              const categories = data?.categories.items || [];
+              if (!data || categories.length === 0) {
                 return (
                   <div className="text-sm" style={{ color: '#a0a0b0' }}>
                     {loading ? '加载中…' : '暂无分类数据'}
@@ -1123,13 +1118,32 @@ export default function StatsPage() {
                 );
               }
 
-              const main = top.slice(0, 9);
-              const list = rest.totalWords > 0 ? [...main, { categoryId: -1 as any, name: '其他', totalWords: rest.totalWords, practicedWords: rest.practicedWords, masteredWords: rest.masteredWords, wrongSum: rest.wrongSum, masteredRate: rest.totalWords > 0 ? rest.masteredWords / rest.totalWords : 0 }] : main;
-              const items: TreemapItem[] = list
+              const main = categories.slice(0, 9);
+              const rest = categories.slice(9);
+              const other =
+                rest.length > 0
+                  ? {
+                      categoryId: -1 as any,
+                      name: '其他',
+                      totalWords: rest.reduce((sum, c) => sum + c.totalWords, 0),
+                      libraryShare: rest.reduce((sum, c) => sum + c.libraryShare, 0),
+                      practicedWords: rest.reduce((sum, c) => sum + c.practicedWords, 0),
+                      masteredWords: rest.reduce((sum, c) => sum + c.masteredWords, 0),
+                      wrongSum: rest.reduce((sum, c) => sum + c.wrongSum, 0),
+                      masteredRate: 0,
+                    }
+                  : null;
+              if (other && other.totalWords > 0) {
+                other.masteredRate = other.masteredWords / other.totalWords;
+              }
+
+              const treemapSource = other ? [...main, other] : main;
+              const items: TreemapItem[] = treemapSource
                 .map((c) => ({
                   id: String(c.categoryId),
                   name: c.name,
                   totalWords: c.totalWords || 0,
+                  libraryShare: clamp01(c.libraryShare || 0),
                   masteredRate: clamp01(c.masteredRate || 0),
                   masteredWords: c.masteredWords || 0,
                   practicedWords: c.practicedWords || 0,
@@ -1137,7 +1151,6 @@ export default function StatsPage() {
                 }))
                 .sort((a, b) => b.totalWords - a.totalWords);
 
-              const total = items.reduce((acc, c) => acc + Math.max(0, c.totalWords), 0) || 1;
               const rects = splitTreemap(items, 0, 0, 100, 100, true);
 
               const base = '#00f0ff';
@@ -1151,6 +1164,10 @@ export default function StatsPage() {
 
               return (
                 <div>
+                  <div className="flex items-center justify-between mb-3 text-[11px]" style={{ color: '#a0a0b0' }}>
+                    <div>面积 = 词库占比</div>
+                    <div>填充 = 掌握率</div>
+                  </div>
                   <div
                     className="relative rounded-2xl overflow-hidden"
                     style={{
@@ -1176,7 +1193,7 @@ export default function StatsPage() {
                             background: 'rgba(0,0,0,0.14)',
                             boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.05)',
                           }}
-                          title={`${r.name}\n${r.masteredWords}/${r.totalWords}`}
+                          title={`${r.name}\n词库占比 ${toPercent(r.libraryShare)}\n掌握率 ${toPercent(r.masteredRate)}\n${r.masteredWords}/${r.totalWords}`}
                         >
                           <div
                             className="absolute inset-y-0"
@@ -1192,7 +1209,10 @@ export default function StatsPage() {
                             <div className="relative p-2">
                               <div className="text-xs font-semibold text-white truncate">{r.name}</div>
                               <div className="text-[11px] mt-0.5" style={{ color: '#a0a0b0' }}>
-                                {r.masteredWords}/{r.totalWords}
+                                占比 {toPercent(r.libraryShare)}
+                              </div>
+                              <div className="text-[11px]" style={{ color: '#a0a0b0' }}>
+                                掌握 {toPercent(r.masteredRate)}
                               </div>
                             </div>
                           )}
@@ -1202,18 +1222,22 @@ export default function StatsPage() {
                   </div>
 
                   <div className="grid grid-cols-2 gap-2 mt-3">
-                    {items.map((c, idx) => {
+                    {categories.map((c, idx) => {
                       const color = palette[idx % palette.length];
                       return (
                         <div
-                          key={`${c.id}-compact`}
+                          key={`${c.categoryId}-compact`}
                           className="rounded-2xl px-3 py-2"
                           style={{ background: 'rgba(255,255,255,0.04)', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.06)' }}
-                          title={`${c.name}\n${c.masteredWords}/${c.totalWords}`}
+                          title={`${c.name}\n词库占比 ${toPercent(c.libraryShare)}\n掌握率 ${toPercent(c.masteredRate)}`}
                         >
                           <div className="flex items-center justify-between gap-2">
                             <div className="text-xs font-semibold text-white truncate">{c.name}</div>
-                            <div className="text-[11px] font-medium" style={{ color }}>{formatCompact(c.masteredWords)}/{formatCompact(c.totalWords)}</div>
+                            <div className="text-[11px] font-medium" style={{ color }}>{toPercent(c.masteredRate)}</div>
+                          </div>
+                          <div className="flex items-center justify-between gap-2 mt-1">
+                            <div className="text-[11px]" style={{ color: '#a0a0b0' }}>词库占比 {toPercent(c.libraryShare)}</div>
+                            <div className="text-[11px]" style={{ color: '#a0a0b0' }}>{formatCompact(c.totalWords)} 词</div>
                           </div>
                         </div>
                       );

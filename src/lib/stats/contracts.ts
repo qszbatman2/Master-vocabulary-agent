@@ -33,22 +33,17 @@ export type StatsDashboardResponse = {
   };
   ladder: { counts: number[] };
   categories: {
-    top: Array<{
+    items: Array<{
       categoryId: number | null;
       name: string;
       totalWords: number;
+      libraryShare: number;
       practicedWords: number;
       masteredWords: number;
       wrongSum: number;
       masteredRate: number;
     }>;
     totalCategories: number;
-    rest: {
-      totalWords: number;
-      practicedWords: number;
-      masteredWords: number;
-      wrongSum: number;
-    };
   };
   weakWords: Array<{
     wordId: number;
