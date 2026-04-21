@@ -330,7 +330,8 @@ function buildMockDashboard(dateString: string): DashboardResponse {
   const totalWords = 13628;
   const masteredCount = 4820;
   const reviewingCount = 938;
-  const newWordsCount = 6820;
+  const learningCount = 1050;
+  const newWordsCount = totalWords - masteredCount - reviewingCount - learningCount;
 
   const dailyGoal = 200;
   const effectiveCompletedCount = 136;
@@ -435,6 +436,7 @@ function buildMockDashboard(dateString: string): DashboardResponse {
       totalWords,
       masteredCount,
       reviewingCount,
+      learningCount,
       newWordsCount,
     },
     ladder: { counts: [3200, 2100, 1700, 1200, 880] },
@@ -525,13 +527,13 @@ export default function StatsPage() {
     const totalWords = data.total.totalWords || 0;
     const mastered = data.total.masteredCount || 0;
     const reviewing = data.total.reviewingCount || 0;
+    const learning = data.total.learningCount || 0;
     const newWords = data.total.newWordsCount || 0;
-    const inProgress = Math.max(0, totalWords - mastered - reviewing - newWords);
 
     const ringBg = buildConicSegments([
       { value: mastered, color: 'rgba(0, 255, 136, 0.95)' },
       { value: reviewing, color: 'rgba(255, 107, 157, 0.95)' },
-      { value: inProgress, color: 'rgba(0, 212, 255, 0.85)' },
+      { value: learning, color: 'rgba(0, 212, 255, 0.85)' },
       { value: newWords, color: 'rgba(124, 77, 255, 0.85)' },
     ]);
 
@@ -541,7 +543,7 @@ export default function StatsPage() {
       totalWords,
       mastered,
       reviewing,
-      inProgress,
+      learning,
       newWords,
       ringBg,
       masteredRate,
@@ -823,7 +825,7 @@ export default function StatsPage() {
                     {[
                       { name: '已掌握', value: orbit.mastered, color: '#00ff88', bg: 'rgba(0, 255, 136, 0.08)' },
                       { name: '复习中', value: orbit.reviewing, color: '#ff6b9d', bg: 'rgba(255, 107, 157, 0.08)' },
-                      { name: '学习中', value: orbit.inProgress, color: '#00d4ff', bg: 'rgba(0, 212, 255, 0.08)' },
+                      { name: '学习中', value: orbit.learning, color: '#00d4ff', bg: 'rgba(0, 212, 255, 0.08)' },
                       { name: '未练习', value: orbit.newWords, color: '#7c4dff', bg: 'rgba(124, 77, 255, 0.10)' },
                     ].map((x) => (
                       <div key={x.name} className="rounded-2xl p-3" style={{ background: x.bg }}>

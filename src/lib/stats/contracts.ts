@@ -28,6 +28,7 @@ export type StatsDashboardResponse = {
     totalWords: number;
     masteredCount: number;
     reviewingCount: number;
+    learningCount: number;
     newWordsCount: number;
   };
   ladder: { counts: number[] };

@@ -125,10 +125,11 @@ export async function GET(request: NextRequest) {
       reviewingKeys.add(k);
     }
 
-    const totalWordsCount = allWordKeys.size;
+    const totalWordsCount = totalWords || 0;
     const masteredCount = masteredKeys.size;
     const reviewingCount = reviewingKeys.size;
-    const newWordsCount = Math.max(0, totalWordsCount - practicedKeys.size);
+    const learningCount = Math.max(0, practicedKeys.size - masteredCount - reviewingCount);
+    const newWordsCount = Math.max(0, totalWordsCount - masteredCount - reviewingCount - learningCount);
 
     const todayStatus = statusList.filter((s) => getShanghaiDateFromTimestamp(s.last_practiced_at) === today);
     const todayPracticedKeys = new Set(todayStatus.map((s) => wordKeyById.get(s.word_id) || `#${s.word_id}`));
@@ -236,6 +237,7 @@ export async function GET(request: NextRequest) {
         totalWords: totalWordsCount,
         masteredCount,
         reviewingCount,
+        learningCount,
         newWordsCount,
       },
       ladder: {
